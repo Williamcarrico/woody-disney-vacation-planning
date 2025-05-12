@@ -325,3 +325,10 @@ export interface Resort extends Entity {
     images?: Image[];
     transportationOptions?: string[];
 }
+
+// Add the new interface definition
+export interface HistoricalWaitTimeData {
+    timestamp: string; // Or Date, depending on API response format
+    waitTime: number | null; // Wait time in minutes, null if unavailable
+    // Add other potential fields if known, e.g., status, condition
+}

@@ -1,6 +1,21 @@
 import { useMemo } from 'react';
 
 /**
+ * Interface for a single wait time data point
+ */
+export interface WaitTimeDataPoint {
+    timestamp: string | number | Date;
+    waitTime: number | null;
+}
+
+/**
+ * Interface for historical wait time data
+ */
+export interface HistoricalData {
+    waitTimes?: WaitTimeDataPoint[];
+}
+
+/**
  * Custom hook for predicting wait times based on historical data
  *
  * Provides methods for:
@@ -11,7 +26,7 @@ import { useMemo } from 'react';
 export function useWaitTimePredictor() {
     const predictor = useMemo(() => ({
         // Predict wait time based on historical data
-        predict: (historicalData: any, time: Date, currentWaitTime?: number): number | null => {
+        predict: (historicalData: HistoricalData, time: Date, currentWaitTime?: number): number | null => {
             if (!historicalData?.waitTimes?.length) return null;
 
             // Extract day of week and hour from the target time
@@ -19,15 +34,20 @@ export function useWaitTimePredictor() {
             const targetHour = time.getHours();
 
             // Filter historical data for the same day of week and hour
-            const relevantData = historicalData.waitTimes.filter((wt: any) => {
+            const relevantRawData = historicalData.waitTimes.filter((wt: WaitTimeDataPoint) => {
                 const date = new Date(wt.timestamp);
                 return date.getDay() === targetDay && date.getHours() === targetHour;
             });
 
+            // Filter out null wait times
+            const relevantData = relevantRawData.filter(
+                (wt): wt is WaitTimeDataPoint & { waitTime: number } => wt.waitTime !== null
+            );
+
             if (relevantData.length === 0) return null;
 
             // Calculate average wait time for the relevant data points
-            const sum = relevantData.reduce((acc: number, curr: any) => acc + curr.waitTime, 0);
+            const sum = relevantData.reduce((acc: number, curr: WaitTimeDataPoint & { waitTime: number }) => acc + curr.waitTime, 0);
             let prediction = Math.round(sum / relevantData.length);
 
             // Adjust prediction based on current wait time if available
@@ -42,7 +62,7 @@ export function useWaitTimePredictor() {
         // Find optimal visit time within a range
         findOptimalTime: (
             attractionId: string,
-            historicalData: any,
+            historicalData: HistoricalData,
             startTime: Date,
             endTime: Date
         ): Date | null => {
@@ -74,7 +94,7 @@ export function useWaitTimePredictor() {
         // Find when wait time will drop below a threshold
         findTimeForThreshold: (
             attractionId: string,
-            historicalData: any,
+            historicalData: HistoricalData,
             threshold: number,
             currentWaitTime: number
         ): Date | null => {

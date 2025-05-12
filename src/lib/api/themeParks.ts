@@ -8,7 +8,8 @@ import type {
     ScheduleData,
     ShowtimeData,
     VirtualQueueData,
-    LightningLaneData
+    LightningLaneData,
+    HistoricalWaitTimeData
 } from '@/types/api';
 
 /**
@@ -37,7 +38,7 @@ const apiClient = axios.create({
  */
 export const getDisneyDestinations = cache(async (): Promise<Destination[]> => {
     try {
-        const response = await apiClient.get('/destinations');
+        const response = await apiClient.get<Destination[]>('/destinations');
         // Filter for Disney destinations only
         return response.data.filter(
             (destination: Destination) => destination.slug.includes('disney')
@@ -53,7 +54,7 @@ export const getDisneyDestinations = cache(async (): Promise<Destination[]> => {
  */
 export const getDestination = cache(async (destinationId: string): Promise<Destination> => {
     try {
-        const response = await apiClient.get(`/destination/${destinationId}`);
+        const response = await apiClient.get<Destination>(`/destination/${destinationId}`);
         return response.data;
     } catch (error) {
         console.error(`Error fetching destination ${destinationId}:`, error);
@@ -67,7 +68,7 @@ export const getDestination = cache(async (destinationId: string): Promise<Desti
 export const getWaltDisneyWorldParks = cache(async (): Promise<Park[]> => {
     try {
         // Assuming 'waltdisneyworldresort' is the slug for WDW
-        const response = await apiClient.get('/destination/waltdisneyworldresort/parks');
+        const response = await apiClient.get<Park[]>('/destination/waltdisneyworldresort/parks');
         return response.data;
     } catch (error) {
         console.error('Error fetching Walt Disney World parks:', error);
@@ -80,7 +81,7 @@ export const getWaltDisneyWorldParks = cache(async (): Promise<Park[]> => {
  */
 export const getPark = cache(async (parkId: string): Promise<Park> => {
     try {
-        const response = await apiClient.get(`/park/${parkId}`);
+        const response = await apiClient.get<Park>(`/park/${parkId}`);
         return response.data;
     } catch (error) {
         console.error(`Error fetching park ${parkId}:`, error);
@@ -93,7 +94,7 @@ export const getPark = cache(async (parkId: string): Promise<Park> => {
  */
 export const getParkAttractions = cache(async (parkId: string): Promise<Attraction[]> => {
     try {
-        const response = await apiClient.get(`/park/${parkId}/attractions`);
+        const response = await apiClient.get<Attraction[]>(`/park/${parkId}/attractions`);
         return response.data;
     } catch (error) {
         console.error(`Error fetching attractions for park ${parkId}:`, error);
@@ -106,7 +107,7 @@ export const getParkAttractions = cache(async (parkId: string): Promise<Attracti
  */
 export const getParkLiveData = async (parkId: string): Promise<LiveData> => {
     try {
-        const response = await apiClient.get(`/park/${parkId}/live`);
+        const response = await apiClient.get<LiveData>(`/park/${parkId}/live`);
         return response.data;
     } catch (error) {
         console.error(`Error fetching live data for park ${parkId}:`, error);
@@ -126,7 +127,7 @@ export const getParkSchedule = cache(async (parkId: string, startDate?: string, 
             url += `?startDate=${startDate}&endDate=${endDate}`;
         }
 
-        const response = await apiClient.get(url);
+        const response = await apiClient.get<ScheduleData>(url);
         return response.data;
     } catch (error) {
         console.error(`Error fetching schedule for park ${parkId}:`, error);
@@ -146,7 +147,7 @@ export const getParkShowtimes = cache(async (parkId: string, date?: string): Pro
             url += `?date=${date}`;
         }
 
-        const response = await apiClient.get(url);
+        const response = await apiClient.get<ShowtimeData>(url);
         return response.data;
     } catch (error) {
         console.error(`Error fetching showtimes for park ${parkId}:`, error);
@@ -159,7 +160,7 @@ export const getParkShowtimes = cache(async (parkId: string, date?: string): Pro
  */
 export const getVirtualQueueData = async (): Promise<VirtualQueueData> => {
     try {
-        const response = await apiClient.get('/destination/waltdisneyworldresort/virtualqueues');
+        const response = await apiClient.get<VirtualQueueData>('/destination/waltdisneyworldresort/virtualqueues');
         return response.data;
     } catch (error) {
         console.error('Error fetching virtual queue data:', error);
@@ -172,7 +173,7 @@ export const getVirtualQueueData = async (): Promise<VirtualQueueData> => {
  */
 export const getLightningLaneData = async (): Promise<LightningLaneData> => {
     try {
-        const response = await apiClient.get('/destination/waltdisneyworldresort/genie');
+        const response = await apiClient.get<LightningLaneData>('/destination/waltdisneyworldresort/genie');
         return response.data;
     } catch (error) {
         console.error('Error fetching Lightning Lane data:', error);
@@ -183,9 +184,9 @@ export const getLightningLaneData = async (): Promise<LightningLaneData> => {
 /**
  * Fetch historical wait time data for an attraction
  */
-export const getAttractionHistoricalData = cache(async (attractionId: string, startDate: string, endDate: string): Promise<any> => {
+export const getAttractionHistoricalData = cache(async (attractionId: string, startDate: string, endDate: string): Promise<HistoricalWaitTimeData[]> => {
     try {
-        const response = await apiClient.get(`/attraction/${attractionId}/waittime?startDate=${startDate}&endDate=${endDate}`);
+        const response = await apiClient.get<HistoricalWaitTimeData[]>(`/attraction/${attractionId}/waittime?startDate=${startDate}&endDate=${endDate}`);
         return response.data;
     } catch (error) {
         console.error(`Error fetching historical data for attraction ${attractionId}:`, error);
@@ -193,8 +194,8 @@ export const getAttractionHistoricalData = cache(async (attractionId: string, st
     }
 });
 
-// Exports all functions for use throughout the application
-export default {
+// Assign the object to a variable before exporting
+const themeParksApi = {
     getDisneyDestinations,
     getDestination,
     getWaltDisneyWorldParks,
@@ -207,3 +208,6 @@ export default {
     getLightningLaneData,
     getAttractionHistoricalData,
 };
+
+// Exports all functions for use throughout the application
+export default themeParksApi;

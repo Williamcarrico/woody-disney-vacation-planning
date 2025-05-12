@@ -1,8 +1,8 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { getParkLiveData, getAttractionHistoricalData } from '@/lib/api/themeParks';
 import type { LiveData } from '@/types/api';
-import { useState, useMemo } from 'react';
-import { useWaitTimePredictor } from './useWaitTimePredictor';
+import { useState, useMemo, useEffect } from 'react';
+import { useWaitTimePredictor, type HistoricalData, type WaitTimeDataPoint } from './useWaitTimePredictor';
 
 // Interfaces for hook parameters and returns
 interface UseWaitTimesParams {
@@ -53,7 +53,6 @@ export function useWaitTimes({
     autoRefresh = true,
 }: UseWaitTimesParams): UseWaitTimesReturn {
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-    const queryClient = useQueryClient();
     const waitTimePredictor = useWaitTimePredictor();
 
     // Fetch live wait time data
@@ -63,14 +62,19 @@ export function useWaitTimes({
         isError,
         error,
         refetch
-    } = useQuery({
+    } = useQuery<LiveData, Error>({ // Explicitly type the query data and error
         queryKey: ['liveWaitTimes', parkId],
         queryFn: () => getParkLiveData(parkId),
         refetchInterval: autoRefresh ? refreshInterval : false,
-        onSuccess: () => {
-            setLastUpdated(new Date());
-        },
+        // onSuccess callback removed here
     });
+
+    // Update lastUpdated when data changes
+    useEffect(() => {
+        if (liveWaitTimes) {
+            setLastUpdated(new Date());
+        }
+    }, [liveWaitTimes]);
 
     // Organize attractions by status
     const sortedAttractions = useMemo(() => {
@@ -115,7 +119,7 @@ export function useWaitTimes({
             // We need to fetch historical data for each attraction
             if (!liveWaitTimes?.attractions) return {};
 
-            const historicalDataMap: Record<string, any> = {};
+            const historicalDataMap: Record<string, HistoricalData> = {};
 
             // Only fetch for operating attractions to limit API calls
             const attractionIds = Object.keys(liveWaitTimes.attractions).filter(
@@ -125,10 +129,14 @@ export function useWaitTimes({
             // Fetch in sequence to avoid overwhelming the API
             for (const id of attractionIds) {
                 try {
-                    const data = await getAttractionHistoricalData(id, startDate, endDate);
-                    historicalDataMap[id] = data;
+                    // Assume getAttractionHistoricalData returns WaitTimeDataPoint[]
+                    const waitTimesData = await getAttractionHistoricalData(id, startDate, endDate);
+                    // Wrap the array in the HistoricalData structure
+                    historicalDataMap[id] = { waitTimes: waitTimesData };
                 } catch (error) {
                     console.error(`Error fetching historical data for attraction ${id}:`, error);
+                    // Optionally assign an empty structure on error
+                    historicalDataMap[id] = { waitTimes: [] };
                 }
             }
 
@@ -145,11 +153,15 @@ export function useWaitTimes({
         if (historicalData) {
             Object.entries(historicalData).forEach(([id, data]) => {
                 if (data?.waitTimes?.length) {
-                    const sum = data.waitTimes.reduce(
-                        (acc: number, current: { waitTime: number }) => acc + current.waitTime,
-                        0
-                    );
-                    averages[id] = Math.round(sum / data.waitTimes.length);
+                    // Filter out null wait times before reducing
+                    const validWaitTimes = data.waitTimes.filter(wt => wt.waitTime !== null) as Array<WaitTimeDataPoint & { waitTime: number }>;
+                    if (validWaitTimes.length > 0) {
+                        const sum = validWaitTimes.reduce(
+                            (acc: number, current: WaitTimeDataPoint & { waitTime: number }) => acc + current.waitTime,
+                            0
+                        );
+                        averages[id] = Math.round(sum / validWaitTimes.length);
+                    }
                 }
             });
         }
@@ -162,7 +174,7 @@ export function useWaitTimes({
         if (!liveWaitTimes || !historicalData) return null;
 
         const operatingAttractions = Object.entries(liveWaitTimes.attractions)
-            .filter(([_, attr]) => attr.status === 'OPERATING');
+            .filter(([, attr]) => attr.status === 'OPERATING'); // Changed [_ , attr] to [, attr]
 
         if (operatingAttractions.length === 0) return null;
 
@@ -175,10 +187,11 @@ export function useWaitTimes({
             // Compare current wait time with average of last hour
             const currentWaitTime = attr.waitTime.standby;
 
-            // Get recent historical data (last hour if available)
-            const recentData = historicalData[id].waitTimes
+            // Get recent historical data (last hour if available), filtering nulls
+            const recentData = (historicalData[id].waitTimes ?? [])
                 .slice(-12) // Last 12 samples (assuming 5-minute intervals)
-                .map((wt: { waitTime: number }) => wt.waitTime);
+                .map((wt: WaitTimeDataPoint) => wt.waitTime)
+                .filter((time): time is number => time !== null); // Filter out null wait times
 
             if (recentData.length > 0) {
                 const recentAverage = recentData.reduce((a: number, b: number) => a + b, 0) / recentData.length;
@@ -207,7 +220,7 @@ export function useWaitTimes({
 
     // Predict wait time for a specific attraction at a future time
     const predictWaitTime = (attractionId: string, time: Date): number | null => {
-        if (!historicalData || !historicalData[attractionId]) return null;
+        if (!historicalData?.[attractionId]) return null;
 
         return waitTimePredictor.predict(
             historicalData[attractionId],
@@ -218,7 +231,7 @@ export function useWaitTimes({
 
     // Calculate optimal visit time within a time range
     const getOptimalVisitTime = (attractionId: string, startTime: Date, endTime: Date): Date | null => {
-        if (!historicalData || !historicalData[attractionId]) return null;
+        if (!historicalData?.[attractionId]) return null;
 
         return waitTimePredictor.findOptimalTime(
             attractionId,
@@ -232,7 +245,7 @@ export function useWaitTimes({
     const getThresholdTime = (attractionId: string, threshold: number): Date | null => {
         if (!liveWaitTimes?.attractions[attractionId]?.waitTime) return null;
 
-        const currentWaitTime = liveWaitTimes.attractions[attractionId].waitTime!.standby;
+        const currentWaitTime = liveWaitTimes.attractions[attractionId].waitTime.standby;
 
         // If already below threshold, return current time
         if (currentWaitTime <= threshold) {
@@ -240,12 +253,12 @@ export function useWaitTimes({
         }
 
         // If we have historical data, use it to predict
-        if (historicalData && historicalData[attractionId]) {
+        if (historicalData?.[attractionId]) {
             return waitTimePredictor.findTimeForThreshold(
                 attractionId,
                 historicalData[attractionId],
                 threshold,
-                liveWaitTimes.attractions[attractionId].waitTime!.standby
+                liveWaitTimes.attractions[attractionId].waitTime.standby
             );
         }
 
@@ -256,7 +269,7 @@ export function useWaitTimes({
         liveWaitTimes,
         isLoading,
         isError,
-        error: error as Error | null,
+        error: error,
         lastUpdated,
         refreshData,
         sortedAttractions,
