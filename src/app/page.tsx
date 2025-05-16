@@ -7,6 +7,9 @@ import { ArrowRight, Calendar, Wand2, Map, Clock, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { gsap } from "@/lib/gsap";
 import { useGSAP } from "@gsap/react";
+import FeaturedEvents from '@/components/events/FeaturedEvents'
+import { annualEvents } from '@/lib/data/annual-events'
+import { APP_NAME, APP_FULL_NAME } from '@/lib/utils/constants'
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -165,7 +168,7 @@ export default function Home() {
                 <span className="block bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 pb-2 hero-title-span">
                   Plan Your Magical
                 </span>
-                <span className="block text-white hero-title-span">Adventure with Woody</span>
+                <span className="block text-white hero-title-span">Adventure with {APP_NAME}</span>
               </h1>
               <p className="text-xl text-gray-300 max-w-xl hero-paragraph">
                 Create unforgettable memories with our interactive vacation planner. Personalized itineraries, real-time updates, and expert recommendations.
@@ -332,7 +335,7 @@ export default function Home() {
               variants={itemVariants}
               className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto"
             >
-              Join thousands of families who have planned their perfect vacation with Woody&apos;s planning tools.
+              Join thousands of families who have planned their perfect vacation with {APP_FULL_NAME}.
             </motion.p>
             <motion.div
               variants={itemVariants}
@@ -350,6 +353,11 @@ export default function Home() {
           </motion.div>
         </div>
       </motion.section>
+
+      {/* Annual Events Section */}
+      <section className="container py-12 md:py-24">
+        <FeaturedEvents events={annualEvents} />
+      </section>
     </motion.div>
   );
 }

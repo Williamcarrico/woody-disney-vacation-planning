@@ -5,6 +5,7 @@ import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
 import { AuthProviderWrapper } from '@/components/auth/AuthProvider';
 import MapProvider from "@/providers/map-provider";
+import { APP_FULL_NAME, APP_DESCRIPTION } from "@/lib/utils/constants";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Woody's Planning Tool",
-  description: "Create magical vacation experiences with our personalized planning tools",
+  title: APP_FULL_NAME,
+  description: APP_DESCRIPTION,
 };
 
 export default function RootLayout({

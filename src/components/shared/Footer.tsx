@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Facebook, Twitter, Instagram, Youtube, Mail, ArrowUp, Send } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { APP_NAME, APP_FULL_NAME } from '@/lib/utils/constants'
 
 export default function Footer() {
     const scrollToTop = () => {
@@ -124,7 +125,7 @@ export default function Footer() {
                     <motion.div variants={itemVariants} className="lg:col-span-4 md:col-span-1">
                         <Link
                             href="/"
-                            aria-label="Woody's Planning Tool logo and homepage link"
+                            aria-label={`${APP_FULL_NAME} logo and homepage link`}
                             className="inline-block mb-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 rounded-sm group"
                         >
                             <motion.div
@@ -217,7 +218,7 @@ export default function Footer() {
                                     />
                                 </div>
                                 <span className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-500 to-blue-400">
-                                    Woody&apos;s
+                                    {APP_NAME}
                                 </span>
                             </motion.div>
                         </Link>
@@ -339,7 +340,7 @@ export default function Footer() {
 
                 <motion.div variants={itemVariants} className="mt-12 md:mt-14 pt-6 border-t border-neutral-700/60 flex flex-col md:flex-row justify-between items-center text-sm">
                     <motion.p variants={itemVariants} className="text-neutral-500 mb-4 md:mb-0">
-                        &copy; {new Date().getFullYear()} Woody&apos;s Planning Tool. Crafted with magic.
+                        &copy; {new Date().getFullYear()} {APP_FULL_NAME}. Crafted with magic.
                     </motion.p>
                     <div className="flex items-center gap-4">
                         <Link href="/support/privacy" className="text-neutral-500 hover:text-pink-400 transition-colors">Privacy</Link>
@@ -362,7 +363,7 @@ export default function Footer() {
             <motion.div variants={itemVariants} className="bg-black/30 py-3 text-xs text-center text-neutral-600">
                 <div className="container mx-auto px-4">
                     <p>
-                        Woody&apos;s Planning Tool is an independent, unofficial resource and is not affiliated with, endorsed by, or sponsored by The Walt Disney Company or its affiliates.
+                        {APP_FULL_NAME} is an independent, unofficial resource and is not affiliated with, endorsed by, or sponsored by The Walt Disney Company or its affiliates.
                         All Disney parks, attractions, characters, and related elements are trademarks and &copy; Disney.
                     </p>
                 </div>

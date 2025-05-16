@@ -30,6 +30,10 @@ export default function MapPage({ className, initialLocation, locations = [], sh
     const [zoom, setZoom] = useState(14);
     const mapRef = useRef<HTMLDivElement>(null);
 
+    // Use a hardcoded default Map ID if none is provided in environment variables
+    // This ensures Advanced Markers will work properly
+    const mapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || 'YOUR_DEFAULT_MAP_ID';
+
     // Fetch map locations from the API
     useEffect(() => {
         if (locations.length > 0) {
@@ -122,7 +126,7 @@ export default function MapPage({ className, initialLocation, locations = [], sh
                     showSearch={showSearch}
                     markers={mapLocations}
                     showUserLocation={true}
-                    mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID}
+                    mapId={mapId}
                 />
 
                 {/* Floating controls */}

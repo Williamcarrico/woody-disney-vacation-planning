@@ -84,31 +84,42 @@ function SearchBox() {
  */
 function UserLocationControl() {
     const map = useMap();
+    const [mapReady, setMapReady] = useState(false);
+
+    useEffect(() => {
+        // Only set mapReady to true if map is available and fully initialized
+        if (map && map.getDiv && typeof map.getDiv === 'function') {
+            setMapReady(true);
+        }
+    }, [map]);
 
     const handleClick = () => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const userLocation = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
-                    map?.panTo(userLocation);
-                    map?.setZoom(15);
-                },
-                (error) => {
-                    console.error('Error getting user location:', error);
-                }
-            );
-        }
+        if (!map || !navigator.geolocation) return;
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const userLocation = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                map.panTo(userLocation);
+                map.setZoom(15);
+            },
+            (error) => {
+                console.error('Error getting user location:', error);
+            }
+        );
     };
 
+    // Don't render anything until map is ready
+    if (!mapReady) return null;
+
     return (
-        <MapControl position="RIGHT_BOTTOM">
+        <div className="absolute right-2 bottom-2 z-10">
             <Button
                 variant="secondary"
                 size="icon"
-                className="m-2 bg-white hover:bg-gray-100"
+                className="bg-white hover:bg-gray-100"
                 onClick={handleClick}
             >
                 <svg
@@ -130,7 +141,7 @@ function UserLocationControl() {
                     <line x1="22" y1="12" x2="20" y2="12" />
                 </svg>
             </Button>
-        </MapControl>
+        </div>
     );
 }
 
@@ -213,10 +224,20 @@ export function InteractiveMap({
     const [isLoaded, setIsLoaded] = useState(false);
     const mapRef = useRef<google.maps.Map | null>(null);
 
+    // Using a fallback mapId or providing a console warning if none is available
+    const effectiveMapId = mapId || process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID;
+
     useEffect(() => {
         const timer = setTimeout(() => setIsLoaded(true), 500);
         return () => clearTimeout(timer);
     }, []);
+
+    // Show warning if no mapId is provided
+    useEffect(() => {
+        if (!effectiveMapId) {
+            console.warn('No Map ID provided to InteractiveMap. Advanced Markers may not work correctly. Please set NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID in your environment variables.');
+        }
+    }, [effectiveMapId]);
 
     if (!isLoaded) {
         return <MapSkeleton height={height} width={width} />;
@@ -225,7 +246,7 @@ export function InteractiveMap({
     return (
         <div style={{ height, width }} className={cn('relative rounded-lg overflow-hidden', className)}>
             <Map
-                mapId={mapId || process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID}
+                mapId={effectiveMapId || ''}
                 defaultCenter={initialCenter}
                 defaultZoom={initialZoom}
                 gestureHandling={'greedy'}

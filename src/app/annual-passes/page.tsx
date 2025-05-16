@@ -22,7 +22,22 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { CheckIcon, XIcon } from "lucide-react"
 
-const annualPasses = [
+interface AnnualPass {
+    id: string
+    name: string
+    eligibility: string
+    price: string
+    monthlyPayment: string
+    reservations: number
+    blockoutDates: string
+    hasBlockouts: boolean
+    standardParking: boolean
+    discountDining: string
+    discountMerchandise: string
+    color: 'primary' | 'purple' | 'blue' | 'green'
+}
+
+const annualPasses: AnnualPass[] = [
     {
         id: "incredi-pass",
         name: "Disney Incredi-Pass",
@@ -82,14 +97,20 @@ const annualPasses = [
 ]
 
 // Different color classes for each pass type
-const colorClasses = {
+const colorClasses: Record<AnnualPass['color'], string> = {
     primary: "bg-primary text-primary-foreground hover:bg-primary/90",
     purple: "bg-purple-600 text-white hover:bg-purple-500",
     blue: "bg-blue-600 text-white hover:bg-blue-500",
     green: "bg-green-600 text-white hover:bg-green-500"
 }
 
-const AnnualPassCard = ({ pass, onCompare, isSelected }) => {
+interface AnnualPassCardProps {
+    pass: AnnualPass
+    onCompare: (passId: string) => void
+    isSelected: boolean
+}
+
+const AnnualPassCard = ({ pass, onCompare, isSelected }: AnnualPassCardProps) => {
     return (
         <Card className="flex flex-col h-full">
             <CardHeader className="flex flex-col items-center text-center">
@@ -140,9 +161,6 @@ const AnnualPassCard = ({ pass, onCompare, isSelected }) => {
                     onClick={() => onCompare(pass.id)}
                 >
                     {isSelected ? "Selected for Comparison" : "Compare Pass"}
-                </Button>
-                <Button variant="outline" className="w-full">
-                    Learn More
                 </Button>
             </CardFooter>
         </Card>
@@ -270,21 +288,15 @@ export default function AnnualPassesPage() {
                             </TableRow>
                             <TableRow>
                                 <TableCell className="font-medium">Dining Discounts</TableCell>
-                                {selectedPasses.map(passId => {
-                                    const pass = annualPasses.find(p => p.id === passId)
-                                    return (
-                                        <TableCell key={passId} className="text-center">Yes</TableCell>
-                                    )
-                                })}
+                                {selectedPasses.map(passId => (
+                                    <TableCell key={passId} className="text-center">Yes</TableCell>
+                                ))}
                             </TableRow>
                             <TableRow>
                                 <TableCell className="font-medium">Merchandise Discounts</TableCell>
-                                {selectedPasses.map(passId => {
-                                    const pass = annualPasses.find(p => p.id === passId)
-                                    return (
-                                        <TableCell key={passId} className="text-center">Up to 20%</TableCell>
-                                    )
-                                })}
+                                {selectedPasses.map(passId => (
+                                    <TableCell key={passId} className="text-center">Up to 20%</TableCell>
+                                ))}
                             </TableRow>
                         </TableBody>
                     </Table>

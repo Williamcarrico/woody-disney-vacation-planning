@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Menu, X, LogIn, User, MoonStar, Sun } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
+import { APP_NAME, APP_FULL_NAME } from '@/lib/utils/constants'
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -73,6 +74,7 @@ export default function Navbar() {
     const navLinks = [
         { name: 'Parks', href: '/parks' },
         { name: 'Attractions', href: '/attractions' },
+        { name: 'Events', href: '/events' },
         { name: 'Dining', href: '/dining' },
         { name: 'Planning', href: '/planning' },
         { name: 'Itinerary', href: '/itinerary' },
@@ -125,7 +127,7 @@ export default function Navbar() {
                         <Link href="/" className="relative flex items-center group">
                             <div
                                 role="img"
-                                aria-label="Woody's Planning Tool Mickey-inspired logo"
+                                aria-label={`${APP_FULL_NAME} Mickey-inspired logo`}
                                 className="relative h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center group-hover:scale-105 transition-transform duration-300"
                             >
                                 <motion.div
@@ -196,10 +198,10 @@ export default function Navbar() {
                                 />
                             </div>
                             <span className={`ml-3 text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-blue-500 to-purple-500 hidden sm:block transition-opacity duration-300 ${isScrolled ? 'opacity-0 sm:opacity-100' : 'opacity-100'}`}>
-                                Woody&apos;s
+                                {APP_NAME}
                             </span>
                             <span className={`ml-1 text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-blue-500 to-purple-500 hidden md:block transition-opacity duration-300 ${isScrolled ? 'opacity-0 md:opacity-100' : 'opacity-100'}`}>
-                                Planning Tool
+                                Vacation Planning
                             </span>
                         </Link>
                     </motion.div>

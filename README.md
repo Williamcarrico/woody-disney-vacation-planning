@@ -20,6 +20,28 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Google Maps Setup
+
+This project uses Google Maps API with Advanced Markers. To set up:
+
+1. Create a Google Cloud project at [Google Cloud Console](https://console.cloud.google.com/)
+2. Enable the Google Maps JavaScript API
+3. Create an API Key with appropriate restrictions
+4. Create a Map ID:
+   - Go to [Google Maps Platform](https://console.cloud.google.com/google/maps-apis/overview)
+   - Navigate to "Map Management" in the menu
+   - Click "Create Map ID"
+   - Choose "Basic" map type and give it a name
+   - Copy the generated Map ID
+
+5. Set up environment variables in `.env.local`:
+```
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="your_api_key_here"
+NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID="your_map_id_here"
+```
+
+The Map ID is required for Advanced Markers to work correctly.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
