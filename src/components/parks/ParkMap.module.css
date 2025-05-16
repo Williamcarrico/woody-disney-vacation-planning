@@ -1,0 +1,269 @@
+/* Map container */
+.mapContainer {
+  position: relative;
+  background-color: #f3f4f6;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border-width: 1px;
+  height: var(--map-height);
+}
+
+/* Park areas */
+.parkArea {
+  position: absolute;
+  border-radius: 9999px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  background-color: var(--area-bg-color);
+  width: var(--area-size);
+  height: var(--area-size);
+  left: var(--area-left);
+  top: var(--area-top);
+}
+
+.parkAreaLabel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+/* Attraction markers */
+.markerButton {
+  position: absolute;
+  cursor: pointer;
+  transition: all 300ms;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  appearance: none;
+  left: var(--marker-left);
+  top: var(--marker-top);
+}
+
+.markerButton:hover {
+  z-index: 10;
+}
+
+.markerPin {
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  background-color: var(--marker-bg-color);
+  width: var(--marker-size);
+  height: var(--marker-size);
+}
+
+.waitTimeLabel {
+  font-size: var(--marker-wait-time-font-size);
+}
+
+.attractionLabel {
+  position: absolute;
+  white-space: nowrap;
+  padding: 0.25rem 0.5rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 0.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 200ms;
+  transform: translateX(-50%);
+  z-index: 30;
+  font-size: var(--attraction-label-font-size);
+  bottom: var(--attraction-label-bottom);
+  left: var(--attraction-label-left);
+}
+
+.markerButton:hover .attractionLabel {
+  opacity: 1;
+}
+
+.selectedLabel {
+  opacity: 1;
+}
+
+/* Map background */
+.mapBackground {
+  position: absolute;
+  inset: 0;
+  background-color: #e8f4f8;
+}
+
+/* Legend styles */
+.mapLegend {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  font-size: 0.75rem;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+
+.legendColorDot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+  margin-right: 0.25rem;
+}
+
+.greenDot {
+  background-color: #059669;
+}
+
+.blueDot {
+  background-color: #2563eb;
+}
+
+.amberDot {
+  background-color: #d97706;
+}
+
+.redDot {
+  background-color: #dc2626;
+}
+
+.grayDot {
+  background-color: #6b7280;
+}
+
+/* User location */
+.userLocation {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 40;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.userLocationDot {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  background-color: #3b82f6;
+  border: 2px solid white;
+}
+
+.userLocationPing {
+  position: absolute;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  background-color: rgba(59, 130, 246, 0.3);
+  left: -0.75rem;
+  top: -0.75rem;
+  animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* North indicator */
+.northIndicator {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 9999px;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.northIcon {
+  height: 1.25rem;
+  width: 1.25rem;
+  color: #374151;
+}
+
+/* Loading state */
+.loadingOverlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loadingSpinner {
+  animation: spin 1s linear infinite;
+  height: 2rem;
+  width: 2rem;
+  border-radius: 9999px;
+  border-width: 2px;
+  border-style: solid;
+  border-color: transparent transparent currentColor transparent;
+  color: var(--primary);
+  margin: 0 auto;
+}
+
+/* Coming soon message */
+.comingSoonOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.comingSoonMessage {
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  text-align: center;
+  max-width: 20rem;
+}
+
+/* Animation keyframes */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes ping {
+  75%,
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

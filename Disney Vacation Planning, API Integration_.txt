@@ -244,14 +244,14 @@ Feature Name
 	GET /entity/{parkID}/schedule
 	ScheduleEntry
 	Full
-	
+
 
 	Live Attraction Wait Times
 	Attraction name, current standby wait time, operational status
 	GET /entity/{parkID}/live
 	EntityLiveData, LiveQueueSTANDBY
 	Full
-	
+
 
 	Lightning Lane (Genie+) Availability
 	Attraction name, LL availability, next return time
@@ -270,7 +270,7 @@ Feature Name
 	GET /entity/{parkID}/schedule, GET /entity/{showID}/live
 	ScheduleEntry, LiveShowTime
 	Full
-	
+
 
 	Dining Location Details & Menus
 	Restaurant name, cuisine, location, menu items (basic info)
@@ -746,3 +746,24 @@ Works cited
 20. 4 common web app development challenges and how to overcome them - Wix.com, accessed May 11, 2025, https://www.wix.com/studio/blog/web-app-development-challenges
 21. 14 Website Speed Optimization Tips: Techniques to Improve Performance and User Experience - Sematext, accessed May 11, 2025, https://sematext.com/blog/improve-website-performance/
 22. Top Web Development Challenges And How to Solve Them - Netguru, accessed May 11, 2025, https://www.netguru.com/blog/web-development-challenges
+
+Usage
+You can use this component in two ways:
+
+Full Budget Tracker:
+tsx<TripBudgetTracker
+  vacationId="your-vacation-id"
+  startDate={new Date('2025-06-01')}
+  endDate={new Date('2025-06-07')}
+/>
+
+Summary Widget:
+tsx<TripBudgetTracker
+  vacationId="your-vacation-id"
+  startDate={new Date('2025-06-01')}
+  endDate={new Date('2025-06-07')}
+  showSummary={true}
+/>
+
+
+The component integrates seamlessly with the rest of your vacation planning tools, providing users with a comprehensive financial management solution for their Disney trip.

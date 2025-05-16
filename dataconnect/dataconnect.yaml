@@ -1,0 +1,12 @@
+specVersion: "v1"
+serviceId: "woody-vacation-planning-tool-service"
+location: "us-east1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "woody-vacation-planning-tool-database"
+      cloudSql:
+        instanceId: "woody-vacation-planning-tool-instance"
+      # schemaValidation: "COMPATIBLE"
+connectorDirs: ["./connector"]

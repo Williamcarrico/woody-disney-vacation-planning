@@ -3,17 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import {
     Card,
     CardContent,
-    CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-} from "@/components/ui/tabs";
 import {
     Select,
     SelectContent,
@@ -21,26 +13,31 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { AlertCircle, Clock, MapPin, Filter, Calendar, Map as MapIcon, RefreshCw } from "lucide-react";
-import { getWaltDisneyWorldParks, getParkAttractions, getParkLiveData } from '@/lib/api/themeParks';
-import { Park, Attraction, AttractionType, AttractionStatus } from '@/types/api';
+import { AlertCircle, Clock, Filter, Map as MapIcon, RefreshCw } from "lucide-react";
+import { getWaltDisneyWorldParks, getParkAttractions } from '@/lib/api/themeParks';
+import { Attraction, AttractionType, AttractionStatus } from '@/types/api';
 import { useWaitTimes } from '@/hooks/useWaitTimes';
 import AttractionCard from './AttractionCard';
 import ParkMap from './ParkMap';
-import { cn } from '@/lib/utils';
+
+// Define a local type that matches ParkMap's AttractionWaitTimeData
+interface ParkMapAttractionWaitTimeData {
+    readonly status: 'OPERATING' | 'DOWN' | 'CLOSED' | 'REFURBISHMENT';
+    readonly waitTime?: {
+        readonly standby: number;
+    };
+}
 
 interface ParkExplorerProps {
-    initialParkId?: string;
-    showFilters?: boolean;
-    onSelectAttraction?: (attraction: Attraction) => void;
-    onAddToItinerary?: (attraction: Attraction) => void;
+    readonly initialParkId?: string;
+    readonly showFilters?: boolean;
+    readonly onSelectAttraction?: (attraction: Attraction) => void;
+    readonly onAddToItinerary?: (attraction: Attraction) => void;
 }
 
 export default function ParkExplorer({
@@ -319,7 +316,7 @@ export default function ParkExplorer({
                             </div>
                             <div className="space-y-2">
                                 <Label>Attraction Type</Label>
-                                <Select value={typeFilter} onValueChange={(value: any) => setTypeFilter(value)}>
+                                <Select value={typeFilter} onValueChange={(value: AttractionType | 'ALL') => setTypeFilter(value)}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="All Types" />
                                     </SelectTrigger>
@@ -334,7 +331,7 @@ export default function ParkExplorer({
                             </div>
                             <div className="space-y-2">
                                 <Label>Sort By</Label>
-                                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                                <Select value={sortBy} onValueChange={(value: 'name' | 'waitTime' | 'popular') => setSortBy(value)}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Sort by..." />
                                     </SelectTrigger>
@@ -357,7 +354,7 @@ export default function ParkExplorer({
                             </div>
                             <div className="space-y-2">
                                 <Label>Status</Label>
-                                <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+                                <Select value={statusFilter} onValueChange={(value: AttractionStatus | 'ALL') => setStatusFilter(value)}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="All Statuses" />
                                     </SelectTrigger>
@@ -441,7 +438,7 @@ export default function ParkExplorer({
                         <ParkMap
                             parkId={selectedParkId}
                             attractions={attractions || []}
-                            waitTimeData={liveWaitTimes?.attractions}
+                            waitTimeData={liveWaitTimes?.attractions as Record<string, ParkMapAttractionWaitTimeData>}
                             onSelectAttraction={onSelectAttraction}
                         />
                     )}

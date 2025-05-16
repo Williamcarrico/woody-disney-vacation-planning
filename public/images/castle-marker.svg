@@ -1,0 +1,37 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g filter="url(#filter0_d)">
+    <path d="M24 4C14.0589 4 6 12.0589 6 22C6 31.9411 24 44 24 44C24 44 42 31.9411 42 22C42 12.0589 33.9411 4 24 4Z" fill="#8B5CF6"/>
+    <path d="M24 4C14.0589 4 6 12.0589 6 22C6 31.9411 24 44 24 44C24 44 42 31.9411 42 22C42 12.0589 33.9411 4 24 4Z" fill="url(#paint0_linear)"/>
+  </g>
+  <!-- Castle silhouette -->
+  <path d="M24 9C23.4477 9 23 9.44772 23 10V11H21C20.4477 11 20 11.4477 20 12V14H18C17.4477 14 17 14.4477 17 15V17H15C14.4477 17 14 17.4477 14 18V30C14 30.5523 14.4477 31 15 31H33C33.5523 31 34 30.5523 34 30V18C34 17.4477 33.5523 17 33 17H31V15C31 14.4477 30.5523 14 30 14H28V12C28 11.4477 27.5523 11 27 11H25V10C25 9.44772 24.5523 9 24 9Z" fill="white"/>
+
+  <!-- Small windows in castle -->
+  <rect x="17" y="19" width="2" height="2" rx="0.5" fill="#8B5CF6"/>
+  <rect x="22" y="19" width="2" height="2" rx="0.5" fill="#8B5CF6"/>
+  <rect x="27" y="19" width="2" height="2" rx="0.5" fill="#8B5CF6"/>
+
+  <!-- Castle door -->
+  <rect x="22" y="24" width="4" height="7" rx="1" fill="#8B5CF6"/>
+
+  <!-- Top turrets -->
+  <path d="M16 16.5C16 15.6716 16.6716 15 17.5 15C18.3284 15 19 15.6716 19 16.5V17H16V16.5Z" fill="#E9D5FF"/>
+  <path d="M23 13.5C23 12.6716 23.6716 12 24.5 12C25.3284 12 26 12.6716 26 13.5V14H23V13.5Z" fill="#E9D5FF"/>
+  <path d="M29 16.5C29 15.6716 29.6716 15 30.5 15C31.3284 15 32 15.6716 32 16.5V17H29V16.5Z" fill="#E9D5FF"/>
+
+  <defs>
+    <filter id="filter0_d" x="0" y="0" width="48" height="48" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"/>
+      <feOffset dy="2"/>
+      <feGaussianBlur stdDeviation="3"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape"/>
+    </filter>
+    <linearGradient id="paint0_linear" x1="16.8421" y1="8.77193" x2="31.1579" y2="39.2281" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C4B5FD"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
+</svg>

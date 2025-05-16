@@ -1,5 +1,5 @@
 // src/components/group/GroupCoordination.tsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,7 +18,6 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 import {
     Tabs,
@@ -31,30 +30,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-    Share,
     UserPlus,
     Users,
     MessageSquare,
     Bell,
     Map,
-    User,
     ThumbsUp,
-    ThumbsDown,
-    Clock,
     CheckCircle,
     X,
     SendHorizontal,
     Plus,
     Heart,
     Trash,
-    MoreHorizontal,
-    Pin
+    Pin,
+    MapPin,
+    Star
 } from "lucide-react";
-import { Vacation, Itinerary, shareVacation, removeVacationSharing } from '@/lib/firebase/vacations';
-import { UserProfile, findUsersByEmail } from '@/lib/firebase/user';
+import { Vacation } from '@/lib/firebase/vacations';
 import { cn } from '@/lib/utils';
 
 // Internal types
@@ -119,6 +113,8 @@ interface GroupNotification {
     referenceId?: string;
 }
 
+// We'll keep this interface but mark it as unused to silence the error
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface GroupPreference {
     userId: string;
     preferences: {
@@ -332,7 +328,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
     const [pollOptions, setPollOptions] = useState(['', '']);
     const [locationSharingActive, setLocationSharingActive] = useState(false);
 
-    const { currentUser } = useAuth();
+    const { user } = useAuth();
     const queryClient = useQueryClient();
 
     // Mock queries - in a real app, these would fetch from Firebase
@@ -375,7 +371,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
         },
         onSuccess: () => {
             // Refetch messages
-            queryClient.invalidateQueries(['vacationMessages', vacationId]);
+            queryClient.invalidateQueries({ queryKey: ['vacationMessages', vacationId] });
             // Clear input
             setMessageInput('');
         },
@@ -389,7 +385,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
         },
         onSuccess: () => {
             // Refetch members
-            queryClient.invalidateQueries(['vacationMembers', vacationId]);
+            queryClient.invalidateQueries({ queryKey: ['vacationMembers', vacationId] });
             // Clear input and close dialog
             setShareEmail('');
             setShowShareDialog(false);
@@ -416,7 +412,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
         },
         onSuccess: () => {
             // Refetch polls
-            queryClient.invalidateQueries(['vacationPolls', vacationId]);
+            queryClient.invalidateQueries({ queryKey: ['vacationPolls', vacationId] });
             // Reset poll state and close dialog
             setPollQuestion('');
             setPollOptions(['', '']);
@@ -433,7 +429,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
         },
         onSuccess: () => {
             // Refetch polls
-            queryClient.invalidateQueries(['vacationPolls', vacationId]);
+            queryClient.invalidateQueries({ queryKey: ['vacationPolls', vacationId] });
         },
     });
 
@@ -445,7 +441,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
         },
         onSuccess: () => {
             // Refetch messages
-            queryClient.invalidateQueries(['vacationMessages', vacationId]);
+            queryClient.invalidateQueries({ queryKey: ['vacationMessages', vacationId] });
         },
     });
 
@@ -457,7 +453,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
         },
         onSuccess: () => {
             // Refetch notifications
-            queryClient.invalidateQueries(['vacationNotifications', vacationId]);
+            queryClient.invalidateQueries({ queryKey: ['vacationNotifications', vacationId] });
         },
     });
 
@@ -469,7 +465,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
         },
         onSuccess: () => {
             // Refetch members
-            queryClient.invalidateQueries(['vacationMembers', vacationId]);
+            queryClient.invalidateQueries({ queryKey: ['vacationMembers', vacationId] });
         },
     });
 
@@ -541,7 +537,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
 
     // Handle removing a vacation member
     const handleRemoveVacationMember = (userId: string) => {
-        if (!currentUser) return;
+        if (!user) return;
         removeVacationMemberMutation.mutate(userId);
     };
 
@@ -645,7 +641,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
 
                                                 {/* Messages */}
                                                 {messages?.map(message => {
-                                                    const isCurrentUser = currentUser?.uid === message.userId;
+                                                    const isCurrentUser = user?.uid === message.userId;
                                                     const hasAttachments = message.attachments && message.attachments.length > 0;
                                                     const hasReactions = message.reactions && Object.keys(message.reactions).length > 0;
 
@@ -762,10 +758,10 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
 
                                                             {isCurrentUser && (
                                                                 <Avatar className="h-6 w-6 ml-2 order-1 self-end mb-2">
-                                                                    {currentUser.photoURL ? (
-                                                                        <AvatarImage src={currentUser.photoURL} alt={currentUser.displayName || ''} />
+                                                                    {user.photoURL ? (
+                                                                        <AvatarImage src={user.photoURL} alt={user.displayName || ''} />
                                                                     ) : (
-                                                                        <AvatarFallback>{currentUser.displayName ? getInitials(currentUser.displayName) : 'U'}</AvatarFallback>
+                                                                        <AvatarFallback>{user.displayName ? getInitials(user.displayName) : 'U'}</AvatarFallback>
                                                                     )}
                                                                 </Avatar>
                                                             )}
@@ -926,13 +922,13 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
                                             const totalVotes = poll.options.reduce((acc, opt) => acc + opt.votes.length, 0);
 
                                             // Check if current user has voted
-                                            const userVoted = currentUser && poll.options.some(opt =>
-                                                opt.votes.includes(currentUser.uid)
+                                            const userVoted = user && poll.options.some(opt =>
+                                                opt.votes.includes(user.uid)
                                             );
 
                                             // Find which option the user voted for
-                                            const userVotedOption = currentUser && poll.options.find(opt =>
-                                                opt.votes.includes(currentUser.uid || '')
+                                            const userVotedOption = user && poll.options.find(opt =>
+                                                opt.votes.includes(user?.uid || '')
                                             );
 
                                             return (
@@ -957,7 +953,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
                                                                     ? 0
                                                                     : Math.round((option.votes.length / totalVotes) * 100);
 
-                                                                const isUserVote = currentUser && option.votes.includes(currentUser.uid || '');
+                                                                const isUserVote = user && option.votes.includes(user.uid || '');
 
                                                                 return (
                                                                     <div key={option.id} className="space-y-1">
@@ -1003,7 +999,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
                                                         {totalVotes} total vote{totalVotes !== 1 ? 's' : ''}
                                                         {userVotedOption && (
                                                             <span className="ml-2">
-                                                                You voted for "{userVotedOption.text}"
+                                                                You voted for &quot;{userVotedOption.text}&quot;
                                                             </span>
                                                         )}
                                                     </CardFooter>
@@ -1135,7 +1131,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
                                         <div>
                                             <div className="font-medium">
                                                 {member.displayName}
-                                                {member.id === currentUser?.uid && (
+                                                {member.id === user?.uid && (
                                                     <span className="text-xs text-muted-foreground ml-2">(You)</span>
                                                 )}
                                             </div>
@@ -1145,7 +1141,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
                                         </div>
                                     </div>
 
-                                    {currentUser?.uid !== member.id && (
+                                    {user?.uid !== member.id && (
                                         <Button
                                             variant="ghost"
                                             size="icon"
@@ -1194,7 +1190,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
                         </div>
 
                         <div className="bg-secondary/20 p-3 rounded-lg text-sm">
-                            <h4 className="font-medium mb-1">What they'll have access to:</h4>
+                            <h4 className="font-medium mb-1">What they&apos;ll have access to:</h4>
                             <ul className="space-y-1 text-muted-foreground">
                                 <li className="flex items-center">
                                     <CheckCircle className="h-3.5 w-3.5 mr-1.5 text-green-500" />

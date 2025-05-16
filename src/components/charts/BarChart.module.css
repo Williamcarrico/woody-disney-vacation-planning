@@ -1,0 +1,7 @@
+.tooltip-entry {
+  color: var(--entry-color);
+}
+
+.tooltip-entry[data-color] {
+  color: var(--tooltip-color);
+}

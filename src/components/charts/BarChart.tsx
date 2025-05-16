@@ -1,17 +1,48 @@
 "use client";
 
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, TooltipProps } from 'recharts';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
+interface CustomTooltipProps extends TooltipProps<number, string> {
+    valueFormatter: (value: number) => string;
+    isDark: boolean;
+}
+
+// Format tooltip
+const CustomTooltip = ({ active, payload, label, valueFormatter, isDark }: CustomTooltipProps) => {
+    if (active && payload?.length) {
+        return (
+            <div className={cn(
+                "px-3 py-2 rounded shadow-md border",
+                isDark ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200"
+            )}>
+                <p className="text-sm font-medium">{label}</p>
+                {payload.map((entry) => (
+                    <p
+                        key={`${entry.name}`}
+                        className="text-xs tooltip-entry"
+                        data-color={entry.color}
+                    >
+                        {entry.name}: {valueFormatter(entry.value as number)}
+                    </p>
+                ))}
+            </div>
+        );
+    }
+
+    return null;
+};
+
 interface BarChartProps {
-    data: any[];
-    index: string;
-    categories: string[];
-    colors?: string[];
-    valueFormatter?: (value: number) => string;
-    className?: string;
+    // Using readonly modifier but keeping compatibility with Recharts
+    readonly data: Array<Record<string, number | string>>;
+    readonly index: string;
+    readonly categories: string[];
+    readonly colors?: string[];
+    readonly valueFormatter?: (value: number) => string;
+    readonly className?: string;
 }
 
 export function BarChart({
@@ -32,31 +63,6 @@ export function BarChart({
     // Default colors if none provided
     const defaultColors = ['#38bdf8', '#818cf8', '#fb7185', '#34d399', '#fbbf24', '#f472b6'];
     const chartColors = colors || defaultColors;
-
-    // Format tooltip
-    const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
-        if (active && payload && payload.length) {
-            return (
-                <div className={cn(
-                    "px-3 py-2 rounded shadow-md border",
-                    isDark ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200"
-                )}>
-                    <p className="text-sm font-medium">{label}</p>
-                    {payload.map((entry, index) => (
-                        <p
-                            key={`item-${index}`}
-                            className="text-xs"
-                            style={{ color: entry.color }}
-                        >
-                            {entry.name}: {valueFormatter(entry.value as number)}
-                        </p>
-                    ))}
-                </div>
-            );
-        }
-
-        return null;
-    };
 
     return (
         <div ref={chartRef} className={cn("w-full h-full", className)}>
@@ -97,7 +103,7 @@ export function BarChart({
                         }}
                     />
                     <Tooltip
-                        content={<CustomTooltip />}
+                        content={<CustomTooltip valueFormatter={valueFormatter} isDark={isDark} />}
                         cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
                     />
                     <Legend

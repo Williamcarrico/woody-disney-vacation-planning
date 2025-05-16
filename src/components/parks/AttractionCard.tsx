@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import Image from 'next/image';
 import {
     Card,
     CardContent,
-    CardDescription,
     CardFooter,
     CardHeader,
     CardTitle
@@ -18,43 +16,40 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-    Clock,
-    MapPin,
     Plus,
-    Calendar,
-    AlertTriangle,
     Info,
     ChevronUp,
     ChevronDown,
     Star,
     Zap
 } from 'lucide-react';
-import { Attraction, AttractionStatus, LiveAttractionData } from '@/types/api';
+import { Attraction, AttractionStatus, LiveData } from '@/types/api';
 import { cn } from '@/lib/utils';
 
 interface AttractionCardProps {
-    attraction: Attraction;
-    waitTimeData?: LiveAttractionData;
-    showDetails?: boolean;
-    onSelect?: () => void;
-    onAddToItinerary?: () => void;
-    lightningLaneAvailable?: boolean;
-    lightningLanePrice?: number;
-    recommended?: boolean;
-    className?: string;
+    readonly attraction: Attraction;
+    readonly waitTimeData?: LiveData['attractions'][string];
+    readonly showDetails?: boolean;
+    readonly onSelect?: () => void;
+    readonly onAddToItinerary?: () => void;
+    readonly lightningLaneAvailable?: boolean;
+    readonly lightningLanePrice?: number;
+    readonly recommended?: boolean;
+    readonly className?: string;
 }
 
-export default function AttractionCard({
-    attraction,
-    waitTimeData,
-    showDetails = false,
-    onSelect,
-    onAddToItinerary,
-    lightningLaneAvailable = false,
-    lightningLanePrice,
-    recommended = false,
-    className,
-}: AttractionCardProps) {
+export default function AttractionCard(props: Readonly<AttractionCardProps>) {
+    const {
+        attraction,
+        waitTimeData,
+        showDetails = false,
+        onSelect,
+        onAddToItinerary,
+        lightningLaneAvailable = false,
+        lightningLanePrice,
+        recommended = false,
+        className,
+    } = props;
     const [expanded, setExpanded] = useState(showDetails);
 
     // Function to determine status badge color
@@ -73,9 +68,33 @@ export default function AttractionCard({
         }
     }
 
+    // Function to get the status badge
+    function getStatusBadge() {
+        if (!waitTimeData?.status) return null;
+
+        const statusClass = getStatusColor(waitTimeData.status);
+
+        return (
+            <Badge variant="outline" className={`text-xs ${statusClass}`}>
+                {waitTimeData.status.charAt(0) + waitTimeData.status.slice(1).toLowerCase().replace('_', ' ')}
+            </Badge>
+        );
+    }
+
+    // Function to get the type badge
+    function getTypeBadge() {
+        if (!attraction.attractionType) return null;
+
+        return (
+            <Badge variant="secondary" className="text-xs">
+                {attraction.attractionType.replace(/_/g, ' ')}
+            </Badge>
+        );
+    }
+
     // Function to display wait time with appropriate styling
     function getWaitTimeDisplay() {
-        if (!waitTimeData || !waitTimeData.waitTime) return null;
+        if (!waitTimeData?.waitTime) return null;
 
         const waitTime = waitTimeData.waitTime.standby;
 
@@ -85,10 +104,7 @@ export default function AttractionCard({
 
         const waitClass = cn(
             "font-medium",
-            waitTime <= 10 ? "text-green-600" :
-                waitTime <= 30 ? "text-blue-600" :
-                    waitTime <= 60 ? "text-amber-600" :
-                        "text-red-600"
+            getWaitTimeColorClass(waitTime)
         );
 
         return (
@@ -106,6 +122,14 @@ export default function AttractionCard({
         );
     }
 
+    // Get color class based on wait time
+    function getWaitTimeColorClass(waitTime: number): string {
+        if (waitTime <= 10) return "text-green-600";
+        if (waitTime <= 30) return "text-blue-600";
+        if (waitTime <= 60) return "text-amber-600";
+        return "text-red-600";
+    }
+
     // Format last update time
     function getLastUpdateTime() {
         if (!waitTimeData) return '';
@@ -121,9 +145,6 @@ export default function AttractionCard({
         const { min, unit } = attraction.heightRequirement;
         return `${min} ${unit}`;
     }
-
-    // Generate a placeholder image if none is provided
-    const imageUrl = attraction.imageUrl || 'https://via.placeholder.com/400x200?text=No+Image';
 
     return (
         <Card

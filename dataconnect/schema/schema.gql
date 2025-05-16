@@ -1,0 +1,96 @@
+type User @table {
+  displayName: String!
+  email: String
+  photoUrl: String
+  preferences: Any
+  createdAt: Timestamp!
+}
+
+type Park @table {
+  name: String!
+  description: String!
+  operatingHours: String
+}
+
+type Attraction @table {
+  park: Park!
+  name: String!
+  description: String!
+  rideType: String!
+  waitTime: Int
+  heightRestriction: String
+  userRating: Float
+}
+
+type Restaurant @table {
+  park: Park!
+  name: String!
+  cuisine: String!
+  priceRange: String!
+  menu: String
+  userReviews: String
+}
+
+type Resort @table {
+  name: String!
+  description: String!
+  category: String!
+  address: String
+  phoneNumber: String
+  amenities: String
+}
+
+type Itinerary @table {
+  user: User!
+  name: String!
+  startDate: Date!
+  endDate: Date!
+  notes: String
+}
+
+type ItineraryItem @table {
+  itinerary: Itinerary!
+  startTime: Timestamp!
+  endTime: Timestamp!
+  itemType: String! # e.g., "Attraction", "Restaurant", "Resort", "Travel"
+  attraction: Attraction
+  restaurant: Restaurant
+  resort: Resort
+  travelDetails: TravelDetail
+  notes: String
+  confirmationNumber: String
+}
+
+type TravelDetail @table {
+  transportationType: String! # e.g., "Flight", "Car", "Bus"
+  departureLocation: String!
+  arrivalLocation: String!
+  departureTime: Timestamp!
+  arrivalTime: Timestamp!
+  notes: String
+}
+
+type VacationParty @table {
+  name: String!
+  createdAt: Timestamp!
+}
+
+type VacationPartyUser @table {
+  user: User!
+  vacationParty: VacationParty!
+  joinedAt: Timestamp!
+}
+
+type Message @table {
+  user: User!
+  vacationParty: VacationParty!
+  content: String!
+  sentAt: Timestamp!
+}
+
+type Location @table {
+  user: User!
+  latitude: Float!
+  longitude: Float!
+  timestamp: Timestamp!
+}

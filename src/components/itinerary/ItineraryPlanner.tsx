@@ -1,20 +1,12 @@
-import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { addDays, format, isSameDay, parseISO, setHours, setMinutes } from 'date-fns';
+import { useState, useMemo, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import dayjs from 'dayjs';
+import advancedFormat from 'dayjs/plugin/advancedFormat';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import * as z from 'zod';
-import { useMemo } from 'react';
 import {
-    Card,
-    CardContent,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-} from '@/components/ui/card';
-import {
-    Form,
     FormField,
     FormItem,
     FormLabel,
@@ -29,77 +21,34 @@ import {
     AccordionTrigger,
 } from '@/components/ui/accordion';
 import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-} from '@/components/ui/tabs';
-import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Calendar } from '@/components/ui/calendar';
 import { Slider } from '@/components/ui/slider';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
-    Calendar as CalendarIcon,
-    Clock,
     Map,
     Users,
-    User,
-    ChevronRight,
-    ChevronLeft,
-    ChevronUp,
-    ChevronDown,
-    Clock1,
-    Clock2,
-    Clock3,
     AlertCircle,
-    Trash2,
-    Edit,
-    Save,
-    Plus,
-    ListChecks,
     Sparkles,
-    Share2,
-    Upload,
     Wand2,
-    Zap,
     Layers,
-    Droplets,
-    Braces,
     CalendarDays,
-    LucideIcon,
     CheckIcon
 } from 'lucide-react';
-import { getWaltDisneyWorldParks, getParkSchedule } from '@/lib/api/themeParks';
+import { getWaltDisneyWorldParks } from '@/lib/api/themeParks';
 import { useItineraryOptimizer } from '@/engines/itinerary/optimizer';
-import { cn } from '@/lib/utils';
-import LoadingSpinner from '@/components/shared/LoadingSpinner';
+
+dayjs.extend(advancedFormat);
+dayjs.extend(customParseFormat);
 
 // Define form schema with Zod
 const planningFormSchema = z.object({
@@ -110,10 +59,7 @@ const planningFormSchema = z.object({
     }),
     endDate: z.date({
         required_error: "Please select an end date",
-    }).min(
-        z.date().refine((data) => data, { message: "" }),
-        { message: "End date must be after start date" }
-    ),
+    }),
 
     // Park days
     parkDays: z.array(z.object({
@@ -149,6 +95,14 @@ const planningFormSchema = z.object({
     // Priority attractions (to be populated dynamically)
     priorityAttractions: z.array(z.string()).optional(),
     excludedAttractions: z.array(z.string()).optional(),
+}).superRefine(({ startDate, endDate }, ctx) => {
+    if (endDate < startDate) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "End date must be after start date",
+            path: ["endDate"],
+        });
+    }
 });
 
 type PlanningFormValues = z.infer<typeof planningFormSchema>;
@@ -177,15 +131,14 @@ const defaultValues: Partial<PlanningFormValues> = {
     excludedAttractions: [],
 };
 
-// Step icons for the planning wizard
-const stepIcons: Record<string, LucideIcon> = {
-    "trip-details": CalendarDays,
-    "park-days": Map,
-    "party-details": Users,
-    "preferences": Layers,
-    "planning": Wand2,
-    "review": ListChecks,
-};
+// Interface for optimization results
+interface OptimizationResult {
+    date: Date;
+    parkId: string;
+    parkName: string;
+    rideName?: string;
+    waitTime?: number;
+}
 
 export default function ItineraryPlanner() {
     // State for the current step in the planning wizard
@@ -194,10 +147,8 @@ export default function ItineraryPlanner() {
     >("trip-details");
 
     // State for optimization results
-    const [optimizationResults, setOptimizationResults] = useState<any>(null);
+    const [optimizationResults, setOptimizationResults] = useState<OptimizationResult[] | null>(null);
     const [isOptimizing, setIsOptimizing] = useState(false);
-    const [selectedDay, setSelectedDay] = useState<number>(0);
-    const [viewMode, setViewMode] = useState<'timeline' | 'list' | 'alternatives'>('timeline');
 
     // Get the itinerary optimizer
     const { optimizeItinerary } = useItineraryOptimizer();
@@ -215,18 +166,32 @@ export default function ItineraryPlanner() {
         mode: "onChange",
     });
 
-    // Initialize field array for park days and children ages
+    // Initialize field array for park days
     const { fields: parkDaysFields, append: appendParkDay, remove: removeParkDay } =
         useFieldArray({ name: "parkDays", control: form.control });
 
-    const { fields: childrenAgesFields, append: appendChildAge, remove: removeChildAge } =
-        useFieldArray({ name: "childrenAges", control: form.control });
+    // Instead of using useFieldArray for childrenAges, manage manually
+    const watchChildrenAges = form.watch("childrenAges") || [];
+    // Create fields objects compatible with how they were used before
+    const childrenAgesFields = watchChildrenAges.map((age, index) => ({
+        id: `child-${index}`,
+        value: age
+    }));
+
+    const appendChildAge = useCallback((value: number) => {
+        const currentAges = form.getValues("childrenAges") || [];
+        form.setValue("childrenAges", [...currentAges, value]);
+    }, [form]);
+
+    const removeChildAge = useCallback((index: number) => {
+        const currentAges = form.getValues("childrenAges") || [];
+        form.setValue("childrenAges", currentAges.filter((_, i) => i !== index));
+    }, [form]);
 
     // Watch form values for dynamic changes
     const watchStartDate = form.watch("startDate");
     const watchEndDate = form.watch("endDate");
     const watchChildrenCount = form.watch("childrenCount");
-    const watchHasChildrenUnder7 = form.watch("hasChildrenUnder7");
     const watchParkDays = form.watch("parkDays");
 
     // Calculate trip duration
@@ -244,7 +209,7 @@ export default function ItineraryPlanner() {
         if (watchChildrenCount > currentCount) {
             // Add more child age inputs
             for (let i = currentCount; i < watchChildrenCount; i++) {
-                appendChildAge(5); // Default age
+                appendChildAge(5 as unknown as never); // Default age
             }
         } else if (watchChildrenCount < currentCount) {
             // Remove excess child age inputs
@@ -285,7 +250,7 @@ export default function ItineraryPlanner() {
                 });
 
                 // Move to next day
-                currentDate = addDays(currentDate, 1);
+                currentDate = dayjs(currentDate).add(1, 'day').toDate();
             }
         }
     }, [watchStartDate, watchEndDate, parks, appendParkDay, removeParkDay, parkDaysFields.length]);
@@ -296,13 +261,11 @@ export default function ItineraryPlanner() {
 
         try {
             // Process each day in the trip
-            const results = [];
+            const results: OptimizationResult[] = [];
 
-            for (let i = 0; i < data.parkDays.length; i++) {
-                const parkDay = data.parkDays[i];
-
+            for (const parkDay of data.parkDays) {
                 // Format the date as YYYY-MM-DD
-                const formattedDate = format(parkDay.date, 'yyyy-MM-dd');
+                const formattedDate = dayjs(parkDay.date).format('YYYY-MM-DD');
 
                 // Convert time strings to ISO time strings
                 const startTime = new Date(parkDay.date);
@@ -336,8 +299,8 @@ export default function ItineraryPlanner() {
                         maxWaitTime: parkDay.maxWaitTime,
                         walkingPace: data.walkingPace,
                         breakDuration: data.breakDuration,
-                        lunchTime: setHours(setMinutes(new Date(parkDay.date), 0), 12).toISOString(),
-                        dinnerTime: setHours(setMinutes(new Date(parkDay.date), 0), 18).toISOString(),
+                        lunchTime: dayjs(parkDay.date).set('hour', 12).set('minute', 0).toISOString(),
+                        dinnerTime: dayjs(parkDay.date).set('hour', 18).set('minute', 0).toISOString(),
                     },
 
                     // Advanced parameters
@@ -368,7 +331,6 @@ export default function ItineraryPlanner() {
 
             // Store the results
             setOptimizationResults(results);
-            setSelectedDay(0);
 
             // Move to review step
             setCurrentStep("review");
@@ -379,23 +341,6 @@ export default function ItineraryPlanner() {
             setIsOptimizing(false);
         }
     }
-
-    // Navigate through wizard steps
-    const goToNextStep = () => {
-        if (currentStep === "trip-details") setCurrentStep("park-days");
-        else if (currentStep === "park-days") setCurrentStep("party-details");
-        else if (currentStep === "party-details") setCurrentStep("preferences");
-        else if (currentStep === "preferences") setCurrentStep("planning");
-        else if (currentStep === "planning") form.handleSubmit(onSubmit)();
-    };
-
-    const goToPreviousStep = () => {
-        if (currentStep === "park-days") setCurrentStep("trip-details");
-        else if (currentStep === "party-details") setCurrentStep("park-days");
-        else if (currentStep === "preferences") setCurrentStep("party-details");
-        else if (currentStep === "planning") setCurrentStep("preferences");
-        else if (currentStep === "review") setCurrentStep("planning");
-    };
 
     // Render the current step content
     const renderStepContent = () => {
@@ -424,7 +369,7 @@ export default function ItineraryPlanner() {
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Getting Started</AlertTitle>
                 <AlertDescription>
-                    Let's start planning your magical Disney vacation! Enter your basic trip information below.
+                    Let&apos;s start planning your magical Disney vacation! Enter your basic trip information below.
                 </AlertDescription>
             </Alert>
 
@@ -457,7 +402,7 @@ export default function ItineraryPlanner() {
                                     <div className="relative">
                                         <Input
                                             type="date"
-                                            value={field.value ? format(field.value, 'yyyy-MM-dd') : ''}
+                                            value={field.value ? dayjs(field.value).format('YYYY-MM-DD') : ''}
                                             onChange={(e) => {
                                                 const date = e.target.value ? new Date(e.target.value) : null;
                                                 if (date) field.onChange(date);
@@ -483,12 +428,12 @@ export default function ItineraryPlanner() {
                                     <div className="relative">
                                         <Input
                                             type="date"
-                                            value={field.value ? format(field.value, 'yyyy-MM-dd') : ''}
+                                            value={field.value ? dayjs(field.value).format('YYYY-MM-DD') : ''}
                                             onChange={(e) => {
                                                 const date = e.target.value ? new Date(e.target.value) : null;
                                                 if (date) field.onChange(date);
                                             }}
-                                            min={watchStartDate ? format(watchStartDate, 'yyyy-MM-dd') : undefined}
+                                            min={watchStartDate ? dayjs(watchStartDate).format('YYYY-MM-DD') : undefined}
                                         />
                                     </div>
                                 </FormControl>
@@ -530,7 +475,7 @@ export default function ItineraryPlanner() {
                 {parkDaysFields.map((field, index) => {
                     // Format the date for display
                     const date = new Date(field.date);
-                    const formattedDate = format(date, 'EEEE, MMMM d, yyyy');
+                    const formattedDate = dayjs(date).format('dddd, MMMM D, YYYY');
 
                     return (
                         <div key={field.id} className="border-b last:border-b-0">
@@ -681,7 +626,7 @@ export default function ItineraryPlanner() {
                 <Users className="h-4 w-4" />
                 <AlertTitle>Tell Us About Your Party</AlertTitle>
                 <AlertDescription>
-                    Help us customize your itinerary by telling us who's coming along.
+                    Help us customize your itinerary by telling us who&apos;s coming along.
                 </AlertDescription>
             </Alert>
 
@@ -759,9 +704,9 @@ export default function ItineraryPlanner() {
 
                 {watchChildrenCount > 0 && (
                     <div className="space-y-4">
-                        <FormLabel>Children's Ages</FormLabel>
+                        <FormLabel>Children&apos;s Ages</FormLabel>
                         <FormDescription>
-                            This helps us recommend attractions appropriate for your children's ages and heights.
+                            This helps us recommend attractions appropriate for your children&apos;s ages and heights.
                         </FormDescription>
 
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -770,7 +715,7 @@ export default function ItineraryPlanner() {
                                     key={field.id}
                                     control={form.control}
                                     name={`childrenAges.${index}`}
-                                    render={({ field }) => (
+                                    render={({ field: inputField }) => (
                                         <FormItem>
                                             <FormLabel>Child {index + 1}</FormLabel>
                                             <FormControl>
@@ -778,8 +723,8 @@ export default function ItineraryPlanner() {
                                                     type="number"
                                                     min={0}
                                                     max={17}
-                                                    {...field}
-                                                    onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                                    {...inputField}
+                                                    onChange={(e) => inputField.onChange(parseInt(e.target.value))}
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -941,7 +886,7 @@ export default function ItineraryPlanner() {
                 <div>
                     <h3 className="text-lg font-medium">Lightning Lane & Genie+</h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                        Optimize your day with Disney's skip-the-line options
+                        Optimize your day with Disney&apos;s skip-the-line options
                     </p>
                 </div>
 
@@ -1109,7 +1054,7 @@ export default function ItineraryPlanner() {
                 <Wand2 className="h-4 w-4" />
                 <AlertTitle>Ready to Create Your Perfect Itinerary</AlertTitle>
                 <AlertDescription>
-                    We'll use your preferences to generate an optimized itinerary for each day of your trip.
+                    We&apos;ll use your preferences to generate an optimized itinerary for each day of your trip.
                     This process takes all factors into account including wait times, walking distances, and your personal preferences.
                 </AlertDescription>
             </Alert>
@@ -1131,7 +1076,7 @@ export default function ItineraryPlanner() {
                             {watchParkDays?.map((day, index) => {
                                 const park = parks?.find(p => p.id === day.parkId);
                                 return park ? (
-                                    <Badge key={index} variant="secondary">
+                                    <Badge key={`${day.date.toISOString()}-${park.id}-${index}`} variant="secondary">
                                         {park.name}
                                     </Badge>
                                 ) : null;
@@ -1159,7 +1104,7 @@ export default function ItineraryPlanner() {
                             <span className="animate-spin mr-2">
                                 <Sparkles className="h-4 w-4" />
                             </span>
-                            Creating Your Itinerary...
+                            {' '}Creating Your Itinerary...
                         </>
                     ) : (
                         <>
@@ -1171,7 +1116,7 @@ export default function ItineraryPlanner() {
             </div>
 
             <div className="border rounded-lg p-4">
-                <h3 className="font-medium mb-2">What's included in your itinerary:</h3>
+                <h3 className="font-medium mb-2">What&apos;s included in your itinerary:</h3>
                 <ul className="space-y-2 text-sm">
                     <li className="flex items-start">
                         <CheckIcon className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
@@ -1213,12 +1158,12 @@ export default function ItineraryPlanner() {
                 </AlertDescription>
             </Alert>
 
-            {optimizationResults?.map((result: any, index: number) => (
-                <div key={index} className="space-y-2">
+            {optimizationResults?.map((result: OptimizationResult, index: number) => (
+                <div key={`${result.date.toISOString()}-${result.parkId}-${index}`} className="space-y-2">
                     <h3 className="text-lg font-semibold">{result.parkName}</h3>
-                    <p>Date: {format(result.date, 'MMM d, yyyy')}</p>
-                    <p>Ride: {result.rideName}</p>
-                    <p>Wait Time: {result.waitTime} minutes</p>
+                    <p>Date: {dayjs(result.date).format('MMM D, YYYY')}</p>
+                    {result.rideName && <p>Ride: {result.rideName}</p>}
+                    {result.waitTime !== undefined && <p>Wait Time: {result.waitTime} minutes</p>}
                 </div>
             ))}
         </div>

@@ -1,14 +1,48 @@
 // src/engines/itinerary/optimizer.ts
 import { getParkLiveData, getParkAttractions, getParkSchedule } from '@/lib/api/themeParks';
-import { useWaitTimePrediction } from '@/hooks/useWaitTimePredictor';
 import type {
     Attraction,
-    Park,
-    Itinerary,
-    ItineraryItem,
     LiveData,
     ScheduleData
 } from '@/types/api';
+
+// Define the missing ItineraryItem type locally
+interface ItineraryItem {
+    type: string;
+    id?: string;
+    name: string;
+    startTime: string;
+    endTime: string;
+    waitTime?: number;
+    walkingTime?: number;
+    location?: string;
+    description?: string;
+    lightningLane?: {
+        type: 'GENIE_PLUS' | 'INDIVIDUAL';
+        price?: number;
+    };
+    notes?: string;
+}
+
+// Define a non-hook based predictor class
+class WaitTimePredictor {
+    predict(attractionId: string, time: Date, currentWaitTime: number): number {
+        // Simple prediction algorithm
+        const hour = time.getHours();
+
+        // Busier in the middle of the day
+        let hourMultiplier = 1.0;
+        if (hour >= 11 && hour <= 15) {
+            hourMultiplier = 1.3; // Peak hours: 11am-3pm
+        } else if (hour >= 16 && hour <= 18) {
+            hourMultiplier = 1.1; // Still busy: 4pm-6pm
+        } else if (hour >= 19 || hour <= 8) {
+            hourMultiplier = 0.7; // Less busy: evening and early morning
+        }
+
+        return Math.round(currentWaitTime * hourMultiplier);
+    }
+}
 
 /**
  * Itinerary Optimization Engine
@@ -104,13 +138,13 @@ interface AttractionWithMetadata extends Attraction {
  * Park Itinerary Optimizer class
  */
 export class ParkItineraryOptimizer {
-    private parkId: string;
-    private date: string;
+    private readonly parkId: string;
+    private readonly date: string;
     private attractions: AttractionWithMetadata[] = [];
     private liveData: LiveData | null = null;
     private schedule: ScheduleData | null = null;
-    private params: OptimizationParameters;
-    private waitTimePredictor = useWaitTimePrediction();
+    private readonly params: OptimizationParameters;
+    private readonly waitTimePredictor = new WaitTimePredictor();
 
     // Walking time estimates between park areas (in minutes)
     private static readonly WALKING_TIMES: Record<string, Record<string, number>> = {
@@ -223,8 +257,7 @@ export class ParkItineraryOptimizer {
                 if (
                     attractionArea &&
                     otherAttractionArea &&
-                    ParkItineraryOptimizer.WALKING_TIMES[attractionArea] &&
-                    ParkItineraryOptimizer.WALKING_TIMES[attractionArea][otherAttractionArea]
+                    ParkItineraryOptimizer.WALKING_TIMES[attractionArea]?.[otherAttractionArea]
                 ) {
                     const baseTime = ParkItineraryOptimizer.WALKING_TIMES[attractionArea][otherAttractionArea];
 
@@ -250,39 +283,37 @@ export class ParkItineraryOptimizer {
                         otherAttraction.id,
                         Math.round(baseTime * paceMultiplier)
                     );
-                } else {
+                } else if (attraction.location && otherAttraction.location) {
                     // Fallback estimation based on distance if available
-                    if (attraction.location && otherAttraction.location) {
-                        const distanceKm = this.calculateDistance(
-                            attraction.location.latitude,
-                            attraction.location.longitude,
-                            otherAttraction.location.latitude,
-                            otherAttraction.location.longitude
-                        );
+                    const distanceKm = this.calculateDistance(
+                        attraction.location.latitude,
+                        attraction.location.longitude,
+                        otherAttraction.location.latitude,
+                        otherAttraction.location.longitude
+                    );
 
-                        // Estimate: 1km takes about 15 minutes to walk in a theme park with crowds
-                        let walkingTime = Math.round(distanceKm * 15);
+                    // Estimate: 1km takes about 15 minutes to walk in a theme park with crowds
+                    let walkingTime = Math.round(distanceKm * 15);
 
-                        // Apply same pace adjustments
-                        if (this.params.preferences.walkingPace === 'slow') {
-                            walkingTime = Math.round(walkingTime * 1.3);
-                        } else if (this.params.preferences.walkingPace === 'fast') {
-                            walkingTime = Math.round(walkingTime * 0.8);
-                        }
-
-                        if (this.params.mobilityConsiderations) {
-                            walkingTime = Math.round(walkingTime * 1.5);
-                        }
-
-                        if (this.params.hasStroller) {
-                            walkingTime = Math.round(walkingTime * 1.2);
-                        }
-
-                        attraction.walkingTimeMap.set(otherAttraction.id, walkingTime);
-                    } else {
-                        // Default fallback
-                        attraction.walkingTimeMap.set(otherAttraction.id, 10);
+                    // Apply same pace adjustments
+                    if (this.params.preferences.walkingPace === 'slow') {
+                        walkingTime = Math.round(walkingTime * 1.3);
+                    } else if (this.params.preferences.walkingPace === 'fast') {
+                        walkingTime = Math.round(walkingTime * 0.8);
                     }
+
+                    if (this.params.mobilityConsiderations) {
+                        walkingTime = Math.round(walkingTime * 1.5);
+                    }
+
+                    if (this.params.hasStroller) {
+                        walkingTime = Math.round(walkingTime * 1.2);
+                    }
+
+                    attraction.walkingTimeMap.set(otherAttraction.id, walkingTime);
+                } else {
+                    // Default fallback
+                    attraction.walkingTimeMap.set(otherAttraction.id, 10);
                 }
             }
         }
@@ -344,63 +375,96 @@ export class ParkItineraryOptimizer {
     }
 
     /**
+     * Generate time slots based on park schedule or default times
+     */
+    private generateTimeSlots(): string[] {
+        // Try to use park schedule if available
+        if (this.schedule && this.schedule.schedule.length > 0) {
+            const scheduleForDate = this.schedule.schedule.find(s => s.date === this.date);
+            if (scheduleForDate) {
+                return this.createTimeSlotsFromSchedule(
+                    new Date(scheduleForDate.openingTime),
+                    new Date(scheduleForDate.closingTime)
+                );
+            }
+        }
+
+        // No schedule found, use default time range (9am to 10pm)
+        return this.createDefaultTimeSlots();
+    }
+
+    /**
+     * Create time slots between opening and closing times
+     */
+    private createTimeSlotsFromSchedule(openingTime: Date, closingTime: Date): string[] {
+        const timeSlots: string[] = [];
+        let currentSlot = new Date(openingTime);
+
+        while (currentSlot < closingTime) {
+            timeSlots.push(currentSlot.toISOString());
+            currentSlot = new Date(currentSlot.setHours(currentSlot.getHours() + 1));
+        }
+
+        return timeSlots;
+    }
+
+    /**
+     * Create default time slots from 9am to 10pm
+     */
+    private createDefaultTimeSlots(): string[] {
+        const timeSlots: string[] = [];
+        const dateObject = new Date(this.date);
+
+        for (let hour = 9; hour <= 22; hour++) {
+            const timeSlot = new Date(dateObject);
+            timeSlot.setHours(hour, 0, 0, 0);
+            timeSlots.push(timeSlot.toISOString());
+        }
+
+        return timeSlots;
+    }
+
+    /**
      * Generate wait time predictions for different times of day
      */
     private async generateWaitTimePredictions(): Promise<void> {
-        // Define time slots to predict (hourly from park open to close)
-        const timeSlots: string[] = [];
+        // Generate time slots
+        const timeSlots = this.generateTimeSlots();
 
-        if (this.schedule && this.schedule.schedule.length > 0) {
-            const scheduleForDate = this.schedule.schedule.find(s => s.date === this.date);
-
-            if (scheduleForDate) {
-                const openingTime = new Date(scheduleForDate.openingTime);
-                const closingTime = new Date(scheduleForDate.closingTime);
-
-                // Create time slots every hour
-                let currentSlot = new Date(openingTime);
-                while (currentSlot < closingTime) {
-                    timeSlots.push(currentSlot.toISOString());
-                    currentSlot = new Date(currentSlot.setHours(currentSlot.getHours() + 1));
-                }
-            }
-        }
-
-        // If no schedule found, use default time range (9am to 10pm)
-        if (timeSlots.length === 0) {
-            const dateObject = new Date(this.date);
-            for (let hour = 9; hour <= 22; hour++) {
-                const timeSlot = new Date(dateObject);
-                timeSlot.setHours(hour, 0, 0, 0);
-                timeSlots.push(timeSlot.toISOString());
-            }
-        }
-
-        // Generate predictions for each attraction and time slot
+        // Generate predictions for each attraction
         for (const attraction of this.attractions) {
             attraction.predictedWaitTimes = new Map();
 
             // Skip predictions for non-rides or attractions without wait times
-            if (
-                attraction.attractionType !== 'RIDE' ||
-                attraction.currentWaitTime === undefined
-            ) {
+            if (attraction.attractionType !== 'RIDE' || attraction.currentWaitTime === undefined) {
                 continue;
             }
 
-            for (const timeSlot of timeSlots) {
-                const timeSlotDate = new Date(timeSlot);
+            this.generatePredictionsForAttraction(attraction, timeSlots);
+        }
+    }
 
-                // Use the predictor to get estimated wait time for this slot
-                const predictedWait = this.waitTimePredictor.predict(
-                    attraction.id,
-                    timeSlotDate,
-                    attraction.currentWaitTime
-                );
+    /**
+     * Generate predictions for a specific attraction across all time slots
+     */
+    private generatePredictionsForAttraction(
+        attraction: AttractionWithMetadata,
+        timeSlots: string[]
+    ): void {
+        if (!attraction.predictedWaitTimes) {
+            attraction.predictedWaitTimes = new Map();
+        }
 
-                if (predictedWait !== null) {
-                    attraction.predictedWaitTimes.set(timeSlot, predictedWait);
-                }
+        for (const timeSlot of timeSlots) {
+            const timeSlotDate = new Date(timeSlot);
+            const predictedWait = this.waitTimePredictor.predict(
+                attraction.id,
+                timeSlotDate,
+                attraction.currentWaitTime as number
+            );
+
+            if (predictedWait !== null) {
+                attraction.predictedWaitTimes.set(timeSlot, predictedWait);
             }
         }
     }
@@ -410,89 +474,128 @@ export class ParkItineraryOptimizer {
      */
     private scoreAttractions(): void {
         for (const attraction of this.attractions) {
-            let score = 50; // Base score
-
-            // Factor 1: Attraction type preference
-            if (attraction.attractionType === 'RIDE') {
-                // Check ride preference
-                if (this.params.preferences.ridePreference === 'thrill') {
-                    // Higher score for thrill rides (usually tagged with "thrill" or having height requirements)
-                    if (
-                        attraction.tags?.includes('thrill') ||
-                        attraction.heightRequirement?.min && attraction.heightRequirement.min > 40
-                    ) {
-                        score += 20;
-                    } else {
-                        score -= 10;
-                    }
-                } else if (this.params.preferences.ridePreference === 'family') {
-                    // Higher score for family rides (no height requirement or low requirement)
-                    if (
-                        !attraction.heightRequirement ||
-                        (attraction.heightRequirement.min && attraction.heightRequirement.min <= 40)
-                    ) {
-                        score += 20;
-                    } else {
-                        score -= 10;
-                    }
-                }
-            } else if (attraction.attractionType === 'SHOW') {
-                // Adjust for show preference
-                score += this.params.includeShows ? 15 : -30;
-            } else if (attraction.attractionType === 'MEET_AND_GREET') {
-                // Adjust for meet and greet preference
-                score += this.params.includeMeetAndGreets ? 15 : -30;
-            }
-
-            // Factor 2: Wait time consideration
-            if (attraction.currentWaitTime !== undefined) {
-                // Prefer lower wait times, but don't completely dismiss popular attractions
-                if (attraction.currentWaitTime <= 15) {
-                    score += 15;
-                } else if (attraction.currentWaitTime > this.params.preferences.maxWaitTime!) {
-                    score -= 25;
-                } else if (attraction.currentWaitTime > 60) {
-                    score -= 10;
-                }
-            }
-
-            // Factor 3: Priority attractions (must-do)
-            if (this.params.preferences.priorityAttractions?.includes(attraction.id)) {
-                score += 50; // Large boost for must-do attractions
-            }
-
-            // Factor 4: Excluded attractions
-            if (this.params.preferences.excludedAttractions?.includes(attraction.id)) {
-                score = -100; // Effectively exclude from consideration
-            }
-
-            // Factor 5: Lightning Lane availability
-            if (
-                (this.params.useGeniePlus || this.params.useIndividualLightningLane) &&
-                attraction.lightning?.available
-            ) {
-                // Bonus for available Lightning Lane options
-                if (
-                    attraction.lightning.type === 'GENIE_PLUS' &&
-                    this.params.useGeniePlus
-                ) {
-                    score += 10;
-                } else if (
-                    attraction.lightning.type === 'INDIVIDUAL' &&
-                    this.params.useIndividualLightningLane &&
-                    (!attraction.lightning.price ||
-                        attraction.lightning.price <= (this.params.maxLightningLaneBudget || 0))
-                ) {
-                    score += 15;
-                }
-            }
-
-            // Assign the final score
-            attraction.score = score;
+            attraction.score = this.calculateAttractionScore(attraction);
         }
 
         // Sort attractions by score (descending)
         this.attractions.sort((a, b) => b.score - a.score);
+    }
+
+    /**
+     * Calculate the score for a single attraction
+     */
+    private calculateAttractionScore(attraction: AttractionWithMetadata): number {
+        let score = 50; // Base score
+
+        score += this.scoreAttractionType(attraction);
+        score += this.scoreWaitTime(attraction);
+        score += this.scorePriority(attraction);
+        score += this.scoreLightningLane(attraction);
+
+        return score;
+    }
+
+    /**
+     * Score based on attraction type and user preferences
+     */
+    private scoreAttractionType(attraction: AttractionWithMetadata): number {
+        if (attraction.attractionType === 'RIDE') {
+            return this.scoreRideAttraction(attraction);
+        }
+
+        if (attraction.attractionType === 'SHOW') {
+            return this.params.includeShows ? 15 : -30;
+        }
+
+        if (attraction.attractionType === 'MEET_AND_GREET') {
+            return this.params.includeMeetAndGreets ? 15 : -30;
+        }
+
+        return 0;
+    }
+
+    /**
+     * Score ride attractions based on thrill preferences
+     */
+    private scoreRideAttraction(attraction: AttractionWithMetadata): number {
+        const preference = this.params.preferences.ridePreference;
+
+        if (preference === 'thrill') {
+            const isThrillRide = attraction.tags?.includes('thrill') ||
+                (attraction.heightRequirement?.min && attraction.heightRequirement.min > 40);
+            return isThrillRide ? 20 : -10;
+        }
+
+        if (preference === 'family') {
+            const isFamilyRide = !attraction.heightRequirement ||
+                (attraction.heightRequirement.min && attraction.heightRequirement.min <= 40);
+            return isFamilyRide ? 20 : -10;
+        }
+
+        return 0;
+    }
+
+    /**
+     * Score based on wait time
+     */
+    private scoreWaitTime(attraction: AttractionWithMetadata): number {
+        if (attraction.currentWaitTime === undefined) {
+            return 0;
+        }
+
+        if (attraction.currentWaitTime <= 15) {
+            return 15;
+        }
+
+        if (attraction.currentWaitTime > (this.params.preferences.maxWaitTime || 60)) {
+            return -25;
+        }
+
+        if (attraction.currentWaitTime > 60) {
+            return -10;
+        }
+
+        return 0;
+    }
+
+    /**
+     * Score based on priority and exclusion lists
+     */
+    private scorePriority(attraction: AttractionWithMetadata): number {
+        if (this.params.preferences.excludedAttractions?.includes(attraction.id)) {
+            return -150; // Base score is 50, so this makes total -100
+        }
+
+        if (this.params.preferences.priorityAttractions?.includes(attraction.id)) {
+            return 50;
+        }
+
+        return 0;
+    }
+
+    /**
+     * Score based on Lightning Lane availability
+     */
+    private scoreLightningLane(attraction: AttractionWithMetadata): number {
+        const hasLightning = (this.params.useGeniePlus || this.params.useIndividualLightningLane) &&
+            attraction.lightning?.available;
+
+        if (!hasLightning || !attraction.lightning) {
+            return 0;
+        }
+
+        if (attraction.lightning.type === 'GENIE_PLUS' && this.params.useGeniePlus) {
+            return 10;
+        }
+
+        if (attraction.lightning.type === 'INDIVIDUAL' &&
+            this.params.useIndividualLightningLane &&
+            (!attraction.lightning.price ||
+                attraction.lightning.price <= (this.params.maxLightningLaneBudget || 0))) {
+            return 15;
+        }
+
+        return 0;
     }
 
     /**
@@ -818,10 +921,10 @@ export class ParkItineraryOptimizer {
                 ).toISOString(),
                 waitTime: effectiveWaitTime,
                 walkingTime,
-                lightningLane: useLightningLane
+                lightningLane: useLightningLane && nextAttraction.lightning
                     ? {
-                        type: nextAttraction.lightning!.type,
-                        price: nextAttraction.lightning!.price
+                        type: nextAttraction.lightning.type,
+                        price: nextAttraction.lightning.price
                     }
                     : undefined,
                 notes: this.generateAttractionNotes(nextAttraction)
@@ -1223,7 +1326,7 @@ export class ParkItineraryOptimizer {
             const coveredHighScored = new Set(
                 itinerary
                     .filter(item => item.id)
-                    .map(item => item.id!)
+                    .map(item => item.id)
             ).size;
 
             coveragePercentage = highScoredAttractions > 0
