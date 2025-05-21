@@ -6,8 +6,8 @@ export default function GlobalError({
     error,
     reset,
 }: {
-    error: Error & { digest?: string };
-    reset: () => void;
+    readonly error: Error & { digest?: string };
+    readonly reset: () => void;
 }) {
     useEffect(() => {
         // Log the error to your error reporting service

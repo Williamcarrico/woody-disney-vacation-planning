@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { DisneySpringLocation, LocationCategory } from "@/types/disneysprings"
-import { Card } from "@/components/ui/card"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, ShoppingBag, Utensils, Ticket } from "lucide-react"
@@ -52,14 +51,16 @@ export default function DisneySpringsMap({ locations }: DisneySpringsMapProps) {
 
                         <div className="space-y-2 max-h-[300px] overflow-auto">
                             {locations.map(location => (
-                                <div
+                                <button
                                     key={location.id}
-                                    className="flex items-center gap-2 p-2 bg-white dark:bg-gray-800 rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    type="button"
+                                    className="flex w-full items-center gap-2 p-2 bg-white dark:bg-gray-800 rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-left"
                                     onClick={() => setSelectedLocation(location)}
+                                    aria-label={`Select ${location.name}`}
                                 >
                                     {getCategoryIcon(location.category)}
                                     <span>{location.name}</span>
-                                </div>
+                                </button>
                             ))}
                         </div>
                     </div>

@@ -20,6 +20,37 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Documentation
+
+This project includes comprehensive documentation:
+
+- **API Documentation**: Generated with TypeDoc
+- **Component Documentation**: JSDoc comments with usage examples
+- **User Guides**: Guides for using application features
+- **Architecture Diagrams**: Visual representations of system design
+
+### Generating Documentation
+
+```bash
+# Generate API documentation
+npm run docs:generate
+
+# Serve documentation locally
+npm run docs:serve
+```
+
+See the [Documentation Home](./DOCUMENTATION.md) for a complete overview.
+
+## API Standards
+
+This project implements standardized API patterns:
+
+- Consistent response format for all API endpoints
+- Utility functions for generating responses
+- Built-in rate limiting for API protection
+
+See the [API Standards documentation](./API_STANDARDS.md) for more details.
+
 ## Google Maps Setup
 
 This project uses Google Maps API with Advanced Markers. To set up:

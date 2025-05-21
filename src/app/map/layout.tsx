@@ -1,8 +1,11 @@
-import type { Metadata } from "next";
+import { Metadata } from 'next';
+import { GoogleMapsProvider } from '@/components/maps/google-maps-provider';
+import ReactQueryProvider from "@/providers/react-query-provider";
+import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-    title: "Interactive Map | Disney Vacation Planning",
-    description: "Explore Walt Disney World Resort with our interactive map.",
+    title: 'Disney World Map | Explore Parks and Attractions',
+    description: 'Interactive map of Walt Disney World parks, attractions, dining, and more. Plan your perfect Disney vacation with our detailed park maps.',
 };
 
 export default function MapLayout({
@@ -10,5 +13,14 @@ export default function MapLayout({
 }: {
     children: React.ReactNode;
 }) {
-    return children;
+    return (
+        <ReactQueryProvider>
+            <div className="h-[calc(100vh-65px)] w-full relative min-h-screen">
+                <GoogleMapsProvider>
+                    {children}
+                </GoogleMapsProvider>
+                <Toaster />
+            </div>
+        </ReactQueryProvider>
+    );
 }

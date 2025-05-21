@@ -4,12 +4,8 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { AnnualEvent } from '@/types/events'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ChevronRight, Calendar } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { formatDate } from '@/lib/utils/date-utils'
 import {
     Carousel,
     CarouselContent,
@@ -20,9 +16,9 @@ import {
 import EventCard from './EventCard'
 
 interface FeaturedEventsProps {
-    events: AnnualEvent[]
-    title?: string
-    showViewAll?: boolean
+    readonly events: AnnualEvent[]
+    readonly title?: string
+    readonly showViewAll?: boolean
 }
 
 export default function FeaturedEvents({
@@ -54,8 +50,9 @@ export default function FeaturedEvents({
                         return startDate > now
                     })
                     .sort((a, b) => {
-                        const aDate = new Date(a.currentYearStartDate!)
-                        const bDate = new Date(b.currentYearStartDate!)
+                        if (!a.currentYearStartDate || !b.currentYearStartDate) return 0
+                        const aDate = new Date(a.currentYearStartDate)
+                        const bDate = new Date(b.currentYearStartDate)
                         return aDate.getTime() - bDate.getTime()
                     })
                     .slice(0, 6)
@@ -121,11 +118,7 @@ export default function FeaturedEvents({
                     <Calendar className="h-10 w-10 text-muted-foreground mb-3" />
                     <h3 className="text-xl font-medium">No events found</h3>
                     <p className="text-muted-foreground mt-2 max-w-md">
-                        {activeTab === 'current'
-                            ? 'There are no active events right now. Check back soon for upcoming events.'
-                            : activeTab === 'upcoming'
-                                ? 'There are no upcoming events scheduled at this time.'
-                                : 'No events are currently available.'}
+                        {getNoEventsMessage(activeTab)}
                     </p>
                     {activeTab !== 'all' && (
                         <Button
@@ -140,4 +133,14 @@ export default function FeaturedEvents({
             )}
         </section>
     )
+}
+
+function getNoEventsMessage(activeTab: string): string {
+    if (activeTab === 'current') {
+        return 'There are no active events right now. Check back soon for upcoming events.'
+    } else if (activeTab === 'upcoming') {
+        return 'There are no upcoming events scheduled at this time.'
+    } else {
+        return 'No events are currently available.'
+    }
 }

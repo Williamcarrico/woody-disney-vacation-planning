@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSessionCookie, revokeSessionCookie } from '@/lib/firebase/auth-session'
+import { createSessionCookie, revokeSessionCookie, rotateSessionToken } from '@/lib/firebase/auth-session'
 
 // Create a session (after successful login)
 export async function POST(request: NextRequest) {
     try {
         console.log('Session API route called');
-        const { idToken } = await request.json()
+        const { idToken, rememberMe } = await request.json()
 
         if (!idToken) {
             console.error('idToken missing in request');
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
         }
 
         console.log('Creating session cookie with Firebase Admin');
-        const result = await createSessionCookie(idToken)
+        const result = await createSessionCookie(idToken, rememberMe)
 
         if ('error' in result) {
             console.error('Error from createSessionCookie:', result.error);
@@ -34,6 +34,40 @@ export async function POST(request: NextRequest) {
         console.error('Session creation error:', errorMessage);
         return NextResponse.json(
             { error: `Internal server error: ${errorMessage}` },
+            { status: 500 }
+        )
+    }
+}
+
+// Rotate a session token (for enhanced security)
+export async function PATCH(request: NextRequest) {
+    try {
+        const { uid, rememberMe } = await request.json()
+
+        if (!uid) {
+            return NextResponse.json(
+                { error: 'User ID is required' },
+                { status: 400 }
+            )
+        }
+
+        const result = await rotateSessionToken(uid, rememberMe)
+
+        if ('error' in result) {
+            return NextResponse.json(
+                { error: result.error },
+                { status: 500 }
+            )
+        }
+
+        return NextResponse.json({
+            success: true,
+            customToken: result.customToken
+        })
+    } catch (error) {
+        console.error('Token rotation error:', error)
+        return NextResponse.json(
+            { error: 'Internal server error' },
             { status: 500 }
         )
     }

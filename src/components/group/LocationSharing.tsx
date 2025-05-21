@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/AuthContext'
@@ -32,10 +34,11 @@ import {
 } from "lucide-react"
 import { motion } from 'framer-motion'
 import { format, formatDistanceToNow } from 'date-fns'
-import { doc, collection, getDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, limit, addDoc, getDocs } from 'firebase/firestore'
+import { doc, collection, getDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, limit, addDoc, getDocs, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore'
 import { firestore } from '@/lib/firebase/firebase.config'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
+import { InteractiveMap, GroupMember } from '@/components/maps/interactive-map'
 
 // Types
 interface LocationUpdate {
@@ -74,6 +77,46 @@ interface LocationSharingProps {
     readonly vacationId: string
 }
 
+// Helper functions to reduce nesting
+const mapDocToLocationUpdate = (doc: QueryDocumentSnapshot<DocumentData>): LocationUpdate => {
+    const data = doc.data()
+    return {
+        id: doc.id,
+        userId: data.userId,
+        userName: data.userName,
+        userPhotoURL: data.userPhotoURL,
+        location: data.location,
+        timestamp: data.timestamp?.toDate() || new Date(),
+        message: data.message
+    }
+}
+
+const mapDocToLocationStatus = (doc: QueryDocumentSnapshot<DocumentData>): UserLocationStatus => {
+    const data = doc.data()
+    return {
+        userId: doc.id,
+        userName: data.userName,
+        userPhotoURL: data.userPhotoURL,
+        isSharing: data.isSharing,
+        lastUpdated: data.lastUpdated?.toDate(),
+        lastLocation: data.lastLocation
+    }
+}
+
+// Format location statuses to GroupMember format for interactive map
+const formatGroupMembersForMap = (statuses: UserLocationStatus[] = []): GroupMember[] => {
+    return statuses
+        .filter(status => status.isSharing && status.lastLocation)
+        .map(status => ({
+            id: status.userId,
+            name: status.userName,
+            avatar: status.userPhotoURL,
+            lat: status.lastLocation?.latitude || 0,
+            lng: status.lastLocation?.longitude || 0,
+            lastUpdated: status.lastUpdated || new Date()
+        }));
+};
+
 export default function LocationSharing({ vacationId }: LocationSharingProps) {
     const { user } = useAuth()
     const queryClient = useQueryClient()
@@ -93,17 +136,7 @@ export default function LocationSharing({ vacationId }: LocationSharingProps) {
             const q = query(statusesRef)
             const snapshot = await getDocs(q)
 
-            return snapshot.docs.map(doc => {
-                const data = doc.data()
-                return {
-                    userId: doc.id,
-                    userName: data.userName,
-                    userPhotoURL: data.userPhotoURL,
-                    isSharing: data.isSharing,
-                    lastUpdated: data.lastUpdated?.toDate(),
-                    lastLocation: data.lastLocation
-                } as UserLocationStatus
-            })
+            return snapshot.docs.map(mapDocToLocationStatus)
         },
         enabled: !!vacationId
     })
@@ -117,19 +150,7 @@ export default function LocationSharing({ vacationId }: LocationSharingProps) {
                 const q = query(updatesRef, orderBy('timestamp', 'desc'), limit(50))
 
                 const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const updates = snapshot.docs.map(doc => {
-                        const data = doc.data()
-                        return {
-                            id: doc.id,
-                            userId: data.userId,
-                            userName: data.userName,
-                            userPhotoURL: data.userPhotoURL,
-                            location: data.location,
-                            timestamp: data.timestamp?.toDate() || new Date(),
-                            message: data.message
-                        } as LocationUpdate
-                    })
-
+                    const updates = snapshot.docs.map(mapDocToLocationUpdate)
                     resolve(updates)
                 })
 
@@ -348,7 +369,7 @@ export default function LocationSharing({ vacationId }: LocationSharingProps) {
 
         setLocationUpdateInterval(interval)
         setIsAutoUpdateActive(true)
-    }, [isAutoUpdateActive, getCurrentLocation, isLocationSharingEnabled, isManualUpdate, shareLocationMutation])
+    }, [isAutoUpdateActive, getCurrentLocation])
 
     // Stop automatic location updates
     const stopLocationUpdates = () => {
@@ -456,15 +477,49 @@ export default function LocationSharing({ vacationId }: LocationSharingProps) {
                     </TabsList>
 
                     <TabsContent value="map">
-                        <div className="bg-muted rounded-md overflow-hidden" style={{ height: '300px' }}>
-                            {/* Placeholder for the map - in a real app, this would be a map component */}
-                            <div className="h-full w-full flex items-center justify-center">
-                                <div className="text-center">
-                                    <MapIcon className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                                    <p className="text-muted-foreground">Interactive map will appear here</p>
-                                    <p className="text-xs text-muted-foreground mt-1">Showing {activeSharings.length} party members</p>
+                        <div className="bg-muted rounded-md overflow-hidden h-[300px]">
+                            {activeSharings.length > 0 ? (
+                                <InteractiveMap
+                                    height="300px"
+                                    width="100%"
+                                    showSearch={false}
+                                    showUserLocation={true}
+                                    groupMembers={formatGroupMembersForMap(locationStatuses)}
+                                    initialCenter={currentLocation ?
+                                        {
+                                            lat: currentLocation.coords.latitude,
+                                            lng: currentLocation.coords.longitude
+                                        } : undefined}
+                                    initialZoom={13}
+                                    onLocationUpdate={(location) => {
+                                        if (isLocationSharingEnabled) {
+                                            // Create a GeolocationPosition-like object from the map location update
+                                            const simulatedPosition = {
+                                                coords: {
+                                                    latitude: location.lat,
+                                                    longitude: location.lng,
+                                                    accuracy: 10
+                                                },
+                                                timestamp: Date.now()
+                                            } as GeolocationPosition;
+
+                                            // Share the location
+                                            shareLocationMutation.mutate({
+                                                location: simulatedPosition,
+                                                name: locationName || 'Current Location',
+                                            });
+                                        }
+                                    }}
+                                />
+                            ) : (
+                                <div className="h-full w-full flex items-center justify-center">
+                                    <div className="text-center">
+                                        <MapIcon className="h-10 w-10 mx-auto mb-2 opacity-20" />
+                                        <p className="text-muted-foreground">No party members sharing location</p>
+                                        <p className="text-xs text-muted-foreground mt-1">Enable location sharing to see the map</p>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
 
                         <div className="mt-4">

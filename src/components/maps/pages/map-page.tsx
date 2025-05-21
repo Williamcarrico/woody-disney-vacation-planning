@@ -32,7 +32,7 @@ export default function MapPage({ className, initialLocation, locations = [], sh
 
     // Use a hardcoded default Map ID if none is provided in environment variables
     // This ensures Advanced Markers will work properly
-    const mapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || 'YOUR_DEFAULT_MAP_ID';
+    const mapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || '8f077a07a8eb2b6d';
 
     // Fetch map locations from the API
     useEffect(() => {

@@ -3,11 +3,20 @@ import { getApps } from 'firebase-admin/app'
 
 // Format private key correctly if it's in environment variable format
 function formatPrivateKey(key: string) {
+    if (!key) return '';
+
     // Remove any quotes if present
     const unquotedKey = key.replace(/^["']|["']$/g, '')
 
     // Replace literal \n with actual newlines
-    return unquotedKey.replace(/\\n/g, '\n')
+    const formattedKey = unquotedKey.replace(/\\n/g, '\n')
+
+    // Check if the key is properly formatted
+    if (!formattedKey.includes('BEGIN PRIVATE KEY') || !formattedKey.includes('END PRIVATE KEY')) {
+        console.warn('Warning: Private key may not be properly formatted')
+    }
+
+    return formattedKey
 }
 
 export function initAdmin() {
@@ -27,23 +36,18 @@ export function initAdmin() {
         throw new Error('Missing Firebase Admin credentials: FIREBASE_PRIVATE_KEY not set')
     }
 
-    // Debug private key format (first few characters for safety)
-    console.log('Private key format check:', {
-        length: privateKey.length,
-        startsWith: privateKey.substring(0, 27),
-        containsNewlines: privateKey.includes('\n'),
-        containsLiteralNewlines: privateKey.includes('\\n')
-    })
-
     // Only initialize once
     if (getApps().length === 0) {
         try {
+            // Format the private key
+            const formattedKey = formatPrivateKey(privateKey)
+
+            // Initialize the app
             admin.initializeApp({
                 credential: admin.credential.cert({
                     projectId,
                     clientEmail,
-                    // Format the private key correctly
-                    privateKey: formatPrivateKey(privateKey),
+                    privateKey: formattedKey,
                 }),
                 databaseURL: `https://${projectId}.firebaseio.com`,
             })

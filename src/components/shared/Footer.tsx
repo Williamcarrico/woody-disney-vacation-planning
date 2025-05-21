@@ -16,25 +16,27 @@ export default function Footer() {
     const footerLinkCategories = {
         'Navigate': [
             { name: 'Home', href: '/' },
-            { name: 'Parks', href: '/parks' },
-            { name: 'Attractions', href: '/attractions' },
+            { name: 'Parks', href: '/dashboard/parks/history' },
+            { name: 'Attractions', href: '/dashboard/attractions' },
             { name: 'Dining', href: '/dining' },
+            { name: 'Disney Springs', href: '/dashboard/disneysprings' },
+            { name: 'Events', href: '/events' }
         ],
         'Planning Tools': [
             { name: 'Itinerary Builder', href: '/itinerary' },
-            { name: 'Group Planning', href: '/group' },
-            { name: 'Budget Calculator', href: '/planning/budget' },
+            { name: 'Vacation Optimizer', href: '/dashboard/optimizer' },
+            { name: 'Budget Calculator', href: '/budget' },
             { name: 'Packing Checklist', href: '/planning/checklist' }
         ],
         'Resources': [
             { name: 'Park Hours', href: '/parks/hours' },
-            { name: 'Resort Information', href: '/resorts' },
-            { name: 'Travel Tips', href: '/planning/travel-tips' },
+            { name: 'Resort Information', href: '/dashboard/resorts' },
+            { name: 'Travel Tips', href: '/tips-tricks' },
             { name: 'FAQs', href: '/faq' }
         ],
         'Connect': [
             { name: 'About Us', href: '/about' },
-            { name: 'Contact Support', href: '/support/contact' },
+            { name: 'Contact Support', href: '/contact' },
             { name: 'Terms of Service', href: '/support/terms' },
             { name: 'Privacy Policy', href: '/support/privacy' }
         ]
@@ -135,14 +137,14 @@ export default function Footer() {
                             >
                                 <div className="relative h-12 w-12 flex items-center justify-center">
                                     <motion.div
-                                        className="relative z-10 w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-[0_0_15px_rgba(156,39,176,0.5)]"
+                                        className="relative z-10 w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 shadow-[0_0_15px_rgba(109,40,217,0.5)] overflow-hidden"
                                         initial={{ scale: 0.9 }}
                                         whileInView={{
                                             scale: [0.9, 1.05, 0.9],
                                             boxShadow: [
-                                                "0 0 15px rgba(156,39,176,0.5)",
-                                                "0 0 22px rgba(156,39,176,0.8)",
-                                                "0 0 15px rgba(156,39,176,0.5)"
+                                                "0 0 15px rgba(109,40,217,0.5)",
+                                                "0 0 22px rgba(109,40,217,0.8)",
+                                                "0 0 15px rgba(109,40,217,0.5)"
                                             ]
                                         }}
                                         transition={{
@@ -152,6 +154,10 @@ export default function Footer() {
                                         }}
                                         viewport={viewportOnce}
                                     >
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <div className="castle-silhouette w-5 h-5 opacity-70"></div>
+                                        </div>
+
                                         <motion.span
                                             className="absolute top-1 right-1 w-2 h-2 bg-white rounded-full"
                                             animate={{
@@ -217,7 +223,7 @@ export default function Footer() {
                                         viewport={viewportOnce}
                                     />
                                 </div>
-                                <span className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-500 to-blue-400">
+                                <span className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 font-luckiest">
                                     {APP_NAME}
                                 </span>
                             </motion.div>

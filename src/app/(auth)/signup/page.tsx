@@ -38,6 +38,7 @@ export default function Signup() {
     })
 
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [rememberMe, setRememberMe] = useState(true)
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target
@@ -78,7 +79,7 @@ export default function Signup() {
             setIsSubmitting(true)
             setFormErrors(prev => ({ ...prev, form: '' }))
 
-            await signUp(formData.email, formData.password, formData.name)
+            await signUp(formData.email, formData.password, formData.name, rememberMe)
             router.push('/dashboard')
         } catch (error) {
             console.error('Error signing up:', error)
@@ -91,7 +92,7 @@ export default function Signup() {
 
     const handleGoogleSignIn = async () => {
         try {
-            await googleSignIn()
+            await googleSignIn(rememberMe)
             router.push('/dashboard')
         } catch (error) {
             console.error('Google sign in error:', error)
@@ -171,6 +172,19 @@ export default function Signup() {
                     error={formErrors.confirmPassword}
                     required
                 />
+
+                <div className="flex items-center space-x-2 mt-2">
+                    <input
+                        type="checkbox"
+                        id="remember"
+                        className="rounded border-gray-300 text-primary focus:ring-primary"
+                        checked={rememberMe}
+                        onChange={() => setRememberMe(!rememberMe)}
+                    />
+                    <label htmlFor="remember" className="text-sm text-gray-600 dark:text-gray-300">
+                        Remember this device for 30 days
+                    </label>
+                </div>
 
                 {formErrors.form && (
                     <div className="bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 p-3 rounded-md text-sm">

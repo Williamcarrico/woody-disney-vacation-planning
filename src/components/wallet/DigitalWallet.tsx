@@ -1,7 +1,7 @@
 // src/components/wallet/DigitalWallet.tsx
-import { useState, useRef, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { format, isToday, isTomorrow, isPast, isAfter, addHours } from 'date-fns';
+import { format, isToday, isTomorrow, isAfter, addDays, isSameDay } from 'date-fns';
 import {
     Ticket,
     Utensils,
@@ -10,16 +10,8 @@ import {
     Zap,
     QrCode,
     Clock,
-    Calendar,
-    ChevronDown,
-    ChevronUp,
-    Users,
-    MapPin,
-    Star,
     Check,
     Plus,
-    Camera,
-    Upload,
     Share2,
     LucideIcon
 } from 'lucide-react';
@@ -44,30 +36,21 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-    Drawer,
-    DrawerContent,
-    DrawerDescription,
-    DrawerFooter,
-    DrawerHeader,
-    DrawerTitle,
-    DrawerTrigger,
-} from "@/components/ui/drawer";
-import {
-    HoverCard,
-    HoverCardContent,
-    HoverCardTrigger,
-} from "@/components/ui/hover-card";
+    Sheet as Drawer,
+    SheetContent as DrawerContent,
+    SheetDescription as DrawerDescription,
+    SheetFooter as DrawerFooter,
+    SheetHeader as DrawerHeader,
+    SheetTitle as DrawerTitle,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
 // Define our pass types
@@ -148,8 +131,8 @@ type Pass = ParkTicketPass | DiningPass | LightningLanePass | HotelPass | EventP
 
 // Props for the digital wallet
 interface DigitalWalletProps {
-    vacationId?: string;
-    showUpcoming?: boolean;
+    readonly vacationId?: string;
+    readonly showUpcoming?: boolean;
 }
 
 export default function DigitalWallet({
@@ -160,13 +143,11 @@ export default function DigitalWallet({
     const [showBarcodeDialog, setShowBarcodeDialog] = useState(false);
     const [showDetailsDrawer, setShowDetailsDrawer] = useState(false);
     const [selectedPass, setSelectedPass] = useState<Pass | null>(null);
-    const [sortBy, setSortBy] = useState<'date' | 'name'>('date');
+    const [sortBy] = useState<'date' | 'name'>('date');
     const [showExpired, setShowExpired] = useState(false);
 
-    const { currentUser } = useAuth();
-
     // Mock API query - in a real app, this would fetch from Firebase
-    const { data: passes, isLoading } = useQuery({
+    const { data: passes, isLoading } = useQuery<Pass[]>({
         queryKey: ['passes', vacationId],
         queryFn: () => getMockPasses(),
     });
@@ -197,6 +178,12 @@ export default function DigitalWallet({
             filtered = filtered.filter(pass => !pass.isExpired && !pass.isUsed);
         }
 
+        // Optionally filter out past passes if the consumer does not want to show upcoming items only
+        if (!showUpcoming) {
+            const today = new Date()
+            filtered = filtered.filter(pass => isAfter(pass.date, today) || isToday(pass.date))
+        }
+
         // Then sort
         return [...filtered].sort((a, b) => {
             if (sortBy === 'date') {
@@ -205,7 +192,7 @@ export default function DigitalWallet({
                 return a.name.localeCompare(b.name);
             }
         });
-    }, [passes, activeTab, sortBy, showExpired]);
+    }, [passes, activeTab, sortBy, showExpired, showUpcoming]);
 
     // Group passes by day
     const passesByDay = useMemo(() => {
@@ -223,7 +210,7 @@ export default function DigitalWallet({
     }, [filteredPasses]);
 
     // Get pass icon
-    const getPassIcon = (type: PassType, isExpired = false, isHighlighted = false): LucideIcon => {
+    const getPassIcon = (type: PassType): LucideIcon => {
         switch (type) {
             case 'ticket':
                 return Ticket;
@@ -350,7 +337,10 @@ export default function DigitalWallet({
     // Render QR code - in a real app, this would generate an actual QR code
     const renderQRCode = (text: string) => {
         return (
-            <div className="relative mx-auto bg-white p-4 rounded-lg" style={{ width: '250px', height: '250px' }}>
+            <div
+                className="relative mx-auto bg-white p-4 rounded-lg w-[250px] h-[250px]"
+                data-barcode={text}
+            >
                 <div className="absolute inset-0 flex items-center justify-center">
                     <QrCode className="h-full w-full p-4 text-black" />
                 </div>
@@ -663,14 +653,15 @@ export default function DigitalWallet({
                                                             const Icon = getPassIcon(pass.type);
 
                                                             return (
-                                                                <div
+                                                                <button
                                                                     key={pass.id}
                                                                     className={cn(
-                                                                        "p-3 rounded-lg border cursor-pointer",
+                                                                        "p-3 rounded-lg border w-full text-left",
                                                                         getPassColor(pass),
-                                                                        "hover:shadow-md transition-shadow"
+                                                                        "hover:shadow-md transition-shadow focus:outline-none focus:ring-2 focus:ring-primary"
                                                                     )}
                                                                     onClick={() => handlePassClick(pass)}
+                                                                    aria-label={`View details for ${pass.name}`}
                                                                 >
                                                                     <div className="flex items-center">
                                                                         <div className={cn(
@@ -693,19 +684,26 @@ export default function DigitalWallet({
                                                                                     "h-3.5 w-3.5 mr-1",
                                                                                     getPassTextColor(pass)
                                                                                 )} />
-                                                                                {pass.type === 'lightning' ? (
-                                                                                    <span>
-                                                                                        {pass.returnTime.start} - {pass.returnTime.end}
-                                                                                    </span>
-                                                                                ) : pass.type === 'dining' ? (
-                                                                                    <span>{pass.time}</span>
-                                                                                ) : pass.type === 'event' ? (
-                                                                                    <span>
-                                                                                        {pass.startTime} - {pass.endTime}
-                                                                                    </span>
-                                                                                ) : (
-                                                                                    <span>Valid {format(pass.date, 'MMM d')}</span>
-                                                                                )}
+                                                                                {(() => {
+                                                                                    if (pass.type === 'lightning') {
+                                                                                        return (
+                                                                                            <span>
+                                                                                                {pass.returnTime.start} - {pass.returnTime.end}
+                                                                                            </span>
+                                                                                        );
+                                                                                    }
+                                                                                    if (pass.type === 'dining') {
+                                                                                        return <span>{pass.time}</span>;
+                                                                                    }
+                                                                                    if (pass.type === 'event') {
+                                                                                        return (
+                                                                                            <span>
+                                                                                                {pass.startTime} - {pass.endTime}
+                                                                                            </span>
+                                                                                        );
+                                                                                    }
+                                                                                    return <span>Valid {format(pass.date, 'MMM d')}</span>;
+                                                                                })()}
                                                                             </div>
                                                                         </div>
 
@@ -713,7 +711,7 @@ export default function DigitalWallet({
                                                                             {getPassStatusBadge(pass)}
                                                                         </div>
                                                                     </div>
-                                                                </div>
+                                                                </button>
                                                             );
                                                         })}
                                                     </div>
@@ -838,7 +836,7 @@ export default function DigitalWallet({
 }
 
 // Ticket pass details component
-function PassTicketDetails({ pass }: { pass: ParkTicketPass }) {
+function PassTicketDetails({ pass }: { readonly pass: ParkTicketPass }) {
     return (
         <div className="space-y-4">
             <div className={cn(
@@ -892,7 +890,7 @@ function PassTicketDetails({ pass }: { pass: ParkTicketPass }) {
 }
 
 // Dining pass details component
-function PassDiningDetails({ pass }: { pass: DiningPass }) {
+function PassDiningDetails({ pass }: { readonly pass: DiningPass }) {
     return (
         <div className="space-y-4">
             <div className={cn(
@@ -949,7 +947,7 @@ function PassDiningDetails({ pass }: { pass: DiningPass }) {
 }
 
 // Lightning Lane pass details component
-function PassLightningDetails({ pass }: { pass: LightningLanePass }) {
+function PassLightningDetails({ pass }: { readonly pass: LightningLanePass }) {
     // Determine if the pass is currently active
     const now = new Date();
     const startTime = new Date();
@@ -964,19 +962,52 @@ function PassLightningDetails({ pass }: { pass: LightningLanePass }) {
     const isUpcoming = !pass.isExpired && !pass.isUsed && now < startTime;
     const isExpired = pass.isExpired || pass.isUsed || (!isActive && !isUpcoming);
 
+    // Determine color classes based on status
+    const getBgColorClass = () => {
+        if (isActive) return "bg-green-50 border-green-200";
+        if (isUpcoming) return "bg-purple-50 border-purple-200";
+        return "bg-gray-50 border-gray-200";
+    }
+
+    const getTextColorClass = () => {
+        if (isActive) return "text-green-600";
+        if (isUpcoming) return "text-purple-600";
+        return "text-gray-500";
+    }
+
+    const getStatusHeadingTextClass = () => {
+        if (isActive) return "text-green-800";
+        if (isUpcoming) return "text-blue-800";
+        return "text-gray-800";
+    }
+
+    const getStatusBodyTextClass = () => {
+        if (isActive) return "text-green-700";
+        if (isUpcoming) return "text-blue-700";
+        return "text-gray-700";
+    }
+
+    const getStatusContent = () => {
+        if (isActive) return 'Ready to Use';
+        if (isUpcoming) return 'Usage Instructions';
+        return 'Pass Expired';
+    }
+
+    const getStatusDescription = () => {
+        if (isActive) return 'Proceed to the Lightning Lane entrance and scan your pass.';
+        if (isUpcoming) return `Return to the attraction between ${pass.returnTime.start} and ${pass.returnTime.end} and scan your pass at the Lightning Lane entrance.`;
+        return 'This Lightning Lane pass has expired and can no longer be used.';
+    }
+
     return (
         <div className="space-y-4">
             <div className={cn(
                 "p-4 rounded-lg border flex items-center",
-                isActive ? "bg-green-50 border-green-200" :
-                    isUpcoming ? "bg-purple-50 border-purple-200" :
-                        "bg-gray-50 border-gray-200"
+                getBgColorClass()
             )}>
                 <div className={cn(
                     "w-12 h-12 rounded-full flex items-center justify-center mr-4",
-                    isActive ? "text-green-600" :
-                        isUpcoming ? "text-purple-600" :
-                            "text-gray-500"
+                    getTextColorClass()
                 )}>
                     <Zap className="h-6 w-6" />
                 </div>
@@ -1040,29 +1071,19 @@ function PassLightningDetails({ pass }: { pass: LightningLanePass }) {
 
             <div className={cn(
                 "border p-3 rounded-lg",
-                isActive ? "bg-green-50 border-green-200" :
-                    isUpcoming ? "bg-blue-50 border-blue-200" :
-                        "bg-gray-50 border-gray-200"
+                getBgColorClass()
             )}>
                 <h3 className={cn(
                     "text-sm font-medium mb-1",
-                    isActive ? "text-green-800" :
-                        isUpcoming ? "text-blue-800" :
-                            "text-gray-800"
+                    getStatusHeadingTextClass()
                 )}>
-                    {isActive ? 'Ready to Use' :
-                        isUpcoming ? 'Usage Instructions' :
-                            'Pass Expired'}
+                    {getStatusContent()}
                 </h3>
                 <p className={cn(
                     "text-sm",
-                    isActive ? "text-green-700" :
-                        isUpcoming ? "text-blue-700" :
-                            "text-gray-700"
+                    getStatusBodyTextClass()
                 )}>
-                    {isActive && 'Proceed to the Lightning Lane entrance and scan your pass.'}
-                    {isUpcoming && `Return to the attraction between ${pass.returnTime.start} and ${pass.returnTime.end} and scan your pass at the Lightning Lane entrance.`}
-                    {isExpired && 'This Lightning Lane pass has expired and can no longer be used.'}
+                    {getStatusDescription()}
                 </p>
             </div>
         </div>
@@ -1070,21 +1091,51 @@ function PassLightningDetails({ pass }: { pass: LightningLanePass }) {
 }
 
 // Hotel pass details component
-function PassHotelDetails({ pass }: { pass: HotelPass }) {
+function PassHotelDetails({ pass }: { readonly pass: HotelPass }) {
     const today = new Date();
     const isCheckInDay = isSameDay(today, pass.checkIn);
     const isCheckOutDay = isSameDay(today, pass.checkOut);
     const isStay = isAfter(today, pass.checkIn) && !isAfter(today, pass.checkOut);
 
+    // Get appropriate background and text color
+    const getCardColorClasses = () => {
+        return (isCheckInDay || isStay)
+            ? "bg-blue-50 border-blue-200"
+            : "bg-gray-50 border-gray-200";
+    };
+
+    const getIconColorClass = () => {
+        return (isCheckInDay || isStay)
+            ? "text-blue-600"
+            : "text-gray-500";
+    };
+
+    // Get appropriate instructions based on status
+    const getInstructionsHeading = () => {
+        if (isCheckInDay) return 'Check-In Instructions';
+        if (isCheckOutDay) return 'Check-Out Instructions';
+        return 'Reservation Information';
+    };
+
+    const getInstructionsText = () => {
+        if (isCheckInDay) {
+            return 'Check-in time is 3:00 PM. Present this pass at the front desk along with ID.';
+        }
+        if (isCheckOutDay) {
+            return 'Check-out time is 11:00 AM. You can use the Express Check-out feature on your TV.';
+        }
+        return 'Your reservation is confirmed. Check-in time is 3:00 PM and check-out is 11:00 AM.';
+    };
+
     return (
         <div className="space-y-4">
             <div className={cn(
                 "p-4 rounded-lg border flex items-center",
-                isCheckInDay || isStay ? "bg-blue-50 border-blue-200" : "bg-gray-50 border-gray-200"
+                getCardColorClasses()
             )}>
                 <div className={cn(
                     "w-12 h-12 rounded-full flex items-center justify-center mr-4",
-                    isCheckInDay || isStay ? "text-blue-600" : "text-gray-500"
+                    getIconColorClass()
                 )}>
                     <Hotel className="h-6 w-6" />
                 </div>
@@ -1130,14 +1181,10 @@ function PassHotelDetails({ pass }: { pass: HotelPass }) {
 
             <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
                 <h3 className="text-sm font-medium text-blue-800 mb-1">
-                    {isCheckInDay ? 'Check-In Instructions' :
-                        isCheckOutDay ? 'Check-Out Instructions' :
-                            'Reservation Information'}
+                    {getInstructionsHeading()}
                 </h3>
                 <p className="text-sm text-blue-700">
-                    {isCheckInDay && 'Check-in time is 3:00 PM. Present this pass at the front desk along with ID.'}
-                    {isCheckOutDay && 'Check-out time is 11:00 AM. You can use the Express Check-out feature on your TV.'}
-                    {!isCheckInDay && !isCheckOutDay && 'Your reservation is confirmed. Check-in time is 3:00 PM and check-out is 11:00 AM.'}
+                    {getInstructionsText()}
                 </p>
             </div>
         </div>
@@ -1145,16 +1192,29 @@ function PassHotelDetails({ pass }: { pass: HotelPass }) {
 }
 
 // Event pass details component
-function PassEventDetails({ pass }: { pass: EventPass }) {
+function PassEventDetails({ pass }: { readonly pass: EventPass }) {
+    // Determine appropriate color classes based on event status
+    const getCardColorClass = () => {
+        return !pass.isExpired
+            ? "bg-pink-50 border-pink-200"
+            : "bg-gray-50 border-gray-200";
+    };
+
+    const getIconColorClass = () => {
+        return !pass.isExpired
+            ? "text-pink-600"
+            : "text-gray-500";
+    };
+
     return (
         <div className="space-y-4">
             <div className={cn(
                 "p-4 rounded-lg border flex items-center",
-                !pass.isExpired ? "bg-pink-50 border-pink-200" : "bg-gray-50 border-gray-200"
+                getCardColorClass()
             )}>
                 <div className={cn(
                     "w-12 h-12 rounded-full flex items-center justify-center mr-4",
-                    !pass.isExpired ? "text-pink-600" : "text-gray-500"
+                    getIconColorClass()
                 )}>
                     <Sparkles className="h-6 w-6" />
                 </div>

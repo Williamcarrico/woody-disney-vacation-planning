@@ -52,6 +52,13 @@ import { Vacation } from '@/lib/firebase/vacations';
 import { cn } from '@/lib/utils';
 
 // Internal types
+interface UserProfile {
+    id: string;
+    displayName: string;
+    email: string;
+    photoURL?: string;
+}
+
 interface GroupMessage {
     id: string;
     userId: string;
@@ -126,7 +133,13 @@ interface GroupPreference {
 }
 
 interface GroupCoordinationProps {
-    vacationId: string;
+    readonly vacationId: string;
+}
+
+// Add this interface near the top of the file with other interfaces
+interface PollOption {
+    id: string;
+    text: string;
 }
 
 // Mock data - in a real app, this would come from Firebase
@@ -316,23 +329,503 @@ const mockMembers: Pick<UserProfile, 'id' | 'displayName' | 'email' | 'photoURL'
     },
 ];
 
+// Helper Components
+const MessageList = ({
+    messages,
+    handleReactToMessage,
+    user,
+    getInitials
+}: {
+    messages: GroupMessage[] | undefined,
+    handleReactToMessage: (messageId: string, reaction: string) => void,
+    user: { uid?: string; photoURL?: string | null; displayName?: string | null } | null,
+    getInitials: (name: string) => string
+}) => {
+    if (!messages?.length) {
+        return (
+            <div className="text-center py-8 text-muted-foreground">
+                No messages yet. Start the conversation!
+            </div>
+        );
+    }
+
+    return (
+        <>
+            {/* Pinned Messages */}
+            {messages.some(m => m.isPinned) && (
+                <div className="mb-4">
+                    <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center">
+                        <Pin className="h-3 w-3 mr-1" />
+                        PINNED MESSAGES
+                    </div>
+                    {messages
+                        .filter(m => m.isPinned)
+                        .map(message => (
+                            <div
+                                key={message.id}
+                                className="bg-secondary/20 p-2 rounded-lg mb-2 text-sm border-l-2 border-primary"
+                            >
+                                <div className="font-medium">{message.userName}</div>
+                                <div>{message.content}</div>
+                            </div>
+                        ))}
+                </div>
+            )}
+
+            {/* Messages */}
+            {messages.map(message => {
+                const isCurrentUser = user?.uid === message.userId;
+                const hasAttachments = message.attachments && message.attachments.length > 0;
+                const hasReactions = message.reactions && Object.keys(message.reactions).length > 0;
+
+                return (
+                    <div
+                        key={message.id}
+                        className={cn(
+                            "flex",
+                            isCurrentUser ? "justify-end" : "justify-start"
+                        )}
+                    >
+                        <div className={cn(
+                            "max-w-[80%]",
+                            isCurrentUser ? "order-2" : "order-1"
+                        )}>
+                            {!isCurrentUser && (
+                                <div className="flex items-center mb-1">
+                                    <Avatar className="h-6 w-6 mr-2">
+                                        {message.userPhotoURL ? (
+                                            <AvatarImage src={message.userPhotoURL} alt={message.userName} />
+                                        ) : (
+                                            <AvatarFallback>{getInitials(message.userName)}</AvatarFallback>
+                                        )}
+                                    </Avatar>
+                                    <span className="text-sm font-medium">{message.userName}</span>
+                                </div>
+                            )}
+
+                            <div className={cn(
+                                "rounded-lg p-3",
+                                isCurrentUser
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-secondary",
+                                message.isPinned && "border-l-2 border-yellow-500"
+                            )}>
+                                <div>{message.content}</div>
+
+                                {/* Attachments */}
+                                {hasAttachments && (
+                                    <div className="mt-2 space-y-2">
+                                        {message.attachments?.map((attachment, index) => (
+                                            <div
+                                                key={`${message.id}-attachment-${index}`}
+                                                className={cn(
+                                                    "text-sm py-1 px-2 rounded flex items-center",
+                                                    isCurrentUser
+                                                        ? "bg-primary-foreground/10"
+                                                        : "bg-background/80"
+                                                )}
+                                            >
+                                                {attachment.type === 'itinerary' && (
+                                                    <Map className="h-3.5 w-3.5 mr-1.5" />
+                                                )}
+                                                {attachment.type === 'location' && (
+                                                    <MapPin className="h-3.5 w-3.5 mr-1.5" />
+                                                )}
+                                                {attachment.type === 'attraction' && (
+                                                    <Star className="h-3.5 w-3.5 mr-1.5" />
+                                                )}
+                                                {attachment.name}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Reactions and timestamp */}
+                            <div className="flex justify-between items-center mt-1">
+                                <div className="text-xs text-muted-foreground">
+                                    {format(message.timestamp, 'h:mm a')}
+                                </div>
+
+                                <div className="flex items-center space-x-1">
+                                    {hasReactions && (
+                                        <div className="flex bg-secondary/50 rounded-full p-0.5 text-xs">
+                                            {Object.values(message.reactions || {}).includes('like') && (
+                                                <div className="flex items-center mr-1">
+                                                    <ThumbsUp className="h-3 w-3 text-blue-500" />
+                                                    <span className="ml-0.5">
+                                                        {Object.values(message.reactions || {}).filter(r => r === 'like').length}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {Object.values(message.reactions || {}).includes('thumbsUp') && (
+                                                <div className="flex items-center mr-1">
+                                                    <ThumbsUp className="h-3 w-3 text-green-500" />
+                                                    <span className="ml-0.5">
+                                                        {Object.values(message.reactions || {}).filter(r => r === 'thumbsUp').length}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {Object.values(message.reactions || {}).includes('heart') && (
+                                                <div className="flex items-center">
+                                                    <Heart className="h-3 w-3 text-red-500" />
+                                                    <span className="ml-0.5">
+                                                        {Object.values(message.reactions || {}).filter(r => r === 'heart').length}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6"
+                                        onClick={() => handleReactToMessage(message.id, 'like')}
+                                    >
+                                        <ThumbsUp className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {isCurrentUser && (
+                            <Avatar className="h-6 w-6 ml-2 order-1 self-end mb-2">
+                                {user.photoURL ? (
+                                    <AvatarImage src={user.photoURL} alt={user.displayName || ''} />
+                                ) : (
+                                    <AvatarFallback>{user.displayName ? getInitials(user.displayName) : 'U'}</AvatarFallback>
+                                )}
+                            </Avatar>
+                        )}
+                    </div>
+                );
+            })}
+        </>
+    );
+};
+
+const LocationList = ({
+    locationUpdates,
+    getInitials
+}: {
+    locationUpdates: GroupLocationUpdate[] | undefined,
+    getInitials: (name: string) => string
+}) => {
+    if (!locationUpdates?.length) {
+        return (
+            <div className="text-center py-4 text-muted-foreground">
+                No one is sharing their location right now.
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-3">
+            {locationUpdates.map(update => (
+                <div key={update.id} className="flex items-center bg-secondary/20 p-3 rounded-lg">
+                    <Avatar className="h-10 w-10 mr-3">
+                        {update.userPhotoURL ? (
+                            <AvatarImage src={update.userPhotoURL} alt={update.userName} />
+                        ) : (
+                            <AvatarFallback>{getInitials(update.userName)}</AvatarFallback>
+                        )}
+                    </Avatar>
+
+                    <div className="flex-1">
+                        <div className="flex justify-between items-center">
+                            <div className="font-medium">{update.userName}</div>
+                            <div className="text-xs text-muted-foreground">
+                                {format(update.timestamp, 'h:mm a')}
+                            </div>
+                        </div>
+
+                        <div className="flex items-center text-sm">
+                            <MapPin className="h-3.5 w-3.5 mr-1.5 text-primary" />
+                            {update.location.name}
+                        </div>
+
+                        {update.message && (
+                            <div className="text-sm mt-1">{update.message}</div>
+                        )}
+                    </div>
+
+                    <Button variant="outline" size="sm" className="ml-2">
+                        Navigate
+                    </Button>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+const PollList = ({
+    polls,
+    user,
+    handleVotePoll
+}: {
+    polls: GroupPoll[] | undefined,
+    user: { uid?: string; photoURL?: string | null; displayName?: string | null } | null,
+    handleVotePoll: (pollId: string, optionId: string) => void
+}) => {
+    if (!polls?.length) {
+        return (
+            <div className="text-center py-8 text-muted-foreground">
+                No polls have been created yet.
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            {polls.map(poll => {
+                // Calculate total votes
+                const totalVotes = poll.options.reduce((acc, opt) => acc + opt.votes.length, 0);
+
+                // Check if current user has voted
+                const userVoted = user && poll.options.some(opt =>
+                    opt.votes.includes(user.uid || '')
+                );
+
+                // Find which option the user voted for
+                const userVotedOption = user && poll.options.find(opt =>
+                    opt.votes.includes(user?.uid || '')
+                );
+
+                return (
+                    <Card key={poll.id}>
+                        <CardHeader className="pb-2">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <CardTitle className="text-lg">{poll.question}</CardTitle>
+                                    <CardDescription>
+                                        Created by {poll.userName} • {format(poll.timestamp, 'MMM d, h:mm a')}
+                                    </CardDescription>
+                                </div>
+                                <Badge variant={poll.isActive ? "default" : "secondary"}>
+                                    {poll.isActive ? "Active" : "Closed"}
+                                </Badge>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-3">
+                                {poll.options.map(option => {
+                                    const percentage = totalVotes === 0
+                                        ? 0
+                                        : Math.round((option.votes.length / totalVotes) * 100);
+
+                                    const isUserVote = user && option.votes.includes(user.uid || '');
+
+                                    return (
+                                        <div key={option.id} className="space-y-1">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="flex items-center">
+                                                    {isUserVote && (
+                                                        <CheckCircle className="h-3.5 w-3.5 mr-1.5 text-primary" />
+                                                    )}
+                                                    {option.text}
+                                                </span>
+                                                <span className="font-medium">{percentage}%</span>
+                                            </div>
+
+                                            <div className="relative h-2 w-full bg-secondary rounded-full overflow-hidden">
+                                                <div
+                                                    className={cn(
+                                                        "absolute inset-y-0 left-0 bg-primary rounded-full",
+                                                        isUserVote && "bg-primary",
+                                                        `w-[${percentage}%]`
+                                                    )}
+                                                ></div>
+                                            </div>
+
+                                            <div className="flex justify-between items-center text-xs text-muted-foreground">
+                                                <span>{option.votes.length} vote{option.votes.length !== 1 ? 's' : ''}</span>
+                                                {poll.isActive && !userVoted && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-6 text-xs"
+                                                        onClick={() => handleVotePoll(poll.id, option.id)}
+                                                    >
+                                                        Vote
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </CardContent>
+                        <CardFooter className="text-sm text-muted-foreground">
+                            {totalVotes} total vote{totalVotes !== 1 ? 's' : ''}
+                            {userVotedOption && (
+                                <span className="ml-2">
+                                    You voted for &quot;{userVotedOption.text}&quot;
+                                </span>
+                            )}
+                        </CardFooter>
+                    </Card>
+                );
+            })}
+        </div>
+    );
+};
+
+const NotificationList = ({
+    notifications,
+    handleMarkNotificationRead
+}: {
+    notifications: GroupNotification[] | undefined,
+    handleMarkNotificationRead: (notificationId: string) => void
+}) => {
+    if (!notifications?.length) {
+        return (
+            <div className="text-center py-8 text-muted-foreground">
+                You have no notifications.
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-3">
+            {notifications.map(notification => (
+                <div
+                    key={notification.id}
+                    className={cn(
+                        "p-3 rounded-lg border flex items-start",
+                        !notification.read && "bg-primary/5 border-primary/20"
+                    )}
+                >
+                    <div className={cn(
+                        "w-9 h-9 rounded-full flex items-center justify-center mr-3 flex-shrink-0",
+                        !notification.read ? "bg-primary/10" : "bg-secondary"
+                    )}>
+                        {notification.type === 'message' && (
+                            <MessageSquare className="h-4 w-4 text-primary" />
+                        )}
+                        {notification.type === 'location' && (
+                            <Map className="h-4 w-4 text-primary" />
+                        )}
+                        {notification.type === 'poll' && (
+                            <Users className="h-4 w-4 text-primary" />
+                        )}
+                        {notification.type === 'itinerary' && (
+                            <Map className="h-4 w-4 text-primary" />
+                        )}
+                    </div>
+
+                    <div className="flex-1">
+                        <div className="font-medium text-sm">{notification.message}</div>
+                        <div className="flex justify-between items-center mt-1">
+                            <div className="text-xs text-muted-foreground">
+                                {format(notification.timestamp, 'MMM d, h:mm a')}
+                            </div>
+
+                            {!notification.read && (
+                                <Badge variant="outline" className="text-[10px] h-4 bg-primary/5">
+                                    New
+                                </Badge>
+                            )}
+                        </div>
+                    </div>
+
+                    {!notification.read && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 ml-2"
+                            onClick={() => handleMarkNotificationRead(notification.id)}
+                        >
+                            <X className="h-3.5 w-3.5" />
+                        </Button>
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+};
+
+// Add a new component to handle member list rendering
+const MemberList = ({
+    members,
+    user,
+    getInitials,
+    handleRemoveVacationMember
+}: {
+    members: Pick<UserProfile, 'id' | 'displayName' | 'email' | 'photoURL'>[] | undefined,
+    user: { uid?: string; photoURL?: string | null; displayName?: string | null } | null,
+    getInitials: (name: string) => string,
+    handleRemoveVacationMember: (userId: string) => void
+}) => {
+    if (!members?.length) {
+        return (
+            <div className="text-center py-4 text-muted-foreground">
+                No members yet. Invite someone to join!
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-3">
+            {members.map(member => (
+                <div key={member.id} className="flex items-center justify-between">
+                    <div className="flex items-center">
+                        <Avatar className="h-10 w-10 mr-3">
+                            {member.photoURL ? (
+                                <AvatarImage src={member.photoURL} alt={member.displayName} />
+                            ) : (
+                                <AvatarFallback>{getInitials(member.displayName)}</AvatarFallback>
+                            )}
+                        </Avatar>
+
+                        <div>
+                            <div className="font-medium">
+                                {member.displayName}
+                                {member.id === user?.uid && (
+                                    <span className="text-xs text-muted-foreground ml-2">(You)</span>
+                                )}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                                {member.email}
+                            </div>
+                        </div>
+                    </div>
+
+                    {user?.uid !== member.id && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleRemoveVacationMember(member.id)}
+                        >
+                            <Trash className="h-4 w-4 text-destructive" />
+                        </Button>
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+};
+
 export default function GroupCoordination({ vacationId }: GroupCoordinationProps) {
     const [activeTab, setActiveTab] = useState('chat');
     const [messageInput, setMessageInput] = useState('');
     const [shareEmail, setShareEmail] = useState('');
     const [showShareDialog, setShowShareDialog] = useState(false);
-    const [showLocationDialog, setShowLocationDialog] = useState(false);
     const [showPollDialog, setShowPollDialog] = useState(false);
     const [isCreatingPoll, setIsCreatingPoll] = useState(false);
     const [pollQuestion, setPollQuestion] = useState('');
-    const [pollOptions, setPollOptions] = useState(['', '']);
+    const [pollOptions, setPollOptions] = useState<PollOption[]>([
+        { id: crypto.randomUUID(), text: '' },
+        { id: crypto.randomUUID(), text: '' }
+    ]);
     const [locationSharingActive, setLocationSharingActive] = useState(false);
 
     const { user } = useAuth();
     const queryClient = useQueryClient();
 
     // Mock queries - in a real app, these would fetch from Firebase
-    const { data: vacation } = useQuery({
+    useQuery({
         queryKey: ['vacation', vacationId],
         queryFn: () => ({ id: vacationId, name: 'Our Disney Vacation' } as Vacation),
     });
@@ -415,7 +908,10 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
             queryClient.invalidateQueries({ queryKey: ['vacationPolls', vacationId] });
             // Reset poll state and close dialog
             setPollQuestion('');
-            setPollOptions(['', '']);
+            setPollOptions([
+                { id: crypto.randomUUID(), text: '' },
+                { id: crypto.randomUUID(), text: '' }
+            ]);
             setShowPollDialog(false);
             setIsCreatingPoll(false);
         },
@@ -490,12 +986,12 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
     const handleCreatePoll = () => {
         // Validate poll inputs
         if (pollQuestion.trim() === '') return;
-        if (pollOptions.filter(opt => opt.trim() !== '').length < 2) return;
+        if (pollOptions.filter(opt => opt.text.trim() !== '').length < 2) return;
 
         // Create poll
         createPollMutation.mutate({
             question: pollQuestion,
-            options: pollOptions.filter(opt => opt.trim() !== ''),
+            options: pollOptions.filter(opt => opt.text.trim() !== '').map(opt => opt.text),
         });
     };
 
@@ -506,23 +1002,20 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
 
     // Handle adding a poll option
     const handleAddPollOption = () => {
-        setPollOptions([...pollOptions, '']);
+        setPollOptions([...pollOptions, { id: crypto.randomUUID(), text: '' }]);
     };
 
     // Handle updating a poll option
-    const handleUpdatePollOption = (index: number, value: string) => {
-        const newOptions = [...pollOptions];
-        newOptions[index] = value;
-        setPollOptions(newOptions);
+    const handleUpdatePollOption = (id: string, value: string) => {
+        setPollOptions(pollOptions.map(option =>
+            option.id === id ? { ...option, text: value } : option
+        ));
     };
 
     // Handle removing a poll option
-    const handleRemovePollOption = (index: number) => {
+    const handleRemovePollOption = (id: string) => {
         if (pollOptions.length <= 2) return; // Keep at least 2 options
-
-        const newOptions = [...pollOptions];
-        newOptions.splice(index, 1);
-        setPollOptions(newOptions);
+        setPollOptions(pollOptions.filter(option => option.id !== id));
     };
 
     // Handle reacting to a message
@@ -612,163 +1105,13 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
                                             <div className="flex justify-center py-8">
                                                 <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
                                             </div>
-                                        ) : messages?.length === 0 ? (
-                                            <div className="text-center py-8 text-muted-foreground">
-                                                No messages yet. Start the conversation!
-                                            </div>
                                         ) : (
-                                            <>
-                                                {/* Pinned Messages */}
-                                                {messages?.some(m => m.isPinned) && (
-                                                    <div className="mb-4">
-                                                        <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center">
-                                                            <Pin className="h-3 w-3 mr-1" />
-                                                            PINNED MESSAGES
-                                                        </div>
-                                                        {messages
-                                                            .filter(m => m.isPinned)
-                                                            .map(message => (
-                                                                <div
-                                                                    key={message.id}
-                                                                    className="bg-secondary/20 p-2 rounded-lg mb-2 text-sm border-l-2 border-primary"
-                                                                >
-                                                                    <div className="font-medium">{message.userName}</div>
-                                                                    <div>{message.content}</div>
-                                                                </div>
-                                                            ))}
-                                                    </div>
-                                                )}
-
-                                                {/* Messages */}
-                                                {messages?.map(message => {
-                                                    const isCurrentUser = user?.uid === message.userId;
-                                                    const hasAttachments = message.attachments && message.attachments.length > 0;
-                                                    const hasReactions = message.reactions && Object.keys(message.reactions).length > 0;
-
-                                                    return (
-                                                        <div
-                                                            key={message.id}
-                                                            className={cn(
-                                                                "flex",
-                                                                isCurrentUser ? "justify-end" : "justify-start"
-                                                            )}
-                                                        >
-                                                            <div className={cn(
-                                                                "max-w-[80%]",
-                                                                isCurrentUser ? "order-2" : "order-1"
-                                                            )}>
-                                                                {!isCurrentUser && (
-                                                                    <div className="flex items-center mb-1">
-                                                                        <Avatar className="h-6 w-6 mr-2">
-                                                                            {message.userPhotoURL ? (
-                                                                                <AvatarImage src={message.userPhotoURL} alt={message.userName} />
-                                                                            ) : (
-                                                                                <AvatarFallback>{getInitials(message.userName)}</AvatarFallback>
-                                                                            )}
-                                                                        </Avatar>
-                                                                        <span className="text-sm font-medium">{message.userName}</span>
-                                                                    </div>
-                                                                )}
-
-                                                                <div className={cn(
-                                                                    "rounded-lg p-3",
-                                                                    isCurrentUser
-                                                                        ? "bg-primary text-primary-foreground"
-                                                                        : "bg-secondary",
-                                                                    message.isPinned && "border-l-2 border-yellow-500"
-                                                                )}>
-                                                                    <div>{message.content}</div>
-
-                                                                    {/* Attachments */}
-                                                                    {hasAttachments && (
-                                                                        <div className="mt-2 space-y-2">
-                                                                            {message.attachments?.map((attachment, index) => (
-                                                                                <div
-                                                                                    key={index}
-                                                                                    className={cn(
-                                                                                        "text-sm py-1 px-2 rounded flex items-center",
-                                                                                        isCurrentUser
-                                                                                            ? "bg-primary-foreground/10"
-                                                                                            : "bg-background/80"
-                                                                                    )}
-                                                                                >
-                                                                                    {attachment.type === 'itinerary' && (
-                                                                                        <Map className="h-3.5 w-3.5 mr-1.5" />
-                                                                                    )}
-                                                                                    {attachment.type === 'location' && (
-                                                                                        <MapPin className="h-3.5 w-3.5 mr-1.5" />
-                                                                                    )}
-                                                                                    {attachment.type === 'attraction' && (
-                                                                                        <Star className="h-3.5 w-3.5 mr-1.5" />
-                                                                                    )}
-                                                                                    {attachment.name}
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-
-                                                                {/* Reactions and timestamp */}
-                                                                <div className="flex justify-between items-center mt-1">
-                                                                    <div className="text-xs text-muted-foreground">
-                                                                        {format(message.timestamp, 'h:mm a')}
-                                                                    </div>
-
-                                                                    <div className="flex items-center space-x-1">
-                                                                        {hasReactions && (
-                                                                            <div className="flex bg-secondary/50 rounded-full p-0.5 text-xs">
-                                                                                {Object.values(message.reactions || {}).includes('like') && (
-                                                                                    <div className="flex items-center mr-1">
-                                                                                        <ThumbsUp className="h-3 w-3 text-blue-500" />
-                                                                                        <span className="ml-0.5">
-                                                                                            {Object.values(message.reactions || {}).filter(r => r === 'like').length}
-                                                                                        </span>
-                                                                                    </div>
-                                                                                )}
-                                                                                {Object.values(message.reactions || {}).includes('thumbsUp') && (
-                                                                                    <div className="flex items-center mr-1">
-                                                                                        <ThumbsUp className="h-3 w-3 text-green-500" />
-                                                                                        <span className="ml-0.5">
-                                                                                            {Object.values(message.reactions || {}).filter(r => r === 'thumbsUp').length}
-                                                                                        </span>
-                                                                                    </div>
-                                                                                )}
-                                                                                {Object.values(message.reactions || {}).includes('heart') && (
-                                                                                    <div className="flex items-center">
-                                                                                        <Heart className="h-3 w-3 text-red-500" />
-                                                                                        <span className="ml-0.5">
-                                                                                            {Object.values(message.reactions || {}).filter(r => r === 'heart').length}
-                                                                                        </span>
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        )}
-
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-6 w-6"
-                                                                            onClick={() => handleReactToMessage(message.id, 'like')}
-                                                                        >
-                                                                            <ThumbsUp className="h-3 w-3" />
-                                                                        </Button>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            {isCurrentUser && (
-                                                                <Avatar className="h-6 w-6 ml-2 order-1 self-end mb-2">
-                                                                    {user.photoURL ? (
-                                                                        <AvatarImage src={user.photoURL} alt={user.displayName || ''} />
-                                                                    ) : (
-                                                                        <AvatarFallback>{user.displayName ? getInitials(user.displayName) : 'U'}</AvatarFallback>
-                                                                    )}
-                                                                </Avatar>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </>
+                                            <MessageList
+                                                messages={messages}
+                                                handleReactToMessage={handleReactToMessage}
+                                                user={user}
+                                                getInitials={getInitials}
+                                            />
                                         )}
                                     </div>
                                 </ScrollArea>
@@ -841,51 +1184,30 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
                                 <div className="space-y-4">
                                     <h3 className="text-lg font-medium">Party Locations</h3>
 
-                                    {isLoadingLocations ? (
-                                        <div className="flex justify-center py-4">
-                                            <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
-                                        </div>
-                                    ) : locationUpdates?.length === 0 ? (
-                                        <div className="text-center py-4 text-muted-foreground">
-                                            No one is sharing their location right now.
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-3">
-                                            {locationUpdates?.map(update => (
-                                                <div key={update.id} className="flex items-center bg-secondary/20 p-3 rounded-lg">
-                                                    <Avatar className="h-10 w-10 mr-3">
-                                                        {update.userPhotoURL ? (
-                                                            <AvatarImage src={update.userPhotoURL} alt={update.userName} />
-                                                        ) : (
-                                                            <AvatarFallback>{getInitials(update.userName)}</AvatarFallback>
-                                                        )}
-                                                    </Avatar>
-
-                                                    <div className="flex-1">
-                                                        <div className="flex justify-between items-center">
-                                                            <div className="font-medium">{update.userName}</div>
-                                                            <div className="text-xs text-muted-foreground">
-                                                                {format(update.timestamp, 'h:mm a')}
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="flex items-center text-sm">
-                                                            <MapPin className="h-3.5 w-3.5 mr-1.5 text-primary" />
-                                                            {update.location.name}
-                                                        </div>
-
-                                                        {update.message && (
-                                                            <div className="text-sm mt-1">{update.message}</div>
-                                                        )}
-                                                    </div>
-
-                                                    <Button variant="outline" size="sm" className="ml-2">
-                                                        Navigate
-                                                    </Button>
+                                    {(() => {
+                                        if (isLoadingLocations) {
+                                            return (
+                                                <div className="flex justify-center py-4">
+                                                    <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    )}
+                                            );
+                                        }
+
+                                        if (locationUpdates?.length === 0) {
+                                            return (
+                                                <div className="text-center py-4 text-muted-foreground">
+                                                    No one is sharing their location right now.
+                                                </div>
+                                            );
+                                        }
+
+                                        return (
+                                            <LocationList
+                                                locationUpdates={locationUpdates}
+                                                getInitials={getInitials}
+                                            />
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         </TabsContent>
@@ -911,103 +1233,23 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
                                     <div className="flex justify-center py-8">
                                         <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
                                     </div>
-                                ) : polls?.length === 0 ? (
-                                    <div className="text-center py-8 text-muted-foreground">
-                                        No polls have been created yet.
-                                    </div>
-                                ) : (
-                                    <div className="space-y-6">
-                                        {polls?.map(poll => {
-                                            // Calculate total votes
-                                            const totalVotes = poll.options.reduce((acc, opt) => acc + opt.votes.length, 0);
+                                ) : (() => {
+                                    if (polls?.length === 0) {
+                                        return (
+                                            <div className="text-center py-8 text-muted-foreground">
+                                                No polls have been created yet.
+                                            </div>
+                                        );
+                                    }
 
-                                            // Check if current user has voted
-                                            const userVoted = user && poll.options.some(opt =>
-                                                opt.votes.includes(user.uid)
-                                            );
-
-                                            // Find which option the user voted for
-                                            const userVotedOption = user && poll.options.find(opt =>
-                                                opt.votes.includes(user?.uid || '')
-                                            );
-
-                                            return (
-                                                <Card key={poll.id}>
-                                                    <CardHeader className="pb-2">
-                                                        <div className="flex justify-between items-start">
-                                                            <div>
-                                                                <CardTitle className="text-lg">{poll.question}</CardTitle>
-                                                                <CardDescription>
-                                                                    Created by {poll.userName} • {format(poll.timestamp, 'MMM d, h:mm a')}
-                                                                </CardDescription>
-                                                            </div>
-                                                            <Badge variant={poll.isActive ? "default" : "secondary"}>
-                                                                {poll.isActive ? "Active" : "Closed"}
-                                                            </Badge>
-                                                        </div>
-                                                    </CardHeader>
-                                                    <CardContent>
-                                                        <div className="space-y-3">
-                                                            {poll.options.map(option => {
-                                                                const percentage = totalVotes === 0
-                                                                    ? 0
-                                                                    : Math.round((option.votes.length / totalVotes) * 100);
-
-                                                                const isUserVote = user && option.votes.includes(user.uid || '');
-
-                                                                return (
-                                                                    <div key={option.id} className="space-y-1">
-                                                                        <div className="flex justify-between text-sm">
-                                                                            <span className="flex items-center">
-                                                                                {isUserVote && (
-                                                                                    <CheckCircle className="h-3.5 w-3.5 mr-1.5 text-primary" />
-                                                                                )}
-                                                                                {option.text}
-                                                                            </span>
-                                                                            <span className="font-medium">{percentage}%</span>
-                                                                        </div>
-
-                                                                        <div className="relative h-2 w-full bg-secondary rounded-full overflow-hidden">
-                                                                            <div
-                                                                                className={cn(
-                                                                                    "absolute inset-y-0 left-0 bg-primary rounded-full",
-                                                                                    isUserVote && "bg-primary",
-                                                                                )}
-                                                                                style={{ width: `${percentage}%` }}
-                                                                            ></div>
-                                                                        </div>
-
-                                                                        <div className="flex justify-between items-center text-xs text-muted-foreground">
-                                                                            <span>{option.votes.length} vote{option.votes.length !== 1 ? 's' : ''}</span>
-                                                                            {poll.isActive && !userVoted && (
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="sm"
-                                                                                    className="h-6 text-xs"
-                                                                                    onClick={() => handleVotePoll(poll.id, option.id)}
-                                                                                >
-                                                                                    Vote
-                                                                                </Button>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </CardContent>
-                                                    <CardFooter className="text-sm text-muted-foreground">
-                                                        {totalVotes} total vote{totalVotes !== 1 ? 's' : ''}
-                                                        {userVotedOption && (
-                                                            <span className="ml-2">
-                                                                You voted for &quot;{userVotedOption.text}&quot;
-                                                            </span>
-                                                        )}
-                                                    </CardFooter>
-                                                </Card>
-                                            );
-                                        })}
-                                    </div>
-                                )}
+                                    return (
+                                        <PollList
+                                            polls={polls}
+                                            user={user}
+                                            handleVotePoll={handleVotePoll}
+                                        />
+                                    );
+                                })()}
                             </div>
                         </TabsContent>
 
@@ -1027,71 +1269,30 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
                                     </Button>
                                 </div>
 
-                                {isLoadingNotifications ? (
-                                    <div className="flex justify-center py-8">
-                                        <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
-                                    </div>
-                                ) : notifications?.length === 0 ? (
-                                    <div className="text-center py-8 text-muted-foreground">
-                                        You have no notifications.
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {notifications?.map(notification => (
-                                            <div
-                                                key={notification.id}
-                                                className={cn(
-                                                    "p-3 rounded-lg border flex items-start",
-                                                    !notification.read && "bg-primary/5 border-primary/20"
-                                                )}
-                                            >
-                                                <div className={cn(
-                                                    "w-9 h-9 rounded-full flex items-center justify-center mr-3 flex-shrink-0",
-                                                    !notification.read ? "bg-primary/10" : "bg-secondary"
-                                                )}>
-                                                    {notification.type === 'message' && (
-                                                        <MessageSquare className="h-4 w-4 text-primary" />
-                                                    )}
-                                                    {notification.type === 'location' && (
-                                                        <Map className="h-4 w-4 text-primary" />
-                                                    )}
-                                                    {notification.type === 'poll' && (
-                                                        <Users className="h-4 w-4 text-primary" />
-                                                    )}
-                                                    {notification.type === 'itinerary' && (
-                                                        <Map className="h-4 w-4 text-primary" />
-                                                    )}
-                                                </div>
-
-                                                <div className="flex-1">
-                                                    <div className="font-medium text-sm">{notification.message}</div>
-                                                    <div className="flex justify-between items-center mt-1">
-                                                        <div className="text-xs text-muted-foreground">
-                                                            {format(notification.timestamp, 'MMM d, h:mm a')}
-                                                        </div>
-
-                                                        {!notification.read && (
-                                                            <Badge variant="outline" className="text-[10px] h-4 bg-primary/5">
-                                                                New
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {!notification.read && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-6 w-6 ml-2"
-                                                        onClick={() => handleMarkNotificationRead(notification.id)}
-                                                    >
-                                                        <X className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                )}
+                                {(() => {
+                                    if (isLoadingNotifications) {
+                                        return (
+                                            <div className="flex justify-center py-8">
+                                                <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
+                                        );
+                                    }
+
+                                    if (notifications?.length === 0) {
+                                        return (
+                                            <div className="text-center py-8 text-muted-foreground">
+                                                You have no notifications.
+                                            </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <NotificationList
+                                            notifications={notifications}
+                                            handleMarkNotificationRead={handleMarkNotificationRead}
+                                        />
+                                    );
+                                })()}
                             </div>
                         </TabsContent>
                     </Tabs>
@@ -1107,54 +1308,32 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {isLoadingMembers ? (
-                        <div className="flex justify-center py-4">
-                            <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
-                        </div>
-                    ) : members?.length === 0 ? (
-                        <div className="text-center py-4 text-muted-foreground">
-                            No members yet. Invite someone to join!
-                        </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {members?.map(member => (
-                                <div key={member.id} className="flex items-center justify-between">
-                                    <div className="flex items-center">
-                                        <Avatar className="h-10 w-10 mr-3">
-                                            {member.photoURL ? (
-                                                <AvatarImage src={member.photoURL} alt={member.displayName} />
-                                            ) : (
-                                                <AvatarFallback>{getInitials(member.displayName)}</AvatarFallback>
-                                            )}
-                                        </Avatar>
-
-                                        <div>
-                                            <div className="font-medium">
-                                                {member.displayName}
-                                                {member.id === user?.uid && (
-                                                    <span className="text-xs text-muted-foreground ml-2">(You)</span>
-                                                )}
-                                            </div>
-                                            <div className="text-sm text-muted-foreground">
-                                                {member.email}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {user?.uid !== member.id && (
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8"
-                                            onClick={() => handleRemoveVacationMember(member.id)}
-                                        >
-                                            <Trash className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                    )}
+                    {(() => {
+                        if (isLoadingMembers) {
+                            return (
+                                <div className="flex justify-center py-4">
+                                    <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
                                 </div>
-                            ))}
-                        </div>
-                    )}
+                            )
+                        }
+
+                        if (members?.length === 0) {
+                            return (
+                                <div className="text-center py-4 text-muted-foreground">
+                                    No members yet. Invite someone to join!
+                                </div>
+                            )
+                        }
+
+                        return (
+                            <MemberList
+                                members={members}
+                                user={user}
+                                getInitials={getInitials}
+                                handleRemoveVacationMember={handleRemoveVacationMember}
+                            />
+                        )
+                    })()}
                 </CardContent>
                 <CardFooter className="pt-0">
                     <Button
@@ -1240,19 +1419,19 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
 
                         <div className="space-y-2">
                             <Label>Options</Label>
-                            {pollOptions.map((option, index) => (
-                                <div key={index} className="flex items-center gap-2">
+                            {pollOptions.map((option) => (
+                                <div key={option.id} className="flex items-center gap-2">
                                     <Input
-                                        placeholder={`Option ${index + 1}`}
-                                        value={option}
-                                        onChange={(e) => handleUpdatePollOption(index, e.target.value)}
+                                        placeholder={`Option ${pollOptions.findIndex(o => o.id === option.id) + 1}`}
+                                        value={option.text}
+                                        onChange={(e) => handleUpdatePollOption(option.id, e.target.value)}
                                     />
-                                    {index >= 2 && (
+                                    {pollOptions.length > 2 && (
                                         <Button
                                             variant="ghost"
                                             size="icon"
                                             className="h-8 w-8"
-                                            onClick={() => handleRemovePollOption(index)}
+                                            onClick={() => handleRemovePollOption(option.id)}
                                         >
                                             <X className="h-4 w-4" />
                                         </Button>
@@ -1280,7 +1459,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
                             disabled={
                                 isCreatingPoll ||
                                 pollQuestion.trim() === '' ||
-                                pollOptions.filter(o => o.trim() !== '').length < 2
+                                pollOptions.filter(o => o.text.trim() !== '').length < 2
                             }
                         >
                             {isCreatingPoll ? (

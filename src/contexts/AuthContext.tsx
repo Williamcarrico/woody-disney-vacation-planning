@@ -1,7 +1,7 @@
 "use client"; // This tells Next.js this is a client component
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, UserCredential, getIdToken } from 'firebase/auth'; // Import User type and getIdToken
+import { User, UserCredential, getIdToken, signInWithCustomToken } from 'firebase/auth'; // Import User type and getIdToken
 import { auth } from '@/lib/firebase/firebase.config';
 import {
     signUpWithEmail,
@@ -14,9 +14,9 @@ import {
 interface AuthContextType {
     user: User | null;
     loading: boolean; // To know if we're still checking the initial auth state
-    signUp: (email: string, password: string, displayName: string) => Promise<UserCredential>;
-    signIn: (email: string, password: string) => Promise<UserCredential>;
-    googleSignIn: () => Promise<UserCredential>;
+    signUp: (email: string, password: string, displayName: string, rememberMe?: boolean) => Promise<UserCredential>;
+    signIn: (email: string, password: string, rememberMe?: boolean) => Promise<UserCredential>;
+    googleSignIn: (rememberMe?: boolean) => Promise<UserCredential>;
     forgotPassword: (email: string) => Promise<void>;
     logout: () => Promise<void>;
     error: string | null;
@@ -25,24 +25,45 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// LocalStorage key for remember-me preference
+const REMEMBER_ME_KEY = 'auth_remember_me';
+
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Get remember-me preference from local storage
+    const getRememberMePreference = (): boolean => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem(REMEMBER_ME_KEY) === 'true';
+        }
+        return false;
+    };
+
+    // Save remember-me preference to local storage
+    const saveRememberMePreference = (remember: boolean) => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(REMEMBER_ME_KEY, remember ? 'true' : 'false');
+        }
+    };
+
     // Creates a server-side session
-    const createSession = async (user: User) => {
+    const createSession = async (user: User, rememberMe: boolean = false) => {
         try {
             console.log('Creating session for user:', user.uid);
             // Get the ID token with true to force refresh
             const idToken = await getIdToken(user, true);
             console.log('Got ID token, calling session API');
 
+            // Save remember-me preference
+            saveRememberMePreference(rememberMe);
+
             // Call API route to create session cookie
             const response = await fetch('/api/auth/session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idToken }),
+                body: JSON.stringify({ idToken, rememberMe }),
             });
 
             if (!response.ok) {
@@ -72,6 +93,37 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         }
     };
 
+    // Rotates the session token for improved security
+    const rotateToken = async (uid: string) => {
+        try {
+            const rememberMe = getRememberMePreference();
+
+            // Call the token rotation API
+            const response = await fetch('/api/auth/session', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid, rememberMe }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to rotate token: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.customToken) {
+                // Use the custom token to refresh the client-side auth state
+                await signInWithCustomToken(auth, data.customToken);
+                console.log('Token rotation successful');
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Token rotation error:', error);
+            return false;
+        }
+    };
+
     useEffect(() => {
         // onAuthStateChanged runs client-side and listens for changes
         const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
@@ -79,7 +131,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
             // If user is logged in, create a session
             if (firebaseUser) {
-                await createSession(firebaseUser);
+                const rememberMe = getRememberMePreference();
+                await createSession(firebaseUser, rememberMe);
             }
 
             setLoading(false); // Done checking initial state
@@ -89,13 +142,46 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         return () => unsubscribe();
     }, []); // Empty dependency array means this runs once on mount
 
-    const signUp = async (email: string, password: string, displayName: string) => {
+    // Setup global fetch interceptor for token rotation
+    useEffect(() => {
+        if (!user) return;
+
+        // Only run this in the browser
+        if (typeof window === 'undefined') return;
+
+        // Store the original fetch function
+        const originalFetch = window.fetch;
+
+        // Replace with our interceptor
+        window.fetch = async (input, init) => {
+            // Call the original fetch
+            const response = await originalFetch(input, init);
+
+            // Check for token rotation header
+            if (response.headers.get('X-Token-Rotation-Required') === 'true' && user) {
+                console.log('Token rotation required, rotating token');
+                // Don't await to avoid blocking the response
+                rotateToken(user.uid).catch(err => {
+                    console.error('Token rotation failed:', err);
+                });
+            }
+
+            return response;
+        };
+
+        // Clean up when component unmounts or user changes
+        return () => {
+            window.fetch = originalFetch;
+        };
+    }, [user]);
+
+    const signUp = async (email: string, password: string, displayName: string, rememberMe: boolean = false) => {
         try {
             const userCredential = await signUpWithEmail(email, password, displayName);
 
             // Create session after signup
             if (userCredential.user) {
-                await createSession(userCredential.user);
+                await createSession(userCredential.user, rememberMe);
             }
 
             return userCredential;
@@ -106,13 +192,13 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         }
     };
 
-    const signIn = async (email: string, password: string) => {
+    const signIn = async (email: string, password: string, rememberMe: boolean = false) => {
         try {
             const userCredential = await signInWithEmail(email, password);
 
             // Create session after sign in
             if (userCredential.user) {
-                await createSession(userCredential.user);
+                await createSession(userCredential.user, rememberMe);
             }
 
             return userCredential;
@@ -123,13 +209,13 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         }
     };
 
-    const googleSignIn = async () => {
+    const googleSignIn = async (rememberMe: boolean = false) => {
         try {
             const userCredential = await signInWithGoogle();
 
             // Create session after Google sign in
             if (userCredential.user) {
-                await createSession(userCredential.user);
+                await createSession(userCredential.user, rememberMe);
             }
 
             return userCredential;
@@ -157,6 +243,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
             // Firebase client logout
             await logOut();
+
+            // Clear remember me preference
+            saveRememberMePreference(false);
 
             // If we had a user, also revoke the server session
             if (uid) {

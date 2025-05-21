@@ -4,9 +4,9 @@ import Image from "next/image"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { MapPin, Clock, Tag } from "lucide-react"
+import { MapPin, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { DisneySpringLocation, LocationCategory, LocationArea, PriceRange } from "@/types/disneysprings"
+import { DisneySpringLocation, LocationCategory, LocationArea } from "@/types/disneysprings"
 
 interface DisneySpringsCardProps {
     readonly location: DisneySpringLocation

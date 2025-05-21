@@ -1,4 +1,5 @@
-// src/components/calendar/VacationCalendar.tsx
+'use client';
+
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
@@ -82,7 +83,7 @@ const createMockTimestamp = (date: Date): Timestamp => {
         isEqual: () => false,
         toJSON: () => ({ seconds, nanoseconds }),
         valueOf: () => `${seconds}.${nanoseconds}`
-    } as Timestamp;
+    } satisfies Timestamp;
 };
 
 // Mock functions to replace the missing Firebase functions
@@ -166,11 +167,11 @@ interface CalendarEvent {
 type CalendarViewType = 'month' | 'week' | 'schedule';
 
 interface VacationCalendarProps {
-    vacationId: string;
-    initialDate?: Date;
-    onEventClick?: (event: CalendarEvent) => void;
-    onAddEvent?: (date: Date) => void;
-    view?: CalendarViewType;
+    readonly vacationId: string;
+    readonly initialDate?: Date;
+    readonly onEventClick?: (event: CalendarEvent) => void;
+    readonly onAddEvent?: (date: Date) => void;
+    readonly view?: CalendarViewType;
 }
 
 export default function VacationCalendar({
@@ -203,6 +204,13 @@ export default function VacationCalendar({
         queryFn: () => getVacationItineraries(),
         enabled: !!vacation,
     });
+
+    // Helper function to determine weather condition
+    const getWeatherCondition = (dayIndex: number): 'sunny' | 'cloudy' | 'rainy' | 'stormy' => {
+        if (dayIndex % 4 === 0) return 'rainy';
+        if (dayIndex % 3 === 0) return 'cloudy';
+        return 'sunny';
+    };
 
     // Generate calendar events based on vacation data
     const events = useMemo(() => {
@@ -327,8 +335,13 @@ export default function VacationCalendar({
                 allEvents.push(dayEvent);
             }
 
-            // Calculate precipitation value from nested ternary
-            const precipitationValue = i % 4 === 0 ? 60 : (i % 3 === 0 ? 20 : 0);
+            // Calculate precipitation value
+            let precipitationValue = 0;
+            if (i % 4 === 0) {
+                precipitationValue = 60;
+            } else if (i % 3 === 0) {
+                precipitationValue = 20;
+            }
 
             // Add mock weather data
             dayEvent.weather = {
@@ -342,12 +355,70 @@ export default function VacationCalendar({
         return allEvents;
     }, [vacation]);
 
-    // Helper function to determine weather condition
-    const getWeatherCondition = (dayIndex: number): 'sunny' | 'cloudy' | 'rainy' | 'stormy' => {
-        if (dayIndex % 4 === 0) return 'rainy';
-        if (dayIndex % 3 === 0) return 'cloudy';
-        return 'sunny';
+    // Event sorting function - extracted to reduce nesting
+    const sortEventsByTypeAndTime = (a: CalendarEvent, b: CalendarEvent) => {
+        // Sort by type (park days first)
+        if (a.type === 'park' && b.type !== 'park') return -1;
+        if (a.type !== 'park' && b.type === 'park') return 1;
+
+        // Then by time
+        if (a.startTime && b.startTime) {
+            return a.startTime.localeCompare(b.startTime);
+        }
+
+        return 0;
     };
+
+    // Event time filtering function - extracted to reduce nesting
+    const filterEventsByHour = (events: CalendarEvent[], hour: number) => {
+        return events.filter(event => {
+            if (!event.startTime) return false;
+            const [eventHour] = event.startTime.split(':').map(Number);
+            return eventHour === hour;
+        });
+    };
+
+    // Event handling functions - moved to component level
+    const createEventButtonClickHandler = (event: CalendarEvent) => (e: React.MouseEvent) => {
+        e.stopPropagation();
+        handleEventClick(event);
+    };
+
+    // Render event button function
+    const renderEventButton = (event: CalendarEvent, onClick: (e: React.MouseEvent) => void) => (
+        <button
+            key={event.id}
+            className={cn(
+                "text-[10px] px-1.5 py-0.5 rounded border truncate cursor-pointer w-full text-left",
+                getEventTypeColor(event.type, event.isHighlighted)
+            )}
+            onClick={onClick}
+            aria-label={`View details for ${event.title}`}
+        >
+            {event.startTime && (
+                <span className="font-medium mr-1">{event.startTime}</span>
+            )}
+            {event.title}
+        </button>
+    );
+
+    // Render event button for hour events - move outside of nested callbacks
+    const renderHourEvent = (event: CalendarEvent) => (
+        <button
+            key={event.id}
+            className={cn(
+                "absolute top-0 left-0 right-0 m-0.5 p-1 text-xs rounded border overflow-hidden text-left calendar-event-height",
+                getEventTypeColor(event.type, event.isHighlighted)
+            )}
+            onClick={() => handleEventClick(event)}
+            aria-label={`View details for ${event.title}`}
+        >
+            <div className="font-medium truncate">{event.title}</div>
+            <div className="text-[10px] truncate">
+                {event.startTime} {event.endTime && `- ${event.endTime}`}
+            </div>
+        </button>
+    );
 
     // Get date range for current view
     const dateRange = useMemo(() => {
@@ -562,21 +633,14 @@ export default function VacationCalendar({
                     const isToday = dayjs(date).isSame(new Date(), 'day');
 
                     return (
-                        <div
+                        <button
                             key={dateStr}
+                            type="button"
                             className={cn(
-                                "h-24 p-1 border border-gray-200 rounded-lg overflow-hidden",
+                                "h-24 p-1 border border-gray-200 rounded-lg overflow-hidden w-full text-left",
                                 isToday ? "bg-primary/5 border-primary" : "bg-card hover:bg-secondary/10 transition-colors"
                             )}
                             onClick={() => handleDateClick(date)}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                    e.preventDefault();
-                                    handleDateClick(date);
-                                }
-                            }}
                             aria-label={`Add event on ${dayjs(date).format('MMMM D, YYYY')}`}
                         >
                             <div className="flex items-center justify-between">
@@ -611,38 +675,11 @@ export default function VacationCalendar({
                             {/* Events for the day */}
                             <div className="mt-1 space-y-1 max-h-[calc(100%-20px)] overflow-hidden">
                                 {dayEvents
-                                    .toSorted((a, b) => {
-                                        // Sort by type (park days first)
-                                        if (a.type === 'park' && b.type !== 'park') return -1;
-                                        if (a.type !== 'park' && b.type === 'park') return 1;
-
-                                        // Then by time
-                                        if (a.startTime && b.startTime) {
-                                            return a.startTime.localeCompare(b.startTime);
-                                        }
-
-                                        return 0;
-                                    })
+                                    .toSorted(sortEventsByTypeAndTime)
                                     .slice(0, 3) // Show only first 3 events
-                                    .map(event => (
-                                        <button
-                                            key={event.id}
-                                            className={cn(
-                                                "text-[10px] px-1.5 py-0.5 rounded border truncate cursor-pointer w-full text-left",
-                                                getEventTypeColor(event.type, event.isHighlighted)
-                                            )}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleEventClick(event);
-                                            }}
-                                            aria-label={`View details for ${event.title}`}
-                                        >
-                                            {event.startTime && (
-                                                <span className="font-medium mr-1">{event.startTime}</span>
-                                            )}
-                                            {event.title}
-                                        </button>
-                                    ))
+                                    .map(event =>
+                                        renderEventButton(event, createEventButtonClickHandler(event))
+                                    )
                                 }
 
                                 {/* "More events" indicator */}
@@ -652,7 +689,7 @@ export default function VacationCalendar({
                                     </div>
                                 )}
                             </div>
-                        </div>
+                        </button>
                     );
                 })}
             </div>
@@ -719,37 +756,14 @@ export default function VacationCalendar({
                             const dateStr = dayjs(date).format('YYYY-MM-DD');
 
                             // Filter events for this hour slot
-                            const hourEvents = (eventsByDate[dateStr] || []).filter(event => {
-                                if (!event.startTime) return false;
-
-                                const [eventHour] = event.startTime.split(':').map(Number);
-                                return eventHour === hour;
-                            });
+                            const hourEvents = filterEventsByHour((eventsByDate[dateStr] || []), hour);
 
                             return (
                                 <div
                                     key={`${dateStr}-${hour}`}
                                     className="border-r border-b min-h-[64px] relative"
                                 >
-                                    {hourEvents.map(event => (
-                                        <button
-                                            key={event.id}
-                                            className={cn(
-                                                "absolute top-0 left-0 right-0 m-0.5 p-1 text-xs rounded border overflow-hidden text-left",
-                                                getEventTypeColor(event.type, event.isHighlighted)
-                                            )}
-                                            style={{
-                                                height: 'calc(100% - 4px)',
-                                            }}
-                                            onClick={() => handleEventClick(event)}
-                                            aria-label={`View details for ${event.title}`}
-                                        >
-                                            <div className="font-medium truncate">{event.title}</div>
-                                            <div className="text-[10px] truncate">
-                                                {event.startTime} {event.endTime && `- ${event.endTime}`}
-                                            </div>
-                                        </button>
-                                    ))}
+                                    {hourEvents.map(renderHourEvent)}
                                 </div>
                             );
                         })}
@@ -808,75 +822,74 @@ export default function VacationCalendar({
                             <CardContent>
                                 <div className="space-y-2">
                                     {dayEvents
-                                        .sort((a, b) => {
+                                        .toSorted((a, b) => {
                                             // Sort by time first
                                             if (a.startTime && b.startTime) {
                                                 return a.startTime.localeCompare(b.startTime);
                                             }
 
-                                            // Then by type (park days first)
-                                            if (a.type === 'park' && b.type !== 'park') return -1;
-                                            if (a.type !== 'park' && b.type === 'park') return 1;
-
-                                            return 0;
+                                            // Then by type using our existing function
+                                            return sortEventsByTypeAndTime(a, b);
                                         })
-                                        .map(event => (
-                                            <button
-                                                key={event.id}
-                                                className={cn(
-                                                    "p-2 rounded-lg border flex items-start cursor-pointer hover:bg-secondary/10 transition-colors w-full text-left",
-                                                    event.isHighlighted && "border-primary/50"
-                                                )}
-                                                onClick={() => handleEventClick(event)}
-                                                aria-label={`View details for ${event.title}`}
-                                            >
-                                                <div className={cn(
-                                                    "w-8 h-8 rounded-full flex items-center justify-center mr-3",
-                                                    getEventTypeColor(event.type, event.isHighlighted)
-                                                )}>
-                                                    {getEventTypeIcon(event.type)}
-                                                </div>
+                                        .map(event => {
+                                            return (
+                                                <button
+                                                    key={event.id}
+                                                    className={cn(
+                                                        "p-2 rounded-lg border flex items-start cursor-pointer hover:bg-secondary/10 transition-colors w-full text-left",
+                                                        event.isHighlighted && "border-primary/50"
+                                                    )}
+                                                    onClick={() => handleEventClick(event)}
+                                                    aria-label={`View details for ${event.title}`}
+                                                >
+                                                    <div className={cn(
+                                                        "w-8 h-8 rounded-full flex items-center justify-center mr-3",
+                                                        getEventTypeColor(event.type, event.isHighlighted)
+                                                    )}>
+                                                        {getEventTypeIcon(event.type)}
+                                                    </div>
 
-                                                <div className="flex-1">
-                                                    <div className="font-medium">{event.title}</div>
+                                                    <div className="flex-1">
+                                                        <div className="font-medium">{event.title}</div>
 
-                                                    <div className="flex flex-wrap gap-2 mt-1">
-                                                        {event.startTime && (
-                                                            <div className="text-xs bg-secondary rounded-full px-2 py-0.5 flex items-center">
-                                                                <Clock className="h-3 w-3 mr-1" />
-                                                                {event.startTime}
-                                                                {event.endTime && ` - ${event.endTime}`}
-                                                            </div>
-                                                        )}
+                                                        <div className="flex flex-wrap gap-2 mt-1">
+                                                            {event.startTime && (
+                                                                <div className="text-xs bg-secondary rounded-full px-2 py-0.5 flex items-center">
+                                                                    <Clock className="h-3 w-3 mr-1" />
+                                                                    {event.startTime}
+                                                                    {event.endTime && ` - ${event.endTime}`}
+                                                                </div>
+                                                            )}
 
-                                                        {event.locationName && (
-                                                            <div className="text-xs bg-secondary rounded-full px-2 py-0.5 flex items-center">
-                                                                <Map className="h-3 w-3 mr-1" />
-                                                                {event.locationName}
-                                                            </div>
-                                                        )}
+                                                            {event.locationName && (
+                                                                <div className="text-xs bg-secondary rounded-full px-2 py-0.5 flex items-center">
+                                                                    <Map className="h-3 w-3 mr-1" />
+                                                                    {event.locationName}
+                                                                </div>
+                                                            )}
 
-                                                        {event.type === 'dining' && event.reservation && (
-                                                            <div className={cn(
-                                                                "text-xs rounded-full px-2 py-0.5 flex items-center",
-                                                                event.reservation.confirmed
-                                                                    ? "bg-green-100 text-green-700"
-                                                                    : "bg-amber-100 text-amber-700"
-                                                            )}>
-                                                                <Utensils className="h-3 w-3 mr-1" />
-                                                                {event.reservation.confirmed ? 'Confirmed' : 'Pending'}
+                                                            {event.type === 'dining' && event.reservation && (
+                                                                <div className={cn(
+                                                                    "text-xs rounded-full px-2 py-0.5 flex items-center",
+                                                                    event.reservation.confirmed
+                                                                        ? "bg-green-100 text-green-700"
+                                                                        : "bg-amber-100 text-amber-700"
+                                                                )}>
+                                                                    <Utensils className="h-3 w-3 mr-1" />
+                                                                    {event.reservation.confirmed ? 'Confirmed' : 'Pending'}
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {event.notes && (
+                                                            <div className="mt-2 text-sm text-muted-foreground">
+                                                                {event.notes}
                                                             </div>
                                                         )}
                                                     </div>
-
-                                                    {event.notes && (
-                                                        <div className="mt-2 text-sm text-muted-foreground">
-                                                            {event.notes}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </button>
-                                        ))
+                                                </button>
+                                            );
+                                        })
                                     }
 
                                     {dayEvents.length === 0 && (
@@ -891,7 +904,7 @@ export default function VacationCalendar({
                                     variant="ghost"
                                     size="sm"
                                     className="ml-auto"
-                                    onClick={() => handleDateClick(date)}
+                                    onClick={() => { handleDateClick(date); }}
                                 >
                                     <PlusCircle className="h-4 w-4 mr-2" />
                                     Add Event
@@ -965,7 +978,11 @@ export default function VacationCalendar({
 
                     <Tabs
                         value={view}
-                        onValueChange={(value) => setView(value as 'month' | 'week' | 'schedule')}
+                        onValueChange={(value) => {
+                            if (value === 'month' || value === 'week' || value === 'schedule') {
+                                setView(value);
+                            }
+                        }}
                     >
                         <TabsList>
                             <TabsTrigger value="month" className="text-xs">
@@ -1164,7 +1181,13 @@ export default function VacationCalendar({
                                 id="event-type"
                                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
                                 value={newEventType}
-                                onChange={(e) => setNewEventType(e.target.value as CalendarEvent['type'])}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (value === 'note' || value === 'dining' || value === 'resort' ||
+                                        value === 'travel' || value === 'rest' || value === 'event' || value === 'park') {
+                                        setNewEventType(value);
+                                    }
+                                }}
                                 aria-label="Select event type"
                             >
                                 <option value="note">Note</option>
@@ -1214,7 +1237,7 @@ export default function VacationCalendar({
     );
 }
 
-function Cloud(props: React.SVGProps<SVGSVGElement>) {
+function Cloud(props: Readonly<React.SVGProps<SVGSVGElement>>) {
     return (
         <svg
             {...props}

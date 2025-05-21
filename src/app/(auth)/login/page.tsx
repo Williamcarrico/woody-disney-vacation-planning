@@ -79,7 +79,7 @@ export default function Login() {
             setIsSubmitting(true)
             setFormErrors(prev => ({ ...prev, form: '' }))
 
-            await signIn(formData.email, formData.password)
+            await signIn(formData.email, formData.password, rememberMe)
 
             // Redirect to the original requested page or dashboard
             router.push(getRedirectPath())
@@ -94,7 +94,7 @@ export default function Login() {
 
     const handleGoogleSignIn = async () => {
         try {
-            await googleSignIn()
+            await googleSignIn(rememberMe)
             // Redirect to the original requested page or dashboard
             router.push(getRedirectPath())
         } catch (error) {

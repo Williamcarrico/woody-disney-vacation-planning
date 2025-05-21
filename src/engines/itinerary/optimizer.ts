@@ -7,7 +7,7 @@ import type {
 } from '@/types/api';
 
 // Define the missing ItineraryItem type locally
-interface ItineraryItem {
+export interface ItineraryItem {
     type: string;
     id?: string;
     name: string;
@@ -96,7 +96,7 @@ interface OptimizationParameters {
     crowdAvoidance?: boolean; // Prioritize least crowded times
 }
 
-interface OptimizationResult {
+export interface OptimizationResult {
     itinerary: ItineraryItem[];
     stats: {
         totalAttractions: number;
@@ -243,80 +243,98 @@ export class ParkItineraryOptimizer {
     private calculateWalkingTimes(): void {
         for (const attraction of this.attractions) {
             attraction.walkingTimeMap = new Map();
-
-            for (const otherAttraction of this.attractions) {
-                if (attraction.id === otherAttraction.id) {
-                    attraction.walkingTimeMap.set(otherAttraction.id, 0);
-                    continue;
-                }
-
-                // If we have the areas in our walking time map, use that
-                const attractionArea = this.getAttractionArea(attraction);
-                const otherAttractionArea = this.getAttractionArea(otherAttraction);
-
-                if (
-                    attractionArea &&
-                    otherAttractionArea &&
-                    ParkItineraryOptimizer.WALKING_TIMES[attractionArea]?.[otherAttractionArea]
-                ) {
-                    const baseTime = ParkItineraryOptimizer.WALKING_TIMES[attractionArea][otherAttractionArea];
-
-                    // Adjust for walking pace
-                    let paceMultiplier = 1.0;
-                    if (this.params.preferences.walkingPace === 'slow') {
-                        paceMultiplier = 1.3;
-                    } else if (this.params.preferences.walkingPace === 'fast') {
-                        paceMultiplier = 0.8;
-                    }
-
-                    // Adjust for mobility considerations
-                    if (this.params.mobilityConsiderations) {
-                        paceMultiplier *= 1.5;
-                    }
-
-                    // Adjust for stroller
-                    if (this.params.hasStroller) {
-                        paceMultiplier *= 1.2;
-                    }
-
-                    attraction.walkingTimeMap.set(
-                        otherAttraction.id,
-                        Math.round(baseTime * paceMultiplier)
-                    );
-                } else if (attraction.location && otherAttraction.location) {
-                    // Fallback estimation based on distance if available
-                    const distanceKm = this.calculateDistance(
-                        attraction.location.latitude,
-                        attraction.location.longitude,
-                        otherAttraction.location.latitude,
-                        otherAttraction.location.longitude
-                    );
-
-                    // Estimate: 1km takes about 15 minutes to walk in a theme park with crowds
-                    let walkingTime = Math.round(distanceKm * 15);
-
-                    // Apply same pace adjustments
-                    if (this.params.preferences.walkingPace === 'slow') {
-                        walkingTime = Math.round(walkingTime * 1.3);
-                    } else if (this.params.preferences.walkingPace === 'fast') {
-                        walkingTime = Math.round(walkingTime * 0.8);
-                    }
-
-                    if (this.params.mobilityConsiderations) {
-                        walkingTime = Math.round(walkingTime * 1.5);
-                    }
-
-                    if (this.params.hasStroller) {
-                        walkingTime = Math.round(walkingTime * 1.2);
-                    }
-
-                    attraction.walkingTimeMap.set(otherAttraction.id, walkingTime);
-                } else {
-                    // Default fallback
-                    attraction.walkingTimeMap.set(otherAttraction.id, 10);
-                }
-            }
+            this.populateWalkingTimes(attraction);
         }
+    }
+
+    /**
+     * Populate walking times from one attraction to all others
+     */
+    private populateWalkingTimes(attraction: AttractionWithMetadata): void {
+        for (const otherAttraction of this.attractions) {
+            // Same attraction has zero walking time
+            if (attraction.id === otherAttraction.id) {
+                attraction.walkingTimeMap?.set(otherAttraction.id, 0);
+                continue;
+            }
+
+            const walkingTime = this.calculateWalkingTimeBetween(attraction, otherAttraction);
+            attraction.walkingTimeMap?.set(otherAttraction.id, walkingTime);
+        }
+    }
+
+    /**
+     * Calculate the walking time between two attractions
+     */
+    private calculateWalkingTimeBetween(
+        fromAttraction: AttractionWithMetadata,
+        toAttraction: AttractionWithMetadata
+    ): number {
+        // Try area-based calculation first
+        const areaBasedTime = this.getAreaBasedWalkingTime(fromAttraction, toAttraction);
+        if (areaBasedTime !== null) {
+            return this.applyPaceMultiplier(areaBasedTime);
+        }
+
+        // Try location-based calculation
+        if (fromAttraction.location && toAttraction.location) {
+            const distanceKm = this.calculateDistance(
+                fromAttraction.location.latitude,
+                fromAttraction.location.longitude,
+                toAttraction.location.latitude,
+                toAttraction.location.longitude
+            );
+
+            // Estimate: 1km takes about 15 minutes to walk in a theme park with crowds
+            const baseWalkingTime = Math.round(distanceKm * 15);
+            return this.applyPaceMultiplier(baseWalkingTime);
+        }
+
+        // Default fallback
+        return 10;
+    }
+
+    /**
+     * Get walking time based on park areas
+     */
+    private getAreaBasedWalkingTime(
+        fromAttraction: AttractionWithMetadata,
+        toAttraction: AttractionWithMetadata
+    ): number | null {
+        const fromArea = this.getAttractionArea(fromAttraction);
+        const toArea = this.getAttractionArea(toAttraction);
+
+        if (!fromArea || !toArea) {
+            return null;
+        }
+
+        return ParkItineraryOptimizer.WALKING_TIMES[fromArea]?.[toArea] || null;
+    }
+
+    /**
+     * Apply pace multiplier based on user preferences
+     */
+    private applyPaceMultiplier(baseTime: number): number {
+        let paceMultiplier = 1.0;
+
+        // Adjust for walking pace
+        if (this.params.preferences.walkingPace === 'slow') {
+            paceMultiplier = 1.3;
+        } else if (this.params.preferences.walkingPace === 'fast') {
+            paceMultiplier = 0.8;
+        }
+
+        // Adjust for mobility considerations
+        if (this.params.mobilityConsiderations) {
+            paceMultiplier *= 1.5;
+        }
+
+        // Adjust for stroller
+        if (this.params.hasStroller) {
+            paceMultiplier *= 1.2;
+        }
+
+        return Math.round(baseTime * paceMultiplier);
     }
 
     /**
@@ -746,205 +764,358 @@ export class ParkItineraryOptimizer {
         let currentTime = new Date(startTime);
         let currentLocation: AttractionWithMetadata | null = null;
         let remainingBreakTime = this.params.preferences.breakDuration || 0;
-        let usedLightningLanes = 0;
-        let lightningLaneCost = 0;
-
-        // Special handling for dining times
-        const lunchTime = this.params.preferences.lunchTime
-            ? new Date(this.params.preferences.lunchTime)
-            : new Date(startTime.getTime() + (4 * 60 * 60 * 1000)); // Default: 4 hours after start
-
-        const dinnerTime = this.params.preferences.dinnerTime
-            ? new Date(this.params.preferences.dinnerTime)
-            : new Date(startTime.getTime() + (9 * 60 * 60 * 1000)); // Default: 9 hours after start
+        const planState = {
+            usedLightningLanes: 0,
+            lightningLaneCost: 0,
+            lunchTime: this.getMealTime(startTime, 'lunch'),
+            dinnerTime: this.getMealTime(startTime, 'dinner')
+        };
 
         // Main planning loop - continue until we reach the end time or run out of attractions
         while (currentTime < endTime && usedAttractions.size < this.attractions.length) {
             // Check if it's time for a meal
-            if (this.isWithinTimeRange(currentTime, lunchTime, 60)) {
-                // Add lunch break
-                itinerary.push({
-                    type: 'DINING',
-                    name: 'Lunch Break',
-                    startTime: currentTime.toISOString(),
-                    endTime: new Date(currentTime.getTime() + 60 * 60 * 1000).toISOString(), // 1 hour lunch
-                    location: currentLocation?.name || 'Nearby Restaurant'
-                });
-
-                currentTime = new Date(currentTime.getTime() + 60 * 60 * 1000);
+            const mealResult = this.handleMealBreak(currentTime, currentLocation, planState);
+            if (mealResult) {
+                itinerary.push(mealResult.item);
+                currentTime = mealResult.nextTime;
                 remainingBreakTime = Math.max(0, remainingBreakTime - 60);
                 continue;
             }
 
-            if (this.isWithinTimeRange(currentTime, dinnerTime, 60)) {
-                // Add dinner break
-                itinerary.push({
-                    type: 'DINING',
-                    name: 'Dinner Break',
-                    startTime: currentTime.toISOString(),
-                    endTime: new Date(currentTime.getTime() + 60 * 60 * 1000).toISOString(), // 1 hour dinner
-                    location: currentLocation?.name || 'Nearby Restaurant'
-                });
-
-                currentTime = new Date(currentTime.getTime() + 60 * 60 * 1000);
-                remainingBreakTime = Math.max(0, remainingBreakTime - 60);
+            // Check if we should add a break
+            const breakResult = this.handleRestBreak(currentTime, currentLocation, itinerary, remainingBreakTime);
+            if (breakResult) {
+                itinerary.push(breakResult.item);
+                currentTime = breakResult.nextTime;
+                remainingBreakTime -= breakResult.breakDuration;
                 continue;
             }
 
-            // Check if we should add a break (we'll distribute remaining break time throughout the day)
-            if (
-                remainingBreakTime > 0 &&
-                itinerary.length > 0 &&
-                itinerary.length % 4 === 0 && // Every 4 attractions
-                !itinerary[itinerary.length - 1].type.includes('BREAK')
-            ) {
-                const breakDuration = Math.min(remainingBreakTime, 30); // Up to 30 minute breaks
-
-                itinerary.push({
-                    type: 'BREAK',
-                    name: 'Rest Break',
-                    startTime: currentTime.toISOString(),
-                    endTime: new Date(currentTime.getTime() + breakDuration * 60 * 1000).toISOString(),
-                    location: currentLocation?.name || 'Nearby Rest Area'
-                });
-
-                currentTime = new Date(currentTime.getTime() + breakDuration * 60 * 1000);
-                remainingBreakTime -= breakDuration;
-                continue;
-            }
-
-            // Find the next best attraction to visit
+            // Find the next best attraction
             const nextAttraction = this.findNextBestAttraction(
                 currentTime,
                 currentLocation,
                 usedAttractions,
-                usedLightningLanes
+                planState.usedLightningLanes
             );
 
             if (!nextAttraction) {
-                // No suitable attraction found - add a break
-                const breakDuration = Math.min(remainingBreakTime > 0 ? remainingBreakTime : 30, 30);
-
-                itinerary.push({
-                    type: 'FLEXIBLE_TIME',
-                    name: 'Flexible Time',
-                    startTime: currentTime.toISOString(),
-                    endTime: new Date(currentTime.getTime() + breakDuration * 60 * 1000).toISOString(),
-                    description: 'Time for shopping, snacks, or revisiting favorites'
-                });
-
-                currentTime = new Date(currentTime.getTime() + breakDuration * 60 * 1000);
-
+                const flexResult = this.createFlexibleTimeItem(currentTime, remainingBreakTime);
+                itinerary.push(flexResult.item);
+                currentTime = flexResult.nextTime;
                 if (remainingBreakTime > 0) {
-                    remainingBreakTime -= breakDuration;
+                    remainingBreakTime -= flexResult.breakDuration;
                 }
-
                 continue;
             }
 
-            // Calculate walking time from current location
-            let walkingTime = 0;
-            if (currentLocation && nextAttraction.walkingTimeMap?.has(currentLocation.id)) {
-                walkingTime = nextAttraction.walkingTimeMap.get(currentLocation.id) || 0;
-            } else if (currentLocation) {
-                // Default walking time if not specifically calculated
-                walkingTime = 10;
-            }
-
-            // Update current time with walking time
-            const arrivalTime = new Date(currentTime.getTime() + walkingTime * 60 * 1000);
-
-            // Determine wait time based on current/predicted data
-            let waitTime = nextAttraction.currentWaitTime || 0;
-
-            // Check if we have a predicted wait time for a time slot close to arrival
-            if (nextAttraction.predictedWaitTimes && nextAttraction.predictedWaitTimes.size > 0) {
-                // Find the closest time slot
-                let closestTimeSlot: string | null = null;
-                let minDifference = Infinity;
-
-                for (const timeSlot of nextAttraction.predictedWaitTimes.keys()) {
-                    const timeSlotDate = new Date(timeSlot);
-                    const difference = Math.abs(timeSlotDate.getTime() - arrivalTime.getTime());
-
-                    if (difference < minDifference) {
-                        minDifference = difference;
-                        closestTimeSlot = timeSlot;
-                    }
-                }
-
-                // Use predicted wait time if we found a close time slot
-                if (closestTimeSlot && minDifference < 2 * 60 * 60 * 1000) { // Within 2 hours
-                    waitTime = nextAttraction.predictedWaitTimes.get(closestTimeSlot) || waitTime;
-                }
-            }
-
-            // Determine if we'll use Lightning Lane
-            let useLightningLane = false;
-
-            if (
-                nextAttraction.lightning?.available &&
-                (
-                    (nextAttraction.lightning.type === 'GENIE_PLUS' && this.params.useGeniePlus) ||
-                    (nextAttraction.lightning.type === 'INDIVIDUAL' && this.params.useIndividualLightningLane)
-                ) &&
-                waitTime > 20 // Only use for waits > 20 minutes
-            ) {
-                // Check budget for Individual Lightning Lane
-                if (
-                    nextAttraction.lightning.type === 'INDIVIDUAL' &&
-                    nextAttraction.lightning.price &&
-                    lightningLaneCost + nextAttraction.lightning.price <= (this.params.maxLightningLaneBudget || 0)
-                ) {
-                    useLightningLane = true;
-                    lightningLaneCost += nextAttraction.lightning.price;
-                } else if (nextAttraction.lightning.type === 'GENIE_PLUS') {
-                    useLightningLane = true;
-                }
-            }
-
-            // Adjust wait time if using Lightning Lane
-            const effectiveWaitTime = useLightningLane ? Math.min(10, waitTime) : waitTime;
-
-            // Calculate activity duration
-            const activityDuration = nextAttraction.duration || 10; // Default 10 minutes if not specified
-
-            // Create itinerary item
-            itinerary.push({
-                type: nextAttraction.attractionType,
-                id: nextAttraction.id,
-                name: nextAttraction.name,
-                startTime: arrivalTime.toISOString(),
-                endTime: new Date(
-                    arrivalTime.getTime() +
-                    (effectiveWaitTime + activityDuration) * 60 * 1000
-                ).toISOString(),
-                waitTime: effectiveWaitTime,
-                walkingTime,
-                lightningLane: useLightningLane && nextAttraction.lightning
-                    ? {
-                        type: nextAttraction.lightning.type,
-                        price: nextAttraction.lightning.price
-                    }
-                    : undefined,
-                notes: this.generateAttractionNotes(nextAttraction)
-            });
-
-            // Update state for next iteration
-            currentTime = new Date(
-                arrivalTime.getTime() +
-                (effectiveWaitTime + activityDuration) * 60 * 1000
+            // Process the next attraction
+            const attractionResult = this.processAttraction(
+                nextAttraction,
+                currentTime,
+                currentLocation,
+                planState
             );
 
+            itinerary.push(attractionResult.item);
+            currentTime = attractionResult.nextTime;
             currentLocation = nextAttraction;
             usedAttractions.add(nextAttraction.id);
 
-            if (useLightningLane) {
-                usedLightningLanes++;
+            if (attractionResult.usedLightningLane) {
+                planState.usedLightningLanes++;
             }
         }
 
-        // Add any remaining break time at the end if needed
+        this.addFinalBreak(itinerary, currentTime, remainingBreakTime, endTime);
+        return itinerary;
+    }
+
+    /**
+     * Get the meal time based on type
+     */
+    private getMealTime(startTime: Date, type: 'lunch' | 'dinner'): Date {
+        if (type === 'lunch') {
+            return this.params.preferences.lunchTime
+                ? new Date(this.params.preferences.lunchTime)
+                : new Date(startTime.getTime() + (4 * 60 * 60 * 1000)); // Default: 4 hours after start
+        } else {
+            return this.params.preferences.dinnerTime
+                ? new Date(this.params.preferences.dinnerTime)
+                : new Date(startTime.getTime() + (9 * 60 * 60 * 1000)); // Default: 9 hours after start
+        }
+    }
+
+    /**
+     * Handle meal breaks (lunch or dinner)
+     */
+    private handleMealBreak(
+        currentTime: Date,
+        currentLocation: AttractionWithMetadata | null,
+        planState: { lunchTime: Date; dinnerTime: Date }
+    ): { item: ItineraryItem; nextTime: Date } | null {
+        // Check for lunch time
+        if (this.isWithinTimeRange(currentTime, planState.lunchTime, 60)) {
+            return this.createMealBreakItem(currentTime, 'Lunch Break', currentLocation);
+        }
+
+        // Check for dinner time
+        if (this.isWithinTimeRange(currentTime, planState.dinnerTime, 60)) {
+            return this.createMealBreakItem(currentTime, 'Dinner Break', currentLocation);
+        }
+
+        return null;
+    }
+
+    /**
+     * Create a meal break item
+     */
+    private createMealBreakItem(
+        currentTime: Date,
+        mealName: string,
+        currentLocation: AttractionWithMetadata | null
+    ): { item: ItineraryItem; nextTime: Date } {
+        const nextTime = new Date(currentTime.getTime() + 60 * 60 * 1000); // 1 hour
+
+        return {
+            item: {
+                type: 'DINING',
+                name: mealName,
+                startTime: currentTime.toISOString(),
+                endTime: nextTime.toISOString(),
+                location: currentLocation?.name || 'Nearby Restaurant'
+            },
+            nextTime
+        };
+    }
+
+    /**
+     * Handle rest breaks
+     */
+    private handleRestBreak(
+        currentTime: Date,
+        currentLocation: AttractionWithMetadata | null,
+        itinerary: ItineraryItem[],
+        remainingBreakTime: number
+    ): { item: ItineraryItem; nextTime: Date; breakDuration: number } | null {
+        const shouldAddBreak = remainingBreakTime > 0 &&
+            itinerary.length > 0 &&
+            itinerary.length % 4 === 0 && // Every 4 attractions
+            !itinerary[itinerary.length - 1].type.includes('BREAK');
+
+        if (!shouldAddBreak) {
+            return null;
+        }
+
+        const breakDuration = Math.min(remainingBreakTime, 30); // Up to 30 minute breaks
+        const nextTime = new Date(currentTime.getTime() + breakDuration * 60 * 1000);
+
+        return {
+            item: {
+                type: 'BREAK',
+                name: 'Rest Break',
+                startTime: currentTime.toISOString(),
+                endTime: nextTime.toISOString(),
+                location: currentLocation?.name || 'Nearby Rest Area'
+            },
+            nextTime,
+            breakDuration
+        };
+    }
+
+    /**
+     * Create a flexible time item when no attraction is found
+     */
+    private createFlexibleTimeItem(
+        currentTime: Date,
+        remainingBreakTime: number
+    ): { item: ItineraryItem; nextTime: Date; breakDuration: number } {
+        const breakDuration = Math.min(remainingBreakTime > 0 ? remainingBreakTime : 30, 30);
+        const nextTime = new Date(currentTime.getTime() + breakDuration * 60 * 1000);
+
+        return {
+            item: {
+                type: 'FLEXIBLE_TIME',
+                name: 'Flexible Time',
+                startTime: currentTime.toISOString(),
+                endTime: nextTime.toISOString(),
+                description: 'Time for shopping, snacks, or revisiting favorites'
+            },
+            nextTime,
+            breakDuration
+        };
+    }
+
+    /**
+     * Process an attraction and create an itinerary item
+     */
+    private processAttraction(
+        attraction: AttractionWithMetadata,
+        currentTime: Date,
+        currentLocation: AttractionWithMetadata | null,
+        planState: { usedLightningLanes: number; lightningLaneCost: number }
+    ): { item: ItineraryItem; nextTime: Date; usedLightningLane: boolean } {
+        // Calculate walking time
+        const walkingTime = this.getWalkingTime(attraction, currentLocation);
+        const arrivalTime = new Date(currentTime.getTime() + walkingTime * 60 * 1000);
+
+        // Determine wait time
+        const waitTime = this.getPredictedWaitTime(attraction, arrivalTime);
+
+        // Determine if we'll use Lightning Lane
+        const { useLightningLane, updatedLightningLaneCost } = this.checkLightningLaneUsage(
+            attraction, waitTime, planState.usedLightningLanes, planState.lightningLaneCost
+        );
+
+        // Update the cost if we used Lightning Lane
+        if (useLightningLane && updatedLightningLaneCost !== planState.lightningLaneCost) {
+            planState.lightningLaneCost = updatedLightningLaneCost;
+        }
+
+        // Adjust wait time if using Lightning Lane
+        const effectiveWaitTime = useLightningLane ? Math.min(10, waitTime) : waitTime;
+
+        // Calculate activity duration
+        const activityDuration = attraction.duration || 10; // Default 10 minutes if not specified
+        const nextTime = new Date(
+            arrivalTime.getTime() + (effectiveWaitTime + activityDuration) * 60 * 1000
+        );
+
+        return {
+            item: {
+                type: attraction.attractionType,
+                id: attraction.id,
+                name: attraction.name,
+                startTime: arrivalTime.toISOString(),
+                endTime: nextTime.toISOString(),
+                waitTime: effectiveWaitTime,
+                walkingTime,
+                lightningLane: useLightningLane && attraction.lightning
+                    ? {
+                        type: attraction.lightning.type,
+                        price: attraction.lightning.price
+                    }
+                    : undefined,
+                notes: this.generateAttractionNotes(attraction)
+            },
+            nextTime,
+            usedLightningLane: useLightningLane
+        };
+    }
+
+    /**
+     * Get walking time from current location to an attraction
+     */
+    private getWalkingTime(
+        attraction: AttractionWithMetadata,
+        currentLocation: AttractionWithMetadata | null
+    ): number {
+        if (!currentLocation) {
+            return 0;
+        }
+
+        if (attraction.walkingTimeMap?.has(currentLocation.id)) {
+            return attraction.walkingTimeMap.get(currentLocation.id) || 0;
+        }
+
+        // Default walking time if not specifically calculated
+        return 10;
+    }
+
+    /**
+     * Get predicted wait time for an attraction at a given time
+     */
+    private getPredictedWaitTime(attraction: AttractionWithMetadata, arrivalTime: Date): number {
+        const waitTime = attraction.currentWaitTime || 0;
+
+        // Check for predicted wait times
+        if (!attraction.predictedWaitTimes || attraction.predictedWaitTimes.size === 0) {
+            return waitTime;
+        }
+
+        // Find the closest time slot
+        let closestTimeSlot: string | null = null;
+        let minDifference = Infinity;
+
+        for (const timeSlot of attraction.predictedWaitTimes.keys()) {
+            const timeSlotDate = new Date(timeSlot);
+            const difference = Math.abs(timeSlotDate.getTime() - arrivalTime.getTime());
+
+            if (difference < minDifference) {
+                minDifference = difference;
+                closestTimeSlot = timeSlot;
+            }
+        }
+
+        // Use predicted wait time if we found a close time slot
+        if (closestTimeSlot && minDifference < 2 * 60 * 60 * 1000) { // Within 2 hours
+            return attraction.predictedWaitTimes.get(closestTimeSlot) || waitTime;
+        }
+
+        return waitTime;
+    }
+
+    /**
+     * Check if we should use Lightning Lane for an attraction
+     */
+    private checkLightningLaneUsage(
+        attraction: AttractionWithMetadata,
+        waitTime: number,
+        usedLightningLanes: number,
+        currentLightningLaneCost: number
+    ): { useLightningLane: boolean; updatedLightningLaneCost: number } {
+        // Not available or wait time too short
+        if (
+            !attraction.lightning?.available ||
+            waitTime <= 20 || // Only use for waits > 20 minutes
+            !(
+                (attraction.lightning.type === 'GENIE_PLUS' && this.params.useGeniePlus) ||
+                (attraction.lightning.type === 'INDIVIDUAL' && this.params.useIndividualLightningLane)
+            )
+        ) {
+            return {
+                useLightningLane: false,
+                updatedLightningLaneCost: currentLightningLaneCost
+            };
+        }
+
+        // Check budget for Individual Lightning Lane
+        if (
+            attraction.lightning.type === 'INDIVIDUAL' &&
+            attraction.lightning.price
+        ) {
+            const newCost = currentLightningLaneCost + attraction.lightning.price;
+            const canAfford = newCost <= (this.params.maxLightningLaneBudget || 0);
+
+            return {
+                useLightningLane: canAfford,
+                updatedLightningLaneCost: canAfford ? newCost : currentLightningLaneCost
+            };
+        }
+
+        // For Genie+ with no price
+        if (attraction.lightning.type === 'GENIE_PLUS') {
+            return {
+                useLightningLane: true,
+                updatedLightningLaneCost: currentLightningLaneCost
+            };
+        }
+
+        return {
+            useLightningLane: false,
+            updatedLightningLaneCost: currentLightningLaneCost
+        };
+    }
+
+    /**
+     * Add a final break at the end of the itinerary if needed
+     */
+    private addFinalBreak(
+        itinerary: ItineraryItem[],
+        currentTime: Date,
+        remainingBreakTime: number,
+        endTime: Date
+    ): void {
         if (remainingBreakTime > 15 && currentTime.getTime() + remainingBreakTime * 60 * 1000 <= endTime.getTime()) {
             itinerary.push({
                 type: 'BREAK',
@@ -954,8 +1125,6 @@ export class ParkItineraryOptimizer {
                 description: 'Time to rest, shop for souvenirs, or enjoy the park atmosphere'
             });
         }
-
-        return itinerary;
     }
 
     /**
@@ -976,7 +1145,35 @@ export class ParkItineraryOptimizer {
         usedLightningLanes: number
     ): AttractionWithMetadata | null {
         // Filter attractions that are already used (unless we allow repeats)
-        const candidateAttractions = this.attractions.filter(attraction => {
+        const candidateAttractions = this.filterCandidateAttractions(usedAttractions);
+
+        if (candidateAttractions.length === 0) {
+            return null;
+        }
+
+        // Score each candidate based on multiple factors
+        const scoredCandidates = candidateAttractions.map(attraction => ({
+            attraction,
+            score: this.calculateCandidateScore(
+                attraction,
+                currentTime,
+                currentLocation,
+                usedLightningLanes
+            )
+        }));
+
+        // Sort by adjusted score
+        scoredCandidates.sort((a, b) => b.score - a.score);
+
+        // Return the top candidate
+        return scoredCandidates.length > 0 ? scoredCandidates[0].attraction : null;
+    }
+
+    /**
+     * Filter attractions based on user preferences and previous selections
+     */
+    private filterCandidateAttractions(usedAttractions: Set<string>): AttractionWithMetadata[] {
+        return this.attractions.filter(attraction => {
             // Skip already used attractions unless we allow repeats and it's a priority
             if (
                 usedAttractions.has(attraction.id) &&
@@ -1006,99 +1203,131 @@ export class ParkItineraryOptimizer {
                 attraction.attractionType === 'SHOW' ||
                 attraction.attractionType === 'PARADE'
             ) {
-                // Check if there's a showtime within the next 1 hour
-                // This would require show schedule data we don't have in this example
-
-                // For now, we'll just include them
+                // In a real implementation, we would check showtimes
                 return true;
             }
 
             return true;
         });
+    }
 
-        if (candidateAttractions.length === 0) {
-            return null;
+    /**
+     * Calculate a score for a candidate attraction
+     */
+    private calculateCandidateScore(
+        attraction: AttractionWithMetadata,
+        currentTime: Date,
+        currentLocation: AttractionWithMetadata | null,
+        usedLightningLanes: number
+    ): number {
+        let score = attraction.score;
+
+        score += this.getLocationBasedScore(attraction, currentLocation);
+        score += this.getWaitTimeBasedScore(attraction, currentTime);
+        score += this.getLightningLaneScore(attraction, usedLightningLanes);
+
+        return score;
+    }
+
+    /**
+     * Calculate score adjustment based on location
+     */
+    private getLocationBasedScore(
+        attraction: AttractionWithMetadata,
+        currentLocation: AttractionWithMetadata | null
+    ): number {
+        if (!currentLocation || !attraction.walkingTimeMap?.has(currentLocation.id)) {
+            return 0;
         }
 
-        // Score each candidate based on multiple factors
-        const scoredCandidates = candidateAttractions.map(attraction => {
-            let score = attraction.score;
+        const walkingTime = attraction.walkingTimeMap.get(currentLocation.id) || 0;
 
-            // Adjust score based on current location (favor nearby attractions)
-            if (currentLocation && attraction.walkingTimeMap?.has(currentLocation.id)) {
-                const walkingTime = attraction.walkingTimeMap.get(currentLocation.id) || 0;
+        // Penalize long walks
+        if (walkingTime > 15) {
+            return -(walkingTime - 15) * 2;
+        }
 
-                // Penalize long walks
-                if (walkingTime > 15) {
-                    score -= (walkingTime - 15) * 2;
-                } else {
-                    // Bonus for very close attractions
-                    score += (15 - walkingTime);
-                }
+        // Bonus for very close attractions
+        return (15 - walkingTime);
+    }
+
+    /**
+     * Calculate score adjustment based on predicted wait times
+     */
+    private getWaitTimeBasedScore(
+        attraction: AttractionWithMetadata,
+        currentTime: Date
+    ): number {
+        if (!attraction.predictedWaitTimes || attraction.predictedWaitTimes.size === 0) {
+            return 0;
+        }
+
+        // Find the closest time slot
+        let closestTimeSlot: string | null = null;
+        let minDifference = Infinity;
+
+        for (const timeSlot of attraction.predictedWaitTimes.keys()) {
+            const timeSlotDate = new Date(timeSlot);
+            const difference = Math.abs(timeSlotDate.getTime() - currentTime.getTime());
+
+            if (difference < minDifference) {
+                minDifference = difference;
+                closestTimeSlot = timeSlot;
             }
+        }
 
-            // Adjust score based on predicted wait times
-            if (attraction.predictedWaitTimes && attraction.predictedWaitTimes.size > 0) {
-                // Find the closest time slot
-                let closestTimeSlot: string | null = null;
-                let minDifference = Infinity;
+        // Adjust score based on predicted wait time
+        if (!closestTimeSlot) {
+            return 0;
+        }
 
-                for (const timeSlot of attraction.predictedWaitTimes.keys()) {
-                    const timeSlotDate = new Date(timeSlot);
-                    const difference = Math.abs(timeSlotDate.getTime() - currentTime.getTime());
+        const predictedWait = attraction.predictedWaitTimes.get(closestTimeSlot) || 0;
 
-                    if (difference < minDifference) {
-                        minDifference = difference;
-                        closestTimeSlot = timeSlot;
-                    }
-                }
+        if (predictedWait < 15) {
+            return 20; // Big bonus for very short waits
+        }
 
-                // Adjust score based on predicted wait time
-                if (closestTimeSlot) {
-                    const predictedWait = attraction.predictedWaitTimes.get(closestTimeSlot) || 0;
+        if (predictedWait > 60) {
+            return -15; // Penalty for very long waits
+        }
 
-                    if (predictedWait < 15) {
-                        score += 20; // Big bonus for very short waits
-                    } else if (predictedWait > 60) {
-                        score -= 15; // Penalty for very long waits
-                    }
+        return 0;
+    }
 
-                    // If the wait is predicted to decrease soon, wait for it
-                    // This would require more sophisticated time-series prediction
-                }
-            }
+    /**
+     * Calculate score adjustment based on Lightning Lane availability
+     */
+    private getLightningLaneScore(
+        attraction: AttractionWithMetadata,
+        usedLightningLanes: number
+    ): number {
+        if (
+            !attraction.lightning?.available ||
+            !(
+                (attraction.lightning.type === 'GENIE_PLUS' && this.params.useGeniePlus) ||
+                (attraction.lightning.type === 'INDIVIDUAL' && this.params.useIndividualLightningLane)
+            )
+        ) {
+            return 0;
+        }
 
-            // Boost score for Lightning Lane if available
-            if (
-                attraction.lightning?.available &&
-                (
-                    (attraction.lightning.type === 'GENIE_PLUS' && this.params.useGeniePlus) ||
-                    (attraction.lightning.type === 'INDIVIDUAL' && this.params.useIndividualLightningLane)
-                )
-            ) {
-                // Prioritize Individual Lightning Lane attractions
-                if (
-                    attraction.lightning.type === 'INDIVIDUAL' &&
-                    (!attraction.lightning.price ||
-                        attraction.lightning.price <= (this.params.maxLightningLaneBudget || 0))
-                ) {
-                    score += 25;
-                } else if (
-                    attraction.lightning.type === 'GENIE_PLUS' &&
-                    usedLightningLanes < 3 // Limit to 3 Genie+ per day in our model
-                ) {
-                    score += 15;
-                }
-            }
+        // Prioritize Individual Lightning Lane attractions
+        if (
+            attraction.lightning.type === 'INDIVIDUAL' &&
+            (!attraction.lightning.price ||
+                attraction.lightning.price <= (this.params.maxLightningLaneBudget || 0))
+        ) {
+            return 25;
+        }
 
-            return { attraction, score };
-        });
+        if (
+            attraction.lightning.type === 'GENIE_PLUS' &&
+            usedLightningLanes < 3 // Limit to 3 Genie+ per day in our model
+        ) {
+            return 15;
+        }
 
-        // Sort by adjusted score
-        scoredCandidates.sort((a, b) => b.score - a.score);
-
-        // Return the top candidate
-        return scoredCandidates.length > 0 ? scoredCandidates[0].attraction : null;
+        return 0;
     }
 
     /**

@@ -1,0 +1,16 @@
+.tourPosition {
+  position: fixed;
+  top: var(--top);
+  right: var(--right);
+  bottom: var(--bottom);
+  left: var(--left);
+  transform: var(--transform);
+}
+
+.highlightRect {
+  position: absolute;
+  top: var(--top);
+  left: var(--left);
+  width: var(--width);
+  height: var(--height);
+}

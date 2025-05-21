@@ -4,15 +4,15 @@ import { AnnualEvent, isEpcotFestival, isHolidayEvent, isRunDisneyEvent } from '
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { CalendarIcon, Clock, Ticket, InfoIcon, MapPin, Music, Utensils, Sparkles, Calendar } from 'lucide-react'
+import { Ticket, InfoIcon, MapPin, Music, Utensils, Sparkles, Calendar } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils/date-utils'
 
 interface EventCardProps {
-    event: AnnualEvent
-    variant?: 'default' | 'compact'
+    readonly event: AnnualEvent
+    readonly variant?: 'default' | 'compact'
 }
 
 export default function EventCard({ event, variant = 'default' }: EventCardProps) {
@@ -26,9 +26,9 @@ export default function EventCard({ event, variant = 'default' }: EventCardProps
         switch (event.category) {
             case 'HOLIDAY': return 'destructive'
             case 'FESTIVAL': return 'default'
-            case 'AFTER_HOURS': return 'purple'
-            case 'MARATHON': return 'yellow'
-            case 'SPECIAL': return 'blue'
+            case 'AFTER_HOURS': return 'secondary'
+            case 'MARATHON': return 'secondary'
+            case 'SPECIAL': return 'secondary'
             default: return 'secondary'
         }
     }
@@ -58,7 +58,7 @@ export default function EventCard({ event, variant = 'default' }: EventCardProps
                     <div className="relative w-full h-48">
                         <Image
                             src={event.images[0].url}
-                            alt={event.images[0].alt}
+                            alt={event.images[0].alt ?? event.name}
                             fill
                             className="object-cover"
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -147,7 +147,7 @@ export default function EventCard({ event, variant = 'default' }: EventCardProps
                 isCompact ? "pt-0" : ""
             )}>
                 <Button variant="outline" size="sm" asChild>
-                    <Link href={`/events/${event.id}`}>
+                    <Link href={`/dashboard/events/${event.id}`}>
                         <InfoIcon className="h-4 w-4 mr-2" />
                         Details
                     </Link>

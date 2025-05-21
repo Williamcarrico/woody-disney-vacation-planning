@@ -431,7 +431,7 @@ function ParkConditionsCard({ showWeather, showCrowdLevels, weatherData, crowdLe
                                         <div className="flex items-center mt-1">
                                             {Array.from({ length: 10 }).map((_, i) => (
                                                 <div
-                                                    key={`crowd-level-indicator-${i}`}
+                                                    key={`crowd-level-${i + 1}-of-10`}
                                                     className={cn(
                                                         "w-5 h-5 rounded mr-1 last:mr-0",
                                                         i < crowdLevelData.today ? getCrowdLevelColor(crowdLevelData.today) : "bg-secondary"

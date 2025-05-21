@@ -1,10 +1,12 @@
+"use client"
+
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import advancedFormat from 'dayjs/plugin/advancedFormat';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Control, FormProvider } from 'react-hook-form';
 import * as z from 'zod';
 import {
     FormField,
@@ -46,6 +48,7 @@ import {
 } from 'lucide-react';
 import { getWaltDisneyWorldParks } from '@/lib/api/themeParks';
 import { useItineraryOptimizer } from '@/engines/itinerary/optimizer';
+import { Park } from '@/types/api';
 
 dayjs.extend(advancedFormat);
 dayjs.extend(customParseFormat);
@@ -138,6 +141,214 @@ interface OptimizationResult {
     parkName: string;
     rideName?: string;
     waitTime?: number;
+}
+
+// Add this component before the main ItineraryPlanner component
+function ParkSelectOptions({ parks }: { readonly parks: Park[] | undefined }) {
+    return (
+        <>
+            {parks?.map(park => (
+                <SelectItem key={park.id} value={park.id}>
+                    {park.name}
+                </SelectItem>
+            ))}
+        </>
+    );
+}
+
+function ChildAgeInput({ index, control }: { readonly index: number; readonly control: Control<PlanningFormValues> }) {
+    return (
+        <FormField
+            control={control}
+            name={`childrenAges.${index}`}
+            render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Child {index + 1}</FormLabel>
+                    <FormControl>
+                        <Input
+                            type="number"
+                            min={0}
+                            max={17}
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+            )}
+        />
+    );
+}
+
+function ParkDayItem({
+    field,
+    index,
+    parks,
+    control
+}: {
+    readonly field: { id: string; date: Date };
+    readonly index: number;
+    readonly parks: Park[] | undefined;
+    readonly control: Control<PlanningFormValues>;
+}) {
+    // Format the date for display
+    const date = new Date(field.date);
+    const formattedDate = dayjs(date).format('dddd, MMMM D, YYYY');
+
+    return (
+        <div className="border-b last:border-b-0">
+            <Accordion type="single" collapsible defaultValue={index === 0 ? `park-day-${index}` : undefined}>
+                <AccordionItem value={`park-day-${index}`} className="border-0">
+                    <AccordionTrigger className="px-4 py-3 text-left hover:no-underline hover:bg-secondary/40">
+                        <div className="flex items-center gap-2">
+                            <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                                {index + 1}
+                            </span>
+                            <span>{formattedDate}</span>
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 py-3 bg-secondary/10">
+                        <div className="grid gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                    control={control}
+                                    name={`parkDays.${index}.parkId`}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Park</FormLabel>
+                                            <Select
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select a park" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <ParkSelectOptions parks={parks} />
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={control}
+                                    name={`parkDays.${index}.ridePreference`}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Ride Preference</FormLabel>
+                                            <Select
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select preference" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="thrill">Thrill Rides</SelectItem>
+                                                    <SelectItem value="family">Family Rides</SelectItem>
+                                                    <SelectItem value="all">All Rides</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FormField
+                                    control={control}
+                                    name={`parkDays.${index}.startTime`}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Start Time</FormLabel>
+                                            <FormControl>
+                                                <Input type="time" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={control}
+                                    name={`parkDays.${index}.endTime`}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>End Time</FormLabel>
+                                            <FormControl>
+                                                <Input type="time" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={control}
+                                    name={`parkDays.${index}.maxWaitTime`}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>
+                                                Maximum Wait Time: {field.value} minutes
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Slider
+                                                    value={[field.value]}
+                                                    min={0}
+                                                    max={180}
+                                                    step={5}
+                                                    onValueChange={(value) => field.onChange(value[0])}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        </div>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
+        </div>
+    );
+}
+
+// Add this component
+function ParkBadges({ parkDays, parks }: {
+    readonly parkDays: z.infer<typeof planningFormSchema>["parkDays"] | undefined;
+    readonly parks: Park[] | undefined
+}) {
+    return (
+        <>
+            {parkDays?.map((day, index) => {
+                const park = parks?.find(p => p.id === day.parkId);
+                return park ? (
+                    <Badge key={`${day.date.toISOString()}-${park.id}-${index}`} variant="secondary">
+                        {park.name}
+                    </Badge>
+                ) : null;
+            })}
+        </>
+    );
+}
+
+// Add another component for optimization results
+function OptimizationResultItem({ result, index }: { readonly result: OptimizationResult; readonly index: number }) {
+    return (
+        <div key={`${result.date.toISOString()}-${result.parkId}-${index}`} className="space-y-2">
+            <h3 className="text-lg font-semibold">{result.parkName}</h3>
+            <p>Date: {dayjs(result.date).format('MMM D, YYYY')}</p>
+            {result.rideName && <p>Ride: {result.rideName}</p>}
+            {result.waitTime !== undefined && <p>Wait Time: {result.waitTime} minutes</p>}
+        </div>
+    );
 }
 
 export default function ItineraryPlanner() {
@@ -472,139 +683,15 @@ export default function ItineraryPlanner() {
             </Alert>
 
             <div className="border rounded-lg">
-                {parkDaysFields.map((field, index) => {
-                    // Format the date for display
-                    const date = new Date(field.date);
-                    const formattedDate = dayjs(date).format('dddd, MMMM D, YYYY');
-
-                    return (
-                        <div key={field.id} className="border-b last:border-b-0">
-                            <Accordion type="single" collapsible defaultValue={index === 0 ? `park-day-${index}` : undefined}>
-                                <AccordionItem value={`park-day-${index}`} className="border-0">
-                                    <AccordionTrigger className="px-4 py-3 text-left hover:no-underline hover:bg-secondary/40">
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                                                {index + 1}
-                                            </span>
-                                            <span>{formattedDate}</span>
-                                        </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent className="px-4 py-3 bg-secondary/10">
-                                        <div className="grid gap-4">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`parkDays.${index}.parkId`}
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>Park</FormLabel>
-                                                            <Select
-                                                                onValueChange={field.onChange}
-                                                                defaultValue={field.value}
-                                                            >
-                                                                <FormControl>
-                                                                    <SelectTrigger>
-                                                                        <SelectValue placeholder="Select a park" />
-                                                                    </SelectTrigger>
-                                                                </FormControl>
-                                                                <SelectContent>
-                                                                    {parks?.map(park => (
-                                                                        <SelectItem key={park.id} value={park.id}>
-                                                                            {park.name}
-                                                                        </SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`parkDays.${index}.ridePreference`}
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>Ride Preference</FormLabel>
-                                                            <Select
-                                                                onValueChange={field.onChange}
-                                                                defaultValue={field.value}
-                                                            >
-                                                                <FormControl>
-                                                                    <SelectTrigger>
-                                                                        <SelectValue placeholder="Select preference" />
-                                                                    </SelectTrigger>
-                                                                </FormControl>
-                                                                <SelectContent>
-                                                                    <SelectItem value="thrill">Thrill Rides</SelectItem>
-                                                                    <SelectItem value="family">Family Rides</SelectItem>
-                                                                    <SelectItem value="all">All Rides</SelectItem>
-                                                                </SelectContent>
-                                                            </Select>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </div>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`parkDays.${index}.startTime`}
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>Start Time</FormLabel>
-                                                            <FormControl>
-                                                                <Input type="time" {...field} />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`parkDays.${index}.endTime`}
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>End Time</FormLabel>
-                                                            <FormControl>
-                                                                <Input type="time" {...field} />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`parkDays.${index}.maxWaitTime`}
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>
-                                                                Maximum Wait Time: {field.value} minutes
-                                                            </FormLabel>
-                                                            <FormControl>
-                                                                <Slider
-                                                                    value={[field.value]}
-                                                                    min={0}
-                                                                    max={180}
-                                                                    step={5}
-                                                                    onValueChange={(value) => field.onChange(value[0])}
-                                                                />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </div>
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            </Accordion>
-                        </div>
-                    );
-                })}
+                {parkDaysFields.map((field, index) => (
+                    <ParkDayItem
+                        key={field.id}
+                        field={field}
+                        index={index}
+                        parks={parks}
+                        control={form.control}
+                    />
+                ))}
             </div>
 
             {parkDaysFields.length === 0 && (
@@ -711,26 +798,7 @@ export default function ItineraryPlanner() {
 
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                             {childrenAgesFields.map((field, index) => (
-                                <FormField
-                                    key={field.id}
-                                    control={form.control}
-                                    name={`childrenAges.${index}`}
-                                    render={({ field: inputField }) => (
-                                        <FormItem>
-                                            <FormLabel>Child {index + 1}</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="number"
-                                                    min={0}
-                                                    max={17}
-                                                    {...inputField}
-                                                    onChange={(e) => inputField.onChange(parseInt(e.target.value))}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                <ChildAgeInput key={field.id} index={index} control={form.control} />
                             ))}
                         </div>
                     </div>
@@ -1073,14 +1141,7 @@ export default function ItineraryPlanner() {
                     <div className="flex items-center justify-center">
                         <span className="text-sm font-medium mr-2">Parks:</span>
                         <div className="flex flex-wrap gap-1 justify-center">
-                            {watchParkDays?.map((day, index) => {
-                                const park = parks?.find(p => p.id === day.parkId);
-                                return park ? (
-                                    <Badge key={`${day.date.toISOString()}-${park.id}-${index}`} variant="secondary">
-                                        {park.name}
-                                    </Badge>
-                                ) : null;
-                            })}
+                            <ParkBadges parkDays={watchParkDays} parks={parks} />
                         </div>
                     </div>
 
@@ -1158,20 +1219,17 @@ export default function ItineraryPlanner() {
                 </AlertDescription>
             </Alert>
 
-            {optimizationResults?.map((result: OptimizationResult, index: number) => (
-                <div key={`${result.date.toISOString()}-${result.parkId}-${index}`} className="space-y-2">
-                    <h3 className="text-lg font-semibold">{result.parkName}</h3>
-                    <p>Date: {dayjs(result.date).format('MMM D, YYYY')}</p>
-                    {result.rideName && <p>Ride: {result.rideName}</p>}
-                    {result.waitTime !== undefined && <p>Wait Time: {result.waitTime} minutes</p>}
-                </div>
+            {optimizationResults?.map((result, index) => (
+                <OptimizationResultItem key={`${result.date.toISOString()}-${result.parkId}-${index}`} result={result} index={index} />
             ))}
         </div>
     );
 
     return (
         <div className="space-y-6">
-            {renderStepContent()}
+            <FormProvider {...form}>
+                {renderStepContent()}
+            </FormProvider>
         </div>
     );
 }

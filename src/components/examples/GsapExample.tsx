@@ -30,7 +30,7 @@ export default function GsapExample() {
         // Create a scroll-triggered animation
         const boxes = containerRef.current?.querySelectorAll('.scroll-box');
 
-        if (boxes && boxes.length) {
+        if (boxes?.length) {
             gsap.from(boxes, {
                 y: 100,
                 opacity: 0,
@@ -68,12 +68,18 @@ export default function GsapExample() {
                 <h2 className="text-xl font-bold text-center">Scroll Animation Example</h2>
                 <p className="text-center text-gray-500 mb-8">Scroll down to see the animations</p>
 
-                {[...Array(5)].map((_, i) => (
+                {[
+                    { id: 'box-1', number: 1 },
+                    { id: 'box-2', number: 2 },
+                    { id: 'box-3', number: 3 },
+                    { id: 'box-4', number: 4 },
+                    { id: 'box-5', number: 5 }
+                ].map((item) => (
                     <div
-                        key={i}
+                        key={item.id}
                         className="scroll-box p-4 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg shadow-md text-white"
                     >
-                        Scroll Box {i + 1}
+                        Scroll Box {item.number}
                     </div>
                 ))}
             </div>

@@ -1,0 +1,17 @@
+{
+  "name": "disney-vacation-weather",
+  "version": "1.0.0",
+  "description": "Weather forecast components for Disney vacation planning using Tomorrow.io API",
+  "private": true,
+  "dependencies": {
+    "date-fns": "^2.30.0",
+    "@mdi/js": "^7.8.0",
+    "@mdi/react": "^1.6.1",
+    "material-icons": "^1.13.12"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "next": "^13.0.0 || ^14.0.0 || ^15.0.0"
+  }
+}

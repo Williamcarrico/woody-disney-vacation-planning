@@ -1,5 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { cache } from 'react';
+import { withEdge } from '../config';
+import { validateQuery } from '@/lib/api/validation';
+import { errorResponse, successResponse } from '@/lib/api/response';
+
+// Define schema for query validation
+const ParksQuerySchema = z.object({
+    destination: z.string().optional()
+});
+
+export const runtime = 'edge';
 
 const BASE_URL = 'https://api.themeparks.wiki/v1';
 
@@ -20,15 +31,20 @@ const cachedFetch = cache(async (url: string) => {
 });
 
 // GET handler for /api/parks
-export async function GET(request: NextRequest) {
+async function handleGet(request: NextRequest) {
     try {
-        const searchParams = request.nextUrl.searchParams;
-        const destination = searchParams.get('destination');
+        // Validate query parameters
+        const validation = await validateQuery(request, ParksQuerySchema);
+        if (!validation.success) {
+            return validation.error;
+        }
+
+        const { destination } = validation.data;
 
         // If a specific destination is requested, return only that destination's parks
         if (destination) {
             const data = await cachedFetch(`${BASE_URL}/destination/${destination}/parks`);
-            return NextResponse.json(data);
+            return successResponse(data);
         }
 
         // Otherwise, return all Disney parks
@@ -37,12 +53,19 @@ export async function GET(request: NextRequest) {
             (dest: any) => dest.slug.includes('disney')
         );
 
-        return NextResponse.json(disneyDestinations);
+        return successResponse(disneyDestinations);
     } catch (error) {
         console.error('Error fetching parks data:', error);
-        return NextResponse.json(
-            { error: 'Failed to fetch parks data' },
-            { status: 500 }
+        return errorResponse(
+            'Failed to fetch parks data',
+            'API_ERROR',
+            500
         );
     }
 }
+
+// Use the edge function wrapper with caching enabled
+export const GET = withEdge(handleGet, {
+    cacheTtl: 300, // 5 minutes
+    edgeCaching: true
+});

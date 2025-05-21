@@ -1,4 +1,3 @@
-// components/DisneyBudgetCalculator.tsx
 "use client"; // Required for Next.js App Router components with client-side interactivity
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -149,7 +148,7 @@ function DisneyBudgetCalculator() {
 
         const totalPeople = numAdults + numChildren;
         const baseTicketCost = (numAdults * avgTicketPriceAdult * numParkDays) +
-                              (numChildren * avgTicketPriceChild * numParkDays);
+            (numChildren * avgTicketPriceChild * numParkDays);
 
         let ticketAddonCost = 0;
         if (ticketType === 'parkHopper') {
@@ -170,7 +169,7 @@ function DisneyBudgetCalculator() {
         const { nightlyRate, resortParkingFee } = accommodationOptions;
         const { numNights } = tripDetails;
         return (nightlyRate * numNights) + resortParkingFee;
-    }, [accommodationOptions, tripDetails.numNights]);
+    }, [accommodationOptions, tripDetails]);
 
     // Calculate transportation costs with useMemo
     const transportationCosts = useMemo(() => {
@@ -274,216 +273,494 @@ function DisneyBudgetCalculator() {
         }));
     }, []);
 
-    // Helper for number inputs
-    const handleNumberChange = useCallback((setter: (field: string, value: number) => void, field: string) =>
-        (e: React.ChangeEvent<HTMLInputElement>) => {
-            const value = e.target.value;
-            setter(field, value === '' ? 0 : parseFloat(value));
-        }, []);
+    // Format currency for display
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
+    };
 
-    // Helper for integer inputs
-    const handleIntChange = useCallback((setter: (field: string, value: number) => void, field: string) =>
-        (e: React.ChangeEvent<HTMLInputElement>) => {
-            const value = e.target.value;
-            setter(field, value === '' ? 0 : parseInt(value, 10));
-        }, []);
-
-    // Helper for select inputs
-    const handleSelectChange = useCallback((setter: (field: string, value: string) => void, field: string) =>
-        (e: React.ChangeEvent<HTMLSelectElement>) => {
-            setter(field, e.target.value);
-        }, []);
+    // Format percentage for display
+    const formatPercent = (percent: number) => {
+        return `${percent}%`;
+    };
 
     return (
-        <div className="calculator-container max-w-3xl mx-auto p-4 md:p-8 bg-white rounded-2xl shadow-xl my-8 font-inter">
-            <h1 className="text-2xl md:text-3xl font-bold text-center mb-8 text-blue-800">Walt Disney World&reg; Vacation Budget Calculator</h1>
-
-            {/* Trip Details Section */}
-            <section id="tripDetails" className="mb-8">
-                <h2 className="section-title text-xl font-semibold text-blue-700 mb-6 pb-2 border-b-2 border-blue-500">1. Trip Details</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                    <div className="input-group">
-                        <label htmlFor="numAdults" className="block font-medium mb-1 text-gray-700">Number of Adults (10+)</label>
-                        <input type="number" id="numAdults" value={tripDetails.numAdults} onChange={handleIntChange(updateTripDetails, 'numAdults')} min="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" />
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="numChildren" className="block font-medium mb-1 text-gray-700">Number of Children (3-9)</label>
-                        <input type="number" id="numChildren" value={tripDetails.numChildren} onChange={handleIntChange(updateTripDetails, 'numChildren')} min="0" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" />
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="numNights" className="block font-medium mb-1 text-gray-700">Length of Stay (Nights)</label>
-                        <input type="number" id="numNights" value={tripDetails.numNights} onChange={handleIntChange(updateTripDetails, 'numNights')} min="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" />
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="numParkDays" className="block font-medium mb-1 text-gray-700">Number of Park Days</label>
-                        <input type="number" id="numParkDays" value={tripDetails.numParkDays} onChange={handleIntChange(updateTripDetails, 'numParkDays')} min="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" />
-                    </div>
-                </div>
-            </section>
-
-            {/* Park Tickets Section */}
-            <section id="parkTickets" className="mb-8">
-                <h2 className="section-title text-xl font-semibold text-blue-700 mb-6 pb-2 border-b-2 border-blue-500">2. Park Tickets</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                    <div className="input-group">
-                        <label htmlFor="ticketType" className="block font-medium mb-1 text-gray-700">Ticket Type</label>
-                        <select id="ticketType" value={ticketOptions.ticketType} onChange={handleSelectChange(updateTicketOptions, 'ticketType')} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow">
-                            <option value="base">Base Ticket (1 Park Per Day)</option>
-                            <option value="parkHopper">Park Hopper</option>
-                            <option value="parkHopperPlus">Park Hopper Plus</option>
-                        </select>
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="avgTicketPriceAdult" className="block font-medium mb-1 text-gray-700">Avg. Daily Adult Ticket Price ($)</label>
-                        <input type="number" id="avgTicketPriceAdult" value={ticketOptions.avgTicketPriceAdult} onChange={handleNumberChange(updateTicketOptions, 'avgTicketPriceAdult')} min="50" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="e.g., 150" />
-                        <p className="text-xs text-gray-500 mt-1">Estimate per adult, per day. Prices vary by date.</p>
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="avgTicketPriceChild" className="block font-medium mb-1 text-gray-700">Avg. Daily Child Ticket Price ($)</label>
-                        <input type="number" id="avgTicketPriceChild" value={ticketOptions.avgTicketPriceChild} onChange={handleNumberChange(updateTicketOptions, 'avgTicketPriceChild')} min="50" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="e.g., 140" />
-                        <p className="text-xs text-gray-500 mt-1">Estimate per child (3-9), per day.</p>
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="parkHopperCost" className="block font-medium mb-1 text-gray-700">Park Hopper Add-on (per ticket, total)</label>
-                        <input type="number" id="parkHopperCost" value={ticketOptions.parkHopperCost} onChange={handleNumberChange(updateTicketOptions, 'parkHopperCost')} min="0" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="e.g., 70" />
-                        <p className="text-xs text-gray-500 mt-1">Total add-on cost for Park Hopper for the entire ticket length.</p>
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="parkHopperPlusCost" className="block font-medium mb-1 text-gray-700">Park Hopper Plus Add-on (per ticket, total)</label>
-                        <input type="number" id="parkHopperPlusCost" value={ticketOptions.parkHopperPlusCost} onChange={handleNumberChange(updateTicketOptions, 'parkHopperPlusCost')} min="0" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="e.g., 90" />
-                        <p className="text-xs text-gray-500 mt-1">Total add-on cost for Park Hopper Plus for the entire ticket length.</p>
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="geniePlus" className="block font-medium mb-1 text-gray-700">Genie+ Per Person Per Day ($)</label>
-                        <input type="number" id="geniePlus" value={ticketOptions.geniePlus} onChange={handleNumberChange(updateTicketOptions, 'geniePlus')} min="0" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="e.g., 25" />
-                        <p className="text-xs text-gray-500 mt-1">Avg. cost if you plan to use Genie+.</p>
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="individualLightningLanes" className="block font-medium mb-1 text-gray-700">Total Estimated ILL Cost ($ for whole trip)</label>
-                        <input type="number" id="individualLightningLanes" value={ticketOptions.individualLightningLanes} onChange={handleNumberChange(updateTicketOptions, 'individualLightningLanes')} min="0" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="e.g., 100" />
-                        <p className="text-xs text-gray-500 mt-1">Total budget for all Individual Lightning Lanes.</p>
+        <div className="container mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                {/* Trip Details Section */}
+                <div className="bg-blue-50 rounded-xl p-6 shadow-md">
+                    <h2 className="text-xl font-semibold text-blue-800 mb-4">Trip Details</h2>
+                    <div className="space-y-4">
+                        <div>
+                            <label htmlFor="numAdults" className="block text-sm font-medium text-gray-700 mb-1">Number of Adults</label>
+                            <input
+                                id="numAdults"
+                                type="number"
+                                min="1"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                value={tripDetails.numAdults}
+                                onChange={(e) => updateTripDetails('numAdults', parseInt(e.target.value) || 0)}
+                                aria-label="Number of Adults"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="numChildren" className="block text-sm font-medium text-gray-700 mb-1">Number of Children</label>
+                            <input
+                                id="numChildren"
+                                type="number"
+                                min="0"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                value={tripDetails.numChildren}
+                                onChange={(e) => updateTripDetails('numChildren', parseInt(e.target.value) || 0)}
+                                aria-label="Number of Children"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="numNights" className="block text-sm font-medium text-gray-700 mb-1">Number of Nights</label>
+                            <input
+                                id="numNights"
+                                type="number"
+                                min="1"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                value={tripDetails.numNights}
+                                onChange={(e) => updateTripDetails('numNights', parseInt(e.target.value) || 0)}
+                                aria-label="Number of Nights"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="numParkDays" className="block text-sm font-medium text-gray-700 mb-1">Number of Park Days</label>
+                            <input
+                                id="numParkDays"
+                                type="number"
+                                min="0"
+                                max={tripDetails.numNights + 2}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                value={tripDetails.numParkDays}
+                                onChange={(e) => updateTripDetails('numParkDays', parseInt(e.target.value) || 0)}
+                                aria-label="Number of Park Days"
+                            />
+                        </div>
                     </div>
                 </div>
-            </section>
 
-            {/* Accommodation Section */}
-            <section id="accommodation" className="mb-8">
-                <h2 className="section-title text-xl font-semibold text-blue-700 mb-6 pb-2 border-b-2 border-blue-500">3. Accommodation</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                    <div className="input-group">
-                        <label htmlFor="resortType" className="block font-medium mb-1 text-gray-700">Resort Category / Type</label>
-                        <select id="resortType" value={accommodationOptions.resortType} onChange={handleSelectChange(updateAccommodationOptions, 'resortType')} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow">
-                            <option value="value">Value Resort (e.g., All-Star Movies)</option>
-                            <option value="moderate">Moderate Resort (e.g., Caribbean Beach)</option>
-                            <option value="deluxe">Deluxe Resort (e.g., Polynesian)</option>
-                            <option value="deluxeVilla">Deluxe Villa (e.g., Bay Lake Tower)</option>
-                            <option value="offSite">Off-site Hotel / Rental</option>
-                            <option value="custom">Custom Nightly Rate</option>
-                        </select>
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="nightlyRate" className="block font-medium mb-1 text-gray-700">Average Nightly Rate ($)</label>
-                        <input type="number" id="nightlyRate" value={accommodationOptions.nightlyRate} onChange={handleNumberChange(updateAccommodationOptions, 'nightlyRate')} min="0" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="Auto-fills or enter custom" disabled={accommodationOptions.resortType !== 'custom'} />
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="resortParkingFee" className="block font-medium mb-1 text-gray-700">Resort Parking (Total for stay, $)</label>
-                        <input type="number" id="resortParkingFee" value={accommodationOptions.resortParkingFee} onChange={handleNumberChange(updateAccommodationOptions, 'resortParkingFee')} min="0" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="e.g., 100" />
-                        <p className="text-xs text-gray-500 mt-1">Many Disney resorts have parking fees.</p>
+                {/* Tickets Section */}
+                <div className="bg-blue-50 rounded-xl p-6 shadow-md">
+                    <h2 className="text-xl font-semibold text-blue-800 mb-4">Tickets</h2>
+                    <div className="space-y-4">
+                        <div>
+                            <label htmlFor="ticketType" className="block text-sm font-medium text-gray-700 mb-1">Ticket Type</label>
+                            <select
+                                id="ticketType"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                value={ticketOptions.ticketType}
+                                onChange={(e) => updateTicketOptions('ticketType', e.target.value)}
+                                aria-label="Ticket Type"
+                            >
+                                <option value="base">Base Ticket (1 park per day)</option>
+                                <option value="parkHopper">Park Hopper</option>
+                                <option value="parkHopperPlus">Park Hopper Plus</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label htmlFor="ticketPriceAdult" className="block text-sm font-medium text-gray-700 mb-1">Adult Ticket Price (per day)</label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">$</span>
+                                <input
+                                    id="ticketPriceAdult"
+                                    type="number"
+                                    min="0"
+                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    value={ticketOptions.avgTicketPriceAdult}
+                                    onChange={(e) => updateTicketOptions('avgTicketPriceAdult', parseInt(e.target.value) || 0)}
+                                    aria-label="Adult Ticket Price per day"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label htmlFor="ticketPriceChild" className="block text-sm font-medium text-gray-700 mb-1">Child Ticket Price (per day)</label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">$</span>
+                                <input
+                                    id="ticketPriceChild"
+                                    type="number"
+                                    min="0"
+                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    value={ticketOptions.avgTicketPriceChild}
+                                    onChange={(e) => updateTicketOptions('avgTicketPriceChild', parseInt(e.target.value) || 0)}
+                                    aria-label="Child Ticket Price per day"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label htmlFor="geniePlus" className="block text-sm font-medium text-gray-700 mb-1">Genie+ Cost (per person per day)</label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">$</span>
+                                <input
+                                    id="geniePlus"
+                                    type="number"
+                                    min="0"
+                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    value={ticketOptions.geniePlus}
+                                    onChange={(e) => updateTicketOptions('geniePlus', parseInt(e.target.value) || 0)}
+                                    aria-label="Genie Plus Cost per person per day"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label htmlFor="lightningLanes" className="block text-sm font-medium text-gray-700 mb-1">Individual Lightning Lanes (total)</label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">$</span>
+                                <input
+                                    id="lightningLanes"
+                                    type="number"
+                                    min="0"
+                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    value={ticketOptions.individualLightningLanes}
+                                    onChange={(e) => updateTicketOptions('individualLightningLanes', parseInt(e.target.value) || 0)}
+                                    aria-label="Individual Lightning Lanes total cost"
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </section>
 
-            {/* Transportation Section */}
-            <section id="transportation" className="mb-8">
-                <h2 className="section-title text-xl font-semibold text-blue-700 mb-6 pb-2 border-b-2 border-blue-500">4. Transportation</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                    <div className="input-group">
-                        <label htmlFor="flightCost" className="block font-medium mb-1 text-gray-700">Flights (Total, Round-trip $)</label>
-                        <input type="number" id="flightCost" value={transportationOptions.flightCost} onChange={handleNumberChange(updateTransportationOptions, 'flightCost')} min="0" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="e.g., 800" />
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="airportTransport" className="block font-medium mb-1 text-gray-700">Airport Transportation (Total, Round-trip $)</label>
-                        <input type="number" id="airportTransport" value={transportationOptions.airportTransport} onChange={handleNumberChange(updateTransportationOptions, 'airportTransport')} min="0" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="e.g., 150" />
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="rentalCarCost" className="block font-medium mb-1 text-gray-700">Rental Car (Total, excl. gas/parking $)</label>
-                        <input type="number" id="rentalCarCost" value={transportationOptions.rentalCarCost} onChange={handleNumberChange(updateTransportationOptions, 'rentalCarCost')} min="0" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="e.g., 300" />
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="gasTollsParking" className="block font-medium mb-1 text-gray-700">Gas, Tolls & Theme Park Parking (Total $)</label>
-                        <input type="number" id="gasTollsParking" value={transportationOptions.gasTollsParking} onChange={handleNumberChange(updateTransportationOptions, 'gasTollsParking')} min="0" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="e.g., 100" />
-                        <p className="text-xs text-gray-500 mt-1">Theme park parking is ~$30/day if not staying at a Disney resort with free park parking.</p>
+                {/* Accommodation Section */}
+                <div className="bg-blue-50 rounded-xl p-6 shadow-md">
+                    <h2 className="text-xl font-semibold text-blue-800 mb-4">Accommodation</h2>
+                    <div className="space-y-4">
+                        <div>
+                            <label htmlFor="resortType" className="block text-sm font-medium text-gray-700 mb-1">Resort Type</label>
+                            <select
+                                id="resortType"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                value={accommodationOptions.resortType}
+                                onChange={(e) => updateAccommodationOptions('resortType', e.target.value)}
+                                aria-label="Resort Type"
+                            >
+                                <option value="value">Value Resort (~$225/night)</option>
+                                <option value="moderate">Moderate Resort (~$350/night)</option>
+                                <option value="deluxe">Deluxe Resort (~$700/night)</option>
+                                <option value="deluxeVilla">Deluxe Villa (~$900/night)</option>
+                                <option value="offSite">Off-Site Hotel (~$150/night)</option>
+                                <option value="custom">Custom Rate</option>
+                            </select>
+                        </div>
+                        {accommodationOptions.resortType === 'custom' && (
+                            <div>
+                                <label htmlFor="nightlyRate" className="block text-sm font-medium text-gray-700 mb-1">Nightly Rate</label>
+                                <div className="relative">
+                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3">$</span>
+                                    <input
+                                        id="nightlyRate"
+                                        type="number"
+                                        min="0"
+                                        className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        value={accommodationOptions.nightlyRate}
+                                        onChange={(e) => updateAccommodationOptions('nightlyRate', parseInt(e.target.value) || 0)}
+                                        aria-label="Nightly Rate"
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        <div>
+                            <label htmlFor="resortParkingFee" className="block text-sm font-medium text-gray-700 mb-1">Resort Parking Fee (total)</label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">$</span>
+                                <input
+                                    id="resortParkingFee"
+                                    type="number"
+                                    min="0"
+                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    value={accommodationOptions.resortParkingFee}
+                                    onChange={(e) => updateAccommodationOptions('resortParkingFee', parseInt(e.target.value) || 0)}
+                                    aria-label="Resort Parking Fee total"
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </section>
+            </div>
 
-            {/* Food & Dining Section */}
-            <section id="foodDining" className="mb-8">
-                <h2 className="section-title text-xl font-semibold text-blue-700 mb-6 pb-2 border-b-2 border-blue-500">5. Food & Dining</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                    <div className="input-group">
-                        <label htmlFor="foodEstimatePerPersonDay" className="block font-medium mb-1 text-gray-700">Daily Food Estimate Per Person ($)</label>
-                        <input type="number" id="foodEstimatePerPersonDay" value={foodOptions.foodEstimatePerPersonDay} onChange={handleNumberChange(updateFoodOptions, 'foodEstimatePerPersonDay')} min="0" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="e.g., 75" />
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="characterDiningBudget" className="block font-medium mb-1 text-gray-700">Character Dining / Signature Meals (Total extra $)</label>
-                        <input type="number" id="characterDiningBudget" value={foodOptions.characterDiningBudget} onChange={handleNumberChange(updateFoodOptions, 'characterDiningBudget')} min="0" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="e.g., 300" />
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="groceriesSnacks" className="block font-medium mb-1 text-gray-700">Groceries & Snacks (Total $)</label>
-                        <input type="number" id="groceriesSnacks" value={foodOptions.groceriesSnacks} onChange={handleNumberChange(updateFoodOptions, 'groceriesSnacks')} min="0" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="e.g., 100" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                {/* Transportation Section */}
+                <div className="bg-blue-50 rounded-xl p-6 shadow-md">
+                    <h2 className="text-xl font-semibold text-blue-800 mb-4">Transportation</h2>
+                    <div className="space-y-4">
+                        <div>
+                            <label htmlFor="flightCost" className="block text-sm font-medium text-gray-700 mb-1">Flight Costs (total)</label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">$</span>
+                                <input
+                                    id="flightCost"
+                                    type="number"
+                                    min="0"
+                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    value={transportationOptions.flightCost}
+                                    onChange={(e) => updateTransportationOptions('flightCost', parseInt(e.target.value) || 0)}
+                                    aria-label="Flight Costs total"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label htmlFor="airportTransport" className="block text-sm font-medium text-gray-700 mb-1">Airport Transportation (total)</label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">$</span>
+                                <input
+                                    id="airportTransport"
+                                    type="number"
+                                    min="0"
+                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    value={transportationOptions.airportTransport}
+                                    onChange={(e) => updateTransportationOptions('airportTransport', parseInt(e.target.value) || 0)}
+                                    aria-label="Airport Transportation total"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label htmlFor="rentalCarCost" className="block text-sm font-medium text-gray-700 mb-1">Rental Car (total)</label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">$</span>
+                                <input
+                                    id="rentalCarCost"
+                                    type="number"
+                                    min="0"
+                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    value={transportationOptions.rentalCarCost}
+                                    onChange={(e) => updateTransportationOptions('rentalCarCost', parseInt(e.target.value) || 0)}
+                                    aria-label="Rental Car total"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label htmlFor="gasTollsParking" className="block text-sm font-medium text-gray-700 mb-1">Gas, Tolls & Parking (total)</label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">$</span>
+                                <input
+                                    id="gasTollsParking"
+                                    type="number"
+                                    min="0"
+                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    value={transportationOptions.gasTollsParking}
+                                    onChange={(e) => updateTransportationOptions('gasTollsParking', parseInt(e.target.value) || 0)}
+                                    aria-label="Gas, Tolls and Parking total"
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </section>
 
-            {/* Souvenirs & Extras Section */}
-            <section id="souvenirsExtras" className="mb-8">
-                <h2 className="section-title text-xl font-semibold text-blue-700 mb-6 pb-2 border-b-2 border-blue-500">6. Souvenirs & Extras</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                    <div className="input-group">
-                        <label htmlFor="souvenirBudget" className="block font-medium mb-1 text-gray-700">Souvenir Budget (Total $)</label>
-                        <input type="number" id="souvenirBudget" value={extrasOptions.souvenirBudget} onChange={handleNumberChange(updateExtrasOptions, 'souvenirBudget')} min="0" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="e.g., 200" />
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="memoryMakerCost" className="block font-medium mb-1 text-gray-700">Memory Maker / PhotoPass ($)</label>
-                        <input type="number" id="memoryMakerCost" value={extrasOptions.memoryMakerCost} onChange={handleNumberChange(updateExtrasOptions, 'memoryMakerCost')} min="0" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="e.g., 199" />
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="specialEventsCost" className="block font-medium mb-1 text-gray-700">Special Events/Tours (Total $)</label>
-                        <input type="number" id="specialEventsCost" value={extrasOptions.specialEventsCost} onChange={handleNumberChange(updateExtrasOptions, 'specialEventsCost')} min="0" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="e.g., After Hours" />
+                {/* Food Section */}
+                <div className="bg-blue-50 rounded-xl p-6 shadow-md">
+                    <h2 className="text-xl font-semibold text-blue-800 mb-4">Food & Dining</h2>
+                    <div className="space-y-4">
+                        <div>
+                            <label htmlFor="foodEstimatePerPersonDay" className="block text-sm font-medium text-gray-700 mb-1">Food Budget (per person per day)</label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">$</span>
+                                <input
+                                    id="foodEstimatePerPersonDay"
+                                    type="number"
+                                    min="0"
+                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    value={foodOptions.foodEstimatePerPersonDay}
+                                    onChange={(e) => updateFoodOptions('foodEstimatePerPersonDay', parseInt(e.target.value) || 0)}
+                                    aria-label="Food Budget per person per day"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label htmlFor="characterDiningBudget" className="block text-sm font-medium text-gray-700 mb-1">Character Dining (total)</label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">$</span>
+                                <input
+                                    id="characterDiningBudget"
+                                    type="number"
+                                    min="0"
+                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    value={foodOptions.characterDiningBudget}
+                                    onChange={(e) => updateFoodOptions('characterDiningBudget', parseInt(e.target.value) || 0)}
+                                    aria-label="Character Dining total"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label htmlFor="groceriesSnacks" className="block text-sm font-medium text-gray-700 mb-1">Groceries & Snacks (total)</label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">$</span>
+                                <input
+                                    id="groceriesSnacks"
+                                    type="number"
+                                    min="0"
+                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    value={foodOptions.groceriesSnacks}
+                                    onChange={(e) => updateFoodOptions('groceriesSnacks', parseInt(e.target.value) || 0)}
+                                    aria-label="Groceries and Snacks total"
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </section>
 
-            {/* Contingency Fund Section */}
-            <section id="contingency" className="mb-8">
-                <h2 className="section-title text-xl font-semibold text-blue-700 mb-6 pb-2 border-b-2 border-blue-500">7. Contingency Fund</h2>
-                <div className="input-group">
-                    <label htmlFor="contingencyPercent" className="block font-medium mb-1 text-gray-700">Contingency Percentage (%)</label>
-                    <input type="number" id="contingencyPercent" value={contingencyPercent} onChange={(e) => setContingencyPercent(e.target.value === '' ? 0 : parseFloat(e.target.value))} min="0" max="100" step="1" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="e.g., 10" />
-                    <p className="text-xs text-gray-500 mt-1">Recommended for unexpected expenses.</p>
+                {/* Extras Section */}
+                <div className="bg-blue-50 rounded-xl p-6 shadow-md">
+                    <h2 className="text-xl font-semibold text-blue-800 mb-4">Extras</h2>
+                    <div className="space-y-4">
+                        <div>
+                            <label htmlFor="souvenirBudget" className="block text-sm font-medium text-gray-700 mb-1">Souvenir Budget (total)</label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">$</span>
+                                <input
+                                    id="souvenirBudget"
+                                    type="number"
+                                    min="0"
+                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    value={extrasOptions.souvenirBudget}
+                                    onChange={(e) => updateExtrasOptions('souvenirBudget', parseInt(e.target.value) || 0)}
+                                    aria-label="Souvenir Budget total"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label htmlFor="memoryMakerCost" className="block text-sm font-medium text-gray-700 mb-1">Memory Maker Photo Package</label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">$</span>
+                                <input
+                                    id="memoryMakerCost"
+                                    type="number"
+                                    min="0"
+                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    value={extrasOptions.memoryMakerCost}
+                                    onChange={(e) => updateExtrasOptions('memoryMakerCost', parseInt(e.target.value) || 0)}
+                                    aria-label="Memory Maker Photo Package cost"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label htmlFor="specialEventsCost" className="block text-sm font-medium text-gray-700 mb-1">Special Events (total)</label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">$</span>
+                                <input
+                                    id="specialEventsCost"
+                                    type="number"
+                                    min="0"
+                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    value={extrasOptions.specialEventsCost}
+                                    onChange={(e) => updateExtrasOptions('specialEventsCost', parseInt(e.target.value) || 0)}
+                                    aria-label="Special Events total cost"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label htmlFor="contingencyPercent" className="block text-sm font-medium text-gray-700 mb-1">Contingency (%)</label>
+                            <div className="relative">
+                                <input
+                                    id="contingencyPercent"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    value={contingencyPercent}
+                                    onChange={(e) => setContingencyPercent(parseInt(e.target.value) || 0)}
+                                    aria-label="Contingency Percentage"
+                                />
+                                <span className="absolute inset-y-0 right-0 flex items-center pr-3">%</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </section>
+            </div>
 
             {/* Summary Section */}
-            <section className="summary-section bg-blue-50 p-6 rounded-xl">
-                <h2 className="summary-title text-2xl font-bold text-blue-800 mb-6 text-center">Budget Summary</h2>
-                <div id="summaryOutput" className="space-y-2">
-                    <div className="summary-item flex justify-between text-gray-700"><span className="font-semibold text-blue-700">Park Tickets Cost:</span> <span className="font-bold text-blue-600">${summary.ticketCostTotal.toFixed(2)}</span></div>
-                    <div className="summary-item flex justify-between text-gray-700"><span className="font-semibold text-blue-700">Accommodation Cost:</span> <span className="font-bold text-blue-600">${summary.accommodationCostTotal.toFixed(2)}</span></div>
-                    <div className="summary-item flex justify-between text-gray-700"><span className="font-semibold text-blue-700">Transportation Cost:</span> <span className="font-bold text-blue-600">${summary.transportationCostTotal.toFixed(2)}</span></div>
-                    <div className="summary-item flex justify-between text-gray-700"><span className="font-semibold text-blue-700">Food & Dining Cost:</span> <span className="font-bold text-blue-600">${summary.foodCostTotal.toFixed(2)}</span></div>
-                    <div className="summary-item flex justify-between text-gray-700"><span className="font-semibold text-blue-700">Souvenirs & Extras Cost:</span> <span className="font-bold text-blue-600">${summary.extrasCostTotal.toFixed(2)}</span></div>
-                    <div className="summary-item flex justify-between text-gray-700 pt-2 border-t border-blue-200"><span className="font-semibold text-blue-700">Subtotal:</span> <span className="font-bold text-blue-600">${summary.subtotalCost.toFixed(2)}</span></div>
-                    <div className="summary-item flex justify-between text-gray-700"><span className="font-semibold text-blue-700">Contingency Fund:</span> <span className="font-bold text-blue-600">${summary.contingencyAmount.toFixed(2)}</span></div>
-                    <hr className="my-3 border-blue-300" />
-                    <div className="summary-item grand-total flex justify-between text-xl text-blue-800 font-bold pt-2 border-t-2 border-blue-500"><span>GRAND TOTAL:</span> <span>${summary.grandTotalCost.toFixed(2)}</span></div>
-                    <div className="summary-item flex justify-between text-lg text-blue-700 mt-1"><span className="font-semibold">Per Person Total:</span> <span className="font-bold">${summary.perPersonCost.toFixed(2)}</span></div>
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 shadow-lg text-white">
+                <h2 className="text-2xl font-bold mb-6 text-center">Budget Summary</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div>
+                        <h3 className="text-lg font-semibold mb-3">Trip Details</h3>
+                        <ul className="space-y-1">
+                            <li className="flex justify-between">
+                                <span>Adults:</span>
+                                <span>{tripDetails.numAdults}</span>
+                            </li>
+                            <li className="flex justify-between">
+                                <span>Children:</span>
+                                <span>{tripDetails.numChildren}</span>
+                            </li>
+                            <li className="flex justify-between">
+                                <span>Total People:</span>
+                                <span>{tripDetails.numAdults + tripDetails.numChildren}</span>
+                            </li>
+                            <li className="flex justify-between">
+                                <span>Nights:</span>
+                                <span>{tripDetails.numNights}</span>
+                            </li>
+                            <li className="flex justify-between">
+                                <span>Park Days:</span>
+                                <span>{tripDetails.numParkDays}</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 className="text-lg font-semibold mb-3">Costs Breakdown</h3>
+                        <ul className="space-y-1">
+                            <li className="flex justify-between">
+                                <span>Tickets:</span>
+                                <span>{formatCurrency(summary.ticketCostTotal)}</span>
+                            </li>
+                            <li className="flex justify-between">
+                                <span>Accommodation:</span>
+                                <span>{formatCurrency(summary.accommodationCostTotal)}</span>
+                            </li>
+                            <li className="flex justify-between">
+                                <span>Transportation:</span>
+                                <span>{formatCurrency(summary.transportationCostTotal)}</span>
+                            </li>
+                            <li className="flex justify-between">
+                                <span>Food & Dining:</span>
+                                <span>{formatCurrency(summary.foodCostTotal)}</span>
+                            </li>
+                            <li className="flex justify-between">
+                                <span>Extras:</span>
+                                <span>{formatCurrency(summary.extrasCostTotal)}</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 className="text-lg font-semibold mb-3">Totals</h3>
+                        <ul className="space-y-1">
+                            <li className="flex justify-between">
+                                <span>Subtotal:</span>
+                                <span>{formatCurrency(summary.subtotalCost)}</span>
+                            </li>
+                            <li className="flex justify-between">
+                                <span>Contingency ({formatPercent(contingencyPercent)}):</span>
+                                <span>{formatCurrency(summary.contingencyAmount)}</span>
+                            </li>
+                            <li className="flex justify-between font-bold text-xl mt-2 pt-2 border-t border-white">
+                                <span>GRAND TOTAL:</span>
+                                <span>{formatCurrency(summary.grandTotalCost)}</span>
+                            </li>
+                            <li className="flex justify-between font-semibold mt-2">
+                                <span>Cost Per Person:</span>
+                                <span>{formatCurrency(summary.perPersonCost)}</span>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
-                <p className="disclaimer text-xs text-gray-600 mt-6 text-center">All prices are estimates. Please check official Walt Disney World sources for current pricing. This calculator is for planning purposes only.</p>
-            </section>
+            </div>
+
+            <div className="mt-8 text-center text-gray-600">
+                <p className="text-sm">
+                    This calculator provides estimates based on your inputs. Actual costs may vary based on season, promotions, and personal choices.
+                </p>
+            </div>
         </div>
     );
 }
 
-export default React.memo(DisneyBudgetCalculator);
+export default DisneyBudgetCalculator;

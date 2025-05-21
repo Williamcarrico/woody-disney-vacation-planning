@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { AnnualEvent } from '@/types/events'
 import EventCard from './EventCard'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Calendar, Filter, Search } from 'lucide-react'
 import {
@@ -18,12 +18,11 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
 
 interface EventListProps {
-    events: AnnualEvent[]
-    title?: string
-    description?: string
+    readonly events: AnnualEvent[]
+    readonly title?: string
+    readonly description?: string
 }
 
 export default function EventList({ events, title, description }: EventListProps) {
@@ -265,7 +264,7 @@ export default function EventList({ events, title, description }: EventListProps
                     <div className="text-4xl mb-4">🔍</div>
                     <h3 className="text-xl font-medium mb-2">No events found</h3>
                     <p className="text-muted-foreground max-w-md">
-                        We couldn't find any events matching your filters. Try adjusting your search or filters to see more events.
+                        We couldn&apos;t find any events matching your filters. Try adjusting your search or filters to see more events.
                     </p>
                     <Button variant="outline" className="mt-4" onClick={clearFilters}>
                         Clear Filters

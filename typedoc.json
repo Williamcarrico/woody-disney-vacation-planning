@@ -1,0 +1,16 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/**/*.tsx", "src/**/*.ts"],
+  "entryPointStrategy": "expand",
+  "exclude": ["node_modules", ".next", "**/*.test.ts", "**/*.test.tsx"],
+  "out": "docs",
+  "plugin": ["typedoc-plugin-markdown"],
+  "theme": "hierarchy",
+  "name": "Disney Vacation Planning Documentation",
+  "includeVersion": true,
+  "categorizeByGroup": true,
+  "categoryOrder": ["Components", "Hooks", "Context", "API", "Utils", "*"],
+  "readme": "README.md",
+  "githubPages": true,
+  "cleanOutputDir": true
+}

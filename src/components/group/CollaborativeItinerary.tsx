@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/AuthContext'
@@ -94,7 +96,7 @@ interface Poll {
 }
 
 interface CollaborativeItineraryProps {
-    vacationId: string
+    readonly vacationId: string
 }
 
 export default function CollaborativeItinerary({ vacationId }: CollaborativeItineraryProps) {
@@ -266,6 +268,23 @@ export default function CollaborativeItinerary({ vacationId }: CollaborativeItin
         }
     }, [itinerary, selectedDay])
 
+    // Update the CSS variable implementation
+    useEffect(() => {
+        // Add CSS class for progress bar
+        const styleElement = document.createElement('style')
+        styleElement.innerHTML = `
+            .progress-bar {
+                transition: width 0.3s ease;
+            }
+        `
+        document.head.appendChild(styleElement)
+
+        return () => {
+            // Clean up on unmount
+            document.head.removeChild(styleElement)
+        }
+    }, [])
+
     // Event handlers
     const handleDaySelect = (date: string) => {
         setSelectedDay(date)
@@ -279,9 +298,10 @@ export default function CollaborativeItinerary({ vacationId }: CollaborativeItin
     }
 
     const handlePollVote = (pollId: string, optionId: string) => {
-        void (pollId);
-        void (optionId);
-        // In a real app, this would update Firestore
+        // Temporary console.log to satisfy linter - would be removed in production
+        console.log(`Recording vote for poll ${pollId}, option ${optionId}`)
+
+        // In a real app, this would update Firestore using the poll and option IDs
         toast.success("Vote recorded", {
             description: "Your vote has been recorded."
         })
@@ -394,6 +414,15 @@ export default function CollaborativeItinerary({ vacationId }: CollaborativeItin
         return userVote ? userVote.vote : null
     }
 
+    const getItemStatusClasses = (status: ItineraryItem['status']) => {
+        if (status === 'approved') {
+            return "border-green-500/20 bg-green-50/50 dark:bg-green-950/10"
+        } else if (status === 'rejected') {
+            return "border-red-500/20 bg-red-50/50 dark:bg-red-950/10"
+        }
+        return "border-muted bg-muted/10"
+    }
+
     if (isItineraryLoading || isPollsLoading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -476,12 +505,7 @@ export default function CollaborativeItinerary({ vacationId }: CollaborativeItin
                                     {selectedDayData.items.map(item => (
                                         <div
                                             key={item.id}
-                                            className={cn(
-                                                "border rounded-lg p-4",
-                                                item.status === 'approved' ? "border-green-500/20 bg-green-50/50 dark:bg-green-950/10" :
-                                                    item.status === 'rejected' ? "border-red-500/20 bg-red-50/50 dark:bg-red-950/10" :
-                                                        "border-muted bg-muted/10"
-                                            )}
+                                            className={cn("border rounded-lg p-4", getItemStatusClasses(item.status))}
                                         >
                                             <div className="flex justify-between items-start">
                                                 <div className="flex items-start gap-3">
@@ -646,6 +670,18 @@ export default function CollaborativeItinerary({ vacationId }: CollaborativeItin
                                                     : 0
                                                 const hasVoted = user && option.votes.includes(user.uid)
 
+                                                let buttonLabel;
+                                                if (hasVoted) {
+                                                    buttonLabel = (
+                                                        <>
+                                                            <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                                                            Voted
+                                                        </>
+                                                    )
+                                                } else {
+                                                    buttonLabel = 'Vote'
+                                                }
+
                                                 return (
                                                     <div key={option.id} className="rounded-md border p-2">
                                                         <div className="flex justify-between items-center">
@@ -663,22 +699,16 @@ export default function CollaborativeItinerary({ vacationId }: CollaborativeItin
                                                                 onClick={() => handlePollVote(poll.id, option.id)}
                                                                 disabled={poll.status !== 'active'}
                                                             >
-                                                                {hasVoted ? (
-                                                                    <>
-                                                                        <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-                                                                        Voted
-                                                                    </>
-                                                                ) : (
-                                                                    'Vote'
-                                                                )}
+                                                                {buttonLabel}
                                                             </Button>
                                                         </div>
 
                                                         {/* Progress bar for votes */}
-                                                        <div className="mt-2 w-full bg-muted rounded-full h-2 overflow-hidden">
+                                                        <div
+                                                            className="mt-2 w-full bg-muted rounded-full h-2 overflow-hidden"
+                                                        >
                                                             <div
-                                                                className="bg-primary h-full rounded-full transition-all"
-                                                                style={{ width: `${votePercentage}%` }}
+                                                                className={`bg-primary h-full rounded-full transition-all w-[${votePercentage}%]`}
                                                             />
                                                         </div>
                                                     </div>

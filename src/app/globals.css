@@ -8,6 +8,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-luckiest: var(--font-luckiest);
+  --font-cabin-sketch: var(--font-cabin-sketch);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -41,6 +43,17 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Disney-inspired custom font classes */
+.font-luckiest {
+  font-family: var(--font-luckiest);
+  letter-spacing: 0.025em;
+}
+
+.font-cabin-sketch {
+  font-family: var(--font-cabin-sketch);
+  letter-spacing: 0.01em;
 }
 
 :root {
@@ -372,17 +385,14 @@
 }
 
 .castle-silhouette {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 30vh;
+  position: relative;
+  width: 100%;
+  height: 100%;
   background-image: url("/images/castle-silhouette.svg");
   background-repeat: no-repeat;
-  background-position: bottom center;
+  background-position: center;
   background-size: contain;
-  opacity: 0.1;
-  z-index: 1;
+  opacity: 0.8;
 }
 
 @keyframes firework {
@@ -551,4 +561,44 @@
 /* Progress Bar Utility */
 .w-progress-bar {
   width: var(--progress-percent);
+}
+
+/* Data attribute versions - CSS custom properties approach */
+[data-category-color],
+[data-category-bg] {
+  --category-color: attr(data-category-color);
+  --category-color-bg: attr(data-category-bg);
+}
+
+[data-progress-percent] {
+  --progress-percent: attr(data-progress-percent);
+}
+
+/* Calendar Specific Styles */
+.calendar-event-height {
+  height: calc(100% - 4px);
+}
+
+/* Z-index using custom properties */
+.fixed[style*="--z-index"] {
+  z-index: var(--z-index);
+}
+
+/* Tour Position Styles */
+.tour-position {
+  position: fixed;
+  top: attr(data-top);
+  right: attr(data-right);
+  bottom: attr(data-bottom);
+  left: attr(data-left);
+  transform: attr(data-transform);
+}
+
+/* Highlight rectangle styles */
+.highlight-rect {
+  position: absolute;
+  top: attr(data-top);
+  left: attr(data-left);
+  width: attr(data-width);
+  height: attr(data-height);
 }

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 export default function AboutLayout({
     children,
 }: {
-    children: React.ReactNode
+    readonly children: React.ReactNode
 }) {
     return children
 }

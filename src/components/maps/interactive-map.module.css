@@ -1,0 +1,33 @@
+.mapContainer {
+  position: relative;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+/* Common heights */
+.h-300 {
+  height: 300px;
+}
+.h-400 {
+  height: 400px;
+}
+.h-500 {
+  height: 500px;
+}
+.h-600 {
+  height: 600px;
+}
+.h-full {
+  height: 100%;
+}
+
+/* Common widths */
+.w-full {
+  width: 100%;
+}
+.w-half {
+  width: 50%;
+}
+.w-auto {
+  width: auto;
+}

@@ -71,6 +71,8 @@ export default function ResortMap({ resorts }: ResortMapProps) {
         switch (category) {
             case ResortCategory.Value:
                 return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+            case ResortCategory.ValuePlus:
+                return "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300"
             case ResortCategory.Moderate:
                 return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
             case ResortCategory.Deluxe:
@@ -112,6 +114,7 @@ export default function ResortMap({ resorts }: ResortMapProps) {
                         if (typeof window !== 'undefined') {
                             const categoryColorMap = {
                                 [ResortCategory.Value]: 'blue',
+                                [ResortCategory.ValuePlus]: 'cyan',
                                 [ResortCategory.Moderate]: 'yellow',
                                 [ResortCategory.Deluxe]: 'purple',
                                 [ResortCategory.DeluxeVilla]: 'indigo',
@@ -230,6 +233,7 @@ export default function ResortMap({ resorts }: ResortMapProps) {
                             {Object.values(ResortCategory).map(category => {
                                 const categoryColorMap = {
                                     [ResortCategory.Value]: 'bg-blue-500',
+                                    [ResortCategory.ValuePlus]: 'bg-cyan-500',
                                     [ResortCategory.Moderate]: 'bg-yellow-500',
                                     [ResortCategory.Deluxe]: 'bg-purple-500',
                                     [ResortCategory.DeluxeVilla]: 'bg-indigo-500',
