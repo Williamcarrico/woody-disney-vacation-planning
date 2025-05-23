@@ -1,17 +1,20 @@
 import * as itineraries from './schema/itineraries'
+import * as users from './schema/users'
+import * as vacations from './schema/vacations'
+import * as locations from './schema/locations'
 
 // Export all schema objects
 export {
     itineraries,
-    // Add others as they are created
-    // users,
-    // vacations,
+    users,
+    vacations,
+    locations,
 }
 
 // Create a single db object containing all schemas
 export const schema = {
     ...itineraries,
-    // Spread others as they are created
-    // ...users,
-    // ...vacations,
+    ...users,
+    ...vacations,
+    ...locations,
 }

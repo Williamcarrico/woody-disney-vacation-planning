@@ -1,7 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, useCallback } from "react"
-/// <reference types="react" />
+import React, { useState, useEffect, useMemo } from "react"
 import Image from "next/image"
 import {
     Card,
@@ -43,11 +42,8 @@ import {
     BarChart3,
     Users,
     Maximize2,
-    Minimize2,
     ExternalLink,
     Sun,
-    Moon,
-    CloudDrizzle,
     Search,
     ListFilter,
     SlidersHorizontal
@@ -70,7 +66,7 @@ const mockAttractions: Attraction[] = [
         geniePlus: { available: true, nextAvailableTime: "10:30 AM", isLightningLane: false },
         riderSwitchAvailable: true,
         heightRequirement: "44in (112cm)",
-        thrillLevels: ["Coaster", "Dark", "Thrill"],
+        thrillLevels: ["Coaster", "Dark Ride"],
         tags: ["Indoor", "Fast"],
         duration: "3 minutes",
         userRating: 4.7,
@@ -262,7 +258,7 @@ export default function WaitTimesDashboard({
     vacationId,
     compact = false,
     initialParkId = ALL_PARKS_ID
-}: WaitTimesDashboardProps): JSX.Element {
+}: WaitTimesDashboardProps): React.ReactElement {
     const [attractions, setAttractions] = useState<Attraction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -504,7 +500,12 @@ export default function WaitTimesDashboard({
                 {/* Park Selector */}
                 <div className="md:col-span-6 lg:col-span-2">
                     {!compact && <Label htmlFor="park-select" className="text-sm font-medium">Park</Label>}
-                    <Select value={selectedPark} onValueChange={(value) => setSelectedPark(value as ParkId | typeof ALL_PARKS_ID)}>
+                    <Select value={selectedPark} onValueChange={(value) => {
+                        const typedValue = value as ParkId | typeof ALL_PARKS_ID;
+                        // Verify the value matches expected type
+                        typedValue satisfies ParkId | typeof ALL_PARKS_ID;
+                        setSelectedPark(typedValue);
+                    }}>
                         <SelectTrigger id="park-select">
                             <SelectValue placeholder="Select Park" />
                         </SelectTrigger>
@@ -521,7 +522,12 @@ export default function WaitTimesDashboard({
                 <div className="md:col-span-6 lg:col-span-3 flex items-end gap-2">
                     <div className="flex-grow">
                         {!compact && <Label htmlFor="sort-by" className="text-sm font-medium">Sort By</Label>}
-                        <Select value={sortBy} onValueChange={(value) => setSortBy(value as "waitTime" | "name")}>
+                        <Select value={sortBy} onValueChange={(value) => {
+                            const typedValue = value as "waitTime" | "name";
+                            // Verify the value matches expected type
+                            typedValue satisfies "waitTime" | "name";
+                            setSortBy(typedValue);
+                        }}>
                             <SelectTrigger id="sort-by">
                                 <SelectValue placeholder="Sort by" />
                             </SelectTrigger>
@@ -599,7 +605,6 @@ export default function WaitTimesDashboard({
                                                                 id={`thrill-${level}`}
                                                                 checked={selectedThrillLevels.includes(level)}
                                                                 onCheckedChange={() => handleThrillLevelChange(level)}
-                                                                size="sm"
                                                             />
                                                             <Label htmlFor={`thrill-${level}`} className="text-sm font-normal">{level}</Label>
                                                         </div>
@@ -922,6 +927,3 @@ function WaitTimesDashboardSkeleton({ compact = false }: { compact?: boolean }) 
     );
 }
 
-
-</code_block_to_apply_changes_from >
-</rewritten_file >

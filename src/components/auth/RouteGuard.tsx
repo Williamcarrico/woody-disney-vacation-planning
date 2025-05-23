@@ -30,7 +30,7 @@ export function RouteGuard({
     if (loading || !user) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-500"></div>
+                <div className="text-2xl animate-spin">⏳</div>
             </div>
         )
     }

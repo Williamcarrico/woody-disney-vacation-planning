@@ -226,7 +226,7 @@ function DisneyGeniePlanner({ vacationId, maxSelections = 8 }: DisneyGeniePlanne
             <Card
                 key={att.id}
                 className={`group relative overflow-hidden hover:shadow-lg transition-shadow ${compact ? "flex" : ""
-                    } ${isSelected ? "border-primary/60 ring-2 ring-primary/40" : ""}`}
+                    } ${isSelected ? "border-primary/60 ring-[2px] ring-primary/40" : ""}`}
             >
                 {/* Thumbnail */}
                 <div className={compact ? "relative w-20 h-20 flex-shrink-0" : "relative w-full h-40"}>

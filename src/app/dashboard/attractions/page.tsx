@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { useState } from "react"
 import { attractions } from "@/lib/utils/attractionData"
 import { Attraction, AttractionType, Park } from "@/types/attraction"

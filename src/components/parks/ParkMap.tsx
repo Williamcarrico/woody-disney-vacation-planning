@@ -1,5 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
 import { getPark } from '@/lib/api/themeParks';
 import type { Attraction, Coordinates } from '@/types/api';
 import {
@@ -19,9 +21,12 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { AlertCircle, Compass, Maximize, Minimize, MapPin, Map as MapIcon, ArrowUp } from "lucide-react";
+import { AlertCircle, Maximize, Minimize, Map as MapIcon, ArrowUp, Locate, RotateCcw } from "lucide-react";
 import { cn } from '@/lib/utils';
 import styles from './ParkMap.module.css';
+
+// Import Leaflet CSS
+import 'leaflet/dist/leaflet.css';
 
 // Type definitions
 type MapViewMode = 'standard' | 'waitTimes' | 'heatmap';
@@ -47,55 +52,123 @@ interface AreaData {
     coordinates: Coordinates;
     radius: number;
     color: string;
+    fillColor: string;
+    name: string;
 }
 
-// Mock coordinates for testing (in a real app, these would come from the API)
-const mockAreaCoordinates: Record<string, AreaData> = {
+interface UserLocation {
+    latitude: number;
+    longitude: number;
+    accuracy?: number;
+}
+
+// Disney World Magic Kingdom coordinates (approximate center)
+const DEFAULT_CENTER: [number, number] = [28.4177, -81.5812];
+
+// Park area definitions with proper coordinates
+const PARK_AREAS: Record<string, AreaData> = {
     'fantasyland': {
-        coordinates: { latitude: 28.420, longitude: -81.581 },
-        radius: 150,
-        color: 'rgba(147, 51, 234, 0.2)' // Purple
+        coordinates: { latitude: 28.4203, longitude: -81.5796 },
+        radius: 200,
+        color: '#8B5CF6',
+        fillColor: 'rgba(139, 92, 246, 0.2)',
+        name: 'Fantasyland'
     },
     'tomorrowland': {
-        coordinates: { latitude: 28.419, longitude: -81.579 },
-        radius: 120,
-        color: 'rgba(6, 182, 212, 0.2)' // Cyan
+        coordinates: { latitude: 28.4186, longitude: -81.5778 },
+        radius: 180,
+        color: '#06B6D4',
+        fillColor: 'rgba(6, 182, 212, 0.2)',
+        name: 'Tomorrowland'
     },
     'frontierland': {
-        coordinates: { latitude: 28.418, longitude: -81.583 },
-        radius: 130,
-        color: 'rgba(180, 83, 9, 0.2)' // Amber
+        coordinates: { latitude: 28.4198, longitude: -81.5845 },
+        radius: 190,
+        color: '#D97706',
+        fillColor: 'rgba(217, 119, 6, 0.2)',
+        name: 'Frontierland'
     },
     'adventureland': {
-        coordinates: { latitude: 28.419, longitude: -81.584 },
-        radius: 100,
-        color: 'rgba(5, 150, 105, 0.2)' // Emerald
+        coordinates: { latitude: 28.4178, longitude: -81.5838 },
+        radius: 150,
+        color: '#059669',
+        fillColor: 'rgba(5, 150, 105, 0.2)',
+        name: 'Adventureland'
     },
     'liberty_square': {
-        coordinates: { latitude: 28.419, longitude: -81.582 },
-        radius: 80,
-        color: 'rgba(185, 28, 28, 0.2)' // Red
+        coordinates: { latitude: 28.4189, longitude: -81.5825 },
+        radius: 120,
+        color: '#DC2626',
+        fillColor: 'rgba(220, 38, 38, 0.2)',
+        name: 'Liberty Square'
     },
     'main_street': {
-        coordinates: { latitude: 28.417, longitude: -81.582 },
-        radius: 90,
-        color: 'rgba(30, 64, 175, 0.2)' // Blue
+        coordinates: { latitude: 28.4158, longitude: -81.5811 },
+        radius: 140,
+        color: '#1E40AF',
+        fillColor: 'rgba(30, 64, 175, 0.2)',
+        name: 'Main Street U.S.A.'
     }
+};
+
+// Custom marker icons
+const createMarkerIcon = (
+    color: string,
+    size: number = 30,
+    waitTime?: number,
+    status?: AttractionStatus
+): L.DivIcon => {
+    const iconSize = Math.max(20, Math.min(40, size));
+    const fontSize = Math.max(10, iconSize * 0.4);
+
+    let iconHtml = '';
+
+    if (waitTime !== undefined && status === 'OPERATING') {
+        iconHtml = `
+            <div class="${styles.markerIcon}" style="--icon-size: ${iconSize}px; --icon-color: ${color}; --icon-font-size: ${fontSize}px;">
+                ${waitTime}
+            </div>
+        `;
+    } else {
+        const statusIcon = status === 'DOWN' ? '⚠️' : status === 'CLOSED' ? '🚫' : '📍';
+        const statusFontSize = Math.max(8, iconSize * 0.35);
+        iconHtml = `
+            <div class="${styles.markerIcon}" style="--icon-size: ${iconSize}px; --icon-color: ${color}; --icon-font-size: ${statusFontSize}px;">
+                ${statusIcon}
+            </div>
+        `;
+    }
+
+    return L.divIcon({
+        html: iconHtml,
+        className: 'custom-marker',
+        iconSize: [iconSize, iconSize],
+        iconAnchor: [iconSize / 2, iconSize / 2],
+        popupAnchor: [0, -iconSize / 2]
+    });
+};
+
+// User location icon
+const createUserLocationIcon = (): L.DivIcon => {
+    return L.divIcon({
+        html: `<div class="${styles.userLocationIcon}"></div>`,
+        className: 'user-location-marker',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+    });
 };
 
 // Helper functions
 const findAreaForAttraction = (attraction: Attraction): string => {
     if (attraction.tags) {
         const areaTags = attraction.tags.filter(tag =>
-            Object.keys(mockAreaCoordinates).includes(tag)
+            Object.keys(PARK_AREAS).includes(tag)
         );
-
         if (areaTags.length > 0) {
             return areaTags[0];
         }
     }
 
-    // Try to determine from name
     const name = attraction.name.toLowerCase();
     if (name.includes('fantasy')) return 'fantasyland';
     if (name.includes('tomorrow')) return 'tomorrowland';
@@ -104,48 +177,47 @@ const findAreaForAttraction = (attraction: Attraction): string => {
     if (name.includes('liberty')) return 'liberty_square';
     if (name.includes('main street')) return 'main_street';
 
-    return 'main_street'; // Default
+    return 'main_street';
 };
 
-const generateRandomOffset = (): number => (Math.random() - 0.5) * 0.002; // ~100-200 meters
+const generateCoordinatesInArea = (areaKey: string): Coordinates => {
+    const area = PARK_AREAS[areaKey];
+    const offsetLat = (Math.random() - 0.5) * 0.003;
+    const offsetLng = (Math.random() - 0.5) * 0.003;
 
-// Assign mock coordinates to attractions if needed
+    return {
+        latitude: area.coordinates.latitude + offsetLat,
+        longitude: area.coordinates.longitude + offsetLng
+    };
+};
+
 const assignMockCoordinates = (attractions: Attraction[]): Attraction[] => {
     return attractions.map(attraction => {
         if (attraction.location) return attraction;
 
-        // Find area for the attraction
         const area = findAreaForAttraction(attraction);
-
-        // Get base coordinates for the area
-        const baseCoordinates = mockAreaCoordinates[area].coordinates;
+        const location = generateCoordinatesInArea(area);
 
         return {
             ...attraction,
-            location: {
-                latitude: baseCoordinates.latitude + generateRandomOffset(),
-                longitude: baseCoordinates.longitude + generateRandomOffset(),
-            }
+            location
         };
     });
 };
 
-// Determine wait time color based on time
 const getWaitTimeColor = (waitTime: number | null, status: AttractionStatus): string => {
     if (status !== 'OPERATING') {
-        if (status === 'DOWN') return '#f59e0b'; // Amber
-        return '#6b7280'; // Gray for CLOSED or REFURBISHMENT
+        if (status === 'DOWN') return '#F59E0B';
+        return '#6B7280';
     }
 
-    if (waitTime === null) return '#059669'; // Green
-
-    if (waitTime <= 10) return '#059669'; // Green
-    if (waitTime <= 30) return '#2563eb'; // Blue
-    if (waitTime <= 60) return '#d97706'; // Amber
-    return '#dc2626'; // Red
+    if (waitTime === null) return '#059669';
+    if (waitTime <= 10) return '#059669';
+    if (waitTime <= 30) return '#2563EB';
+    if (waitTime <= 60) return '#D97706';
+    return '#DC2626';
 };
 
-// Filter attractions based on criteria
 const filterAttractions = (
     attractions: Attraction[],
     filter: FilterMode,
@@ -156,12 +228,10 @@ const filterAttractions = (
     if (!attractions) return [];
 
     return attractions.filter(attraction => {
-        // Apply attraction type filter
         if (filter === 'rides' && attraction.attractionType !== 'RIDE') return false;
         if (filter === 'shows' && attraction.attractionType !== 'SHOW') return false;
-        if (filter === 'dining') return false; // Don't show attractions when dining filter is selected
+        if (filter === 'dining') return false;
 
-        // Apply wait time filter
         if (mapView === 'waitTimes' && waitTimeData) {
             const standbyWait = waitTimeData[attraction.id]?.waitTime?.standby;
             if (standbyWait != null && standbyWait > maxWaitTime) {
@@ -173,7 +243,30 @@ const filterAttractions = (
     });
 };
 
-// Components
+// Map event handlers
+const MapEventHandler = ({
+    onLocationFound,
+    onLocationError
+}: {
+    onLocationFound: (location: UserLocation) => void;
+    onLocationError: (error: string) => void;
+}) => {
+    useMapEvents({
+        locationfound: (e) => {
+            onLocationFound({
+                latitude: e.latlng.lat,
+                longitude: e.latlng.lng,
+                accuracy: e.accuracy
+            });
+        },
+        locationerror: (e) => {
+            onLocationError(e.message);
+        }
+    });
+    return null;
+};
+
+// Map controls component
 const MapControls = ({
     mapView,
     setMapView,
@@ -238,170 +331,37 @@ const MapControls = ({
     </div>
 );
 
-const ParkAreas = ({ zoom }: { zoom: number }) => (
-    <>
-        {Object.entries(mockAreaCoordinates).map(([area, data]) => {
-            // Apply CSS variables for this specific area
-            document.documentElement.style.setProperty('--area-bg-color', data.color);
-            document.documentElement.style.setProperty('--area-size', `${data.radius * 2 * (zoom / 16)}px`);
-            document.documentElement.style.setProperty('--area-left', `${(data.coordinates.longitude + 81.582) * 100000}px`);
-            document.documentElement.style.setProperty('--area-top', `${(28.42 - data.coordinates.latitude) * 100000}px`);
-
-            return (
-                <div key={area} className={styles.parkArea}>
-                    <div className={styles.parkAreaLabel}>
-                        {area.replace('_', ' ')}
-                    </div>
-                </div>
-            );
-        })}
-    </>
-);
-
-const PathsBetweenAreas = () => (
-    <div className="absolute inset-0">
-        <svg width="100%" height="100%" className="absolute">
-            {Object.entries(mockAreaCoordinates).map(([area1, data1], i) =>
-                Object.entries(mockAreaCoordinates).slice(i + 1).map(([area2, data2]) => (
-                    <line
-                        key={`${area1}-${area2}`}
-                        x1={`${(data1.coordinates.longitude + 81.582) * 100000}`}
-                        y1={`${(28.42 - data1.coordinates.latitude) * 100000}`}
-                        x2={`${(data2.coordinates.longitude + 81.582) * 100000}`}
-                        y2={`${(28.42 - data2.coordinates.latitude) * 100000}`}
-                        stroke="#d1d5db"
-                        strokeWidth="4"
-                        strokeDasharray="5,5"
-                        strokeLinecap="round"
-                    />
-                ))
-            )}
-        </svg>
-    </div>
-);
-
-const WaitTimeBadge = ({ waitTime, size }: { waitTime: number; size: number }) => {
-    // Apply CSS variable for this wait time badge
-    document.documentElement.style.setProperty('--marker-wait-time-font-size', `${size * 0.375}px`);
+// Park areas overlay component
+const ParkAreasOverlay = ({ showAreas }: { showAreas: boolean }) => {
+    if (!showAreas) return null;
 
     return (
-        <span className={styles.waitTimeLabel}>
-            {waitTime}
-        </span>
-    );
-};
-
-const AttractionLabel = ({
-    name,
-    size,
-    isSelected
-}: {
-    name: string;
-    size: number;
-    isSelected: boolean;
-}) => {
-    // Apply CSS variables for this label
-    document.documentElement.style.setProperty('--attraction-label-font-size', `${size * 0.625}px`);
-    document.documentElement.style.setProperty('--attraction-label-bottom', `${size + 4}px`);
-    document.documentElement.style.setProperty('--attraction-label-left', '50%');
-
-    return (
-        <div className={cn(
-            styles.attractionLabel,
-            isSelected && styles.selectedLabel
-        )}>
-            {name}
-        </div>
-    );
-};
-
-const AttractionMarker = ({
-    attraction,
-    mapView,
-    zoom,
-    isSelected,
-    waitTimeData,
-    onSelect
-}: {
-    attraction: Attraction;
-    mapView: MapViewMode;
-    zoom: number;
-    isSelected: boolean;
-    waitTimeData?: Record<string, AttractionWaitTimeData>;
-    onSelect: () => void;
-}) => {
-    if (!attraction.location) return null;
-
-    // Determine pin size based on attraction type
-    const size = attraction.attractionType === 'RIDE' ?
-        24 * (zoom / 16) :
-        18 * (zoom / 16);
-
-    // Determine pin color based on wait time or status
-    let color = '#6b7280'; // Default gray
-    let waitTime: number | null = null;
-    let status: AttractionStatus = 'CLOSED';
-
-    const attractionWaitTimeData = waitTimeData?.[attraction.id];
-
-    if (attractionWaitTimeData) {
-        status = attractionWaitTimeData.status;
-        if (status === 'OPERATING') {
-            waitTime = attractionWaitTimeData.waitTime?.standby ?? null;
-        }
-        color = getWaitTimeColor(waitTime, status);
-    }
-
-    // Apply CSS variables for this marker
-    document.documentElement.style.setProperty('--marker-left', `${(attraction.location.longitude + 81.582) * 100000}px`);
-    document.documentElement.style.setProperty('--marker-top', `${(28.42 - attraction.location.latitude) * 100000}px`);
-    document.documentElement.style.setProperty('--marker-bg-color', color);
-    document.documentElement.style.setProperty('--marker-size', `${size}px`);
-
-    return (
-        <button
-            key={attraction.id}
-            type="button"
-            tabIndex={0}
-            aria-label={`Select attraction ${attraction.name}`}
-            className={styles.markerButton}
-            onClick={onSelect}
-        >
-            <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <div className="relative">
-                            <div className={styles.markerPin}>
-                                {mapView === 'waitTimes' && waitTime !== null ? (
-                                    <WaitTimeBadge waitTime={waitTime} size={size} />
-                                ) : (
-                                    <MapPin size={size * 0.5} />
-                                )}
-                            </div>
-                            <AttractionLabel
-                                name={attraction.name}
-                                size={size}
-                                isSelected={isSelected}
-                            />
+        <>
+            {Object.entries(PARK_AREAS).map(([areaKey, area]) => (
+                <Circle
+                    key={areaKey}
+                    center={[area.coordinates.latitude, area.coordinates.longitude]}
+                    radius={area.radius}
+                    color={area.color}
+                    fillColor={area.fillColor}
+                    fillOpacity={0.3}
+                    weight={2}
+                >
+                    <Popup>
+                        <div className="text-center">
+                            <h3 className="font-semibold">{area.name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                                Theme park area
+                            </p>
                         </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <div className="space-y-1">
-                            <p className="font-semibold">{attraction.name}</p>
-                            {waitTime !== null && status === 'OPERATING' && (
-                                <p>Wait Time: {waitTime} minutes</p>
-                            )}
-                            {status !== 'OPERATING' && (
-                                <p>{status.charAt(0) + status.slice(1).toLowerCase().replace('_', ' ')}</p>
-                            )}
-                        </div>
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
-        </button>
+                    </Popup>
+                </Circle>
+            ))}
+        </>
     );
 };
 
+// Wait time legend component
 const WaitTimeLegend = () => (
     <div className={styles.mapLegend}>
         <div className="font-semibold mb-1">Wait Times</div>
@@ -428,42 +388,26 @@ const WaitTimeLegend = () => (
     </div>
 );
 
-const UserLocation = () => (
-    <div className={styles.userLocation}>
-        <div className="relative">
-            <div className={styles.userLocationDot}></div>
-            <div className={styles.userLocationPing}></div>
-        </div>
-    </div>
+// User location marker component
+const UserLocationMarker = ({ location }: { location: UserLocation }) => (
+    <Marker
+        position={[location.latitude, location.longitude]}
+        icon={createUserLocationIcon()}
+    >
+        <Popup>
+            <div className="text-center">
+                <h3 className="font-semibold">Your Location</h3>
+                {location.accuracy && (
+                    <p className="text-sm text-muted-foreground">
+                        Accuracy: ±{Math.round(location.accuracy)}m
+                    </p>
+                )}
+            </div>
+        </Popup>
+    </Marker>
 );
 
-const NorthIndicator = () => (
-    <div className={styles.northIndicator}>
-        <ArrowUp className={styles.northIcon} />
-    </div>
-);
-
-const LoadingIndicator = () => (
-    <div className={styles.loadingOverlay}>
-        <div className="text-center">
-            <div className={styles.loadingSpinner}></div>
-            <p className="mt-2 text-sm text-muted-foreground">Loading map data...</p>
-        </div>
-    </div>
-);
-
-const ComingSoonMessage = () => (
-    <div className={styles.comingSoonOverlay}>
-        <div className={styles.comingSoonMessage}>
-            <AlertCircle className="h-6 w-6 mx-auto text-amber-500 mb-2" />
-            <h3 className="text-sm font-semibold">Interactive Map Coming Soon</h3>
-            <p className="text-xs text-muted-foreground mt-1">
-                This is a placeholder. The final implementation will use a real interactive map with accurate geolocation.
-            </p>
-        </div>
-    </div>
-);
-
+// Selected attraction info component
 const SelectedAttractionInfo = ({
     attraction,
     waitTimeData
@@ -486,16 +430,29 @@ const SelectedAttractionInfo = ({
                 {selectedWaitTimeData && (
                     <div className="mt-4">
                         <h4 className="text-sm font-semibold mb-1">Current Status</h4>
-                        <div className="flex items-center">
+                        <div className="flex items-center gap-2 flex-wrap">
                             <Badge variant="outline">
                                 {selectedWaitTimeData.status}
                             </Badge>
 
                             {selectedWaitTimeData.waitTime?.standby != null && (
-                                <Badge className="ml-2" variant="secondary">
+                                <Badge variant="secondary">
                                     Wait: {selectedWaitTimeData.waitTime.standby} minutes
                                 </Badge>
                             )}
+                        </div>
+                    </div>
+                )}
+
+                {attraction.tags && (
+                    <div className="mt-3">
+                        <h4 className="text-sm font-semibold mb-1">Tags</h4>
+                        <div className="flex flex-wrap gap-1">
+                            {attraction.tags.map((tag) => (
+                                <Badge key={tag} variant="outline" className="text-xs">
+                                    {tag}
+                                </Badge>
+                            ))}
                         </div>
                     </div>
                 )}
@@ -504,8 +461,7 @@ const SelectedAttractionInfo = ({
     );
 };
 
-// Map component that uses mapbox-gl or a similar library in a real-world app
-// This is a simplified mock version for demonstration
+// Main map component
 export default function ParkMap({
     parkId,
     attractions,
@@ -514,13 +470,23 @@ export default function ParkMap({
     height = '600px'
 }: ParkMapProps) {
     const [mapView, setMapView] = useState<MapViewMode>('standard');
-    const [zoom, setZoom] = useState(16);
     const [selectedAttraction, setSelectedAttraction] = useState<Attraction | null>(null);
     const [filter, setFilter] = useState<FilterMode>('all');
     const [maxWaitTime, setMaxWaitTime] = useState(240);
+    const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+    const [locationError, setLocationError] = useState<string | null>(null);
+    const [mapRef, setMapRef] = useState<L.Map | null>(null);
+    const mapContainerRef = useRef<HTMLDivElement>(null);
 
-    // Fetch detailed park information
-    const { data: parkDetails, isLoading: isLoadingPark } = useQuery({
+    // Set dynamic height via CSS custom property
+    useEffect(() => {
+        if (mapContainerRef.current) {
+            mapContainerRef.current.style.setProperty('--map-height', height);
+        }
+    }, [height]);
+
+    // Fetch park details
+    const { data: parkDetails } = useQuery({
         queryKey: ['parkDetails', parkId],
         queryFn: () => getPark(parkId),
     });
@@ -531,7 +497,7 @@ export default function ParkMap({
         return assignMockCoordinates(attractions);
     }, [attractions]);
 
-    // Filter attractions based on criteria
+    // Filter attractions
     const filteredAttractions = useMemo(() =>
         filterAttractions(
             attractionsWithCoordinates,
@@ -540,10 +506,76 @@ export default function ParkMap({
             waitTimeData,
             maxWaitTime
         ),
-        [attractionsWithCoordinates, filter, waitTimeData, mapView, maxWaitTime]);
+        [attractionsWithCoordinates, filter, waitTimeData, mapView, maxWaitTime]
+    );
 
-    // Set CSS variable for map height
-    document.documentElement.style.setProperty('--map-height', height);
+    // Geolocation functions
+    const requestUserLocation = useCallback(() => {
+        if (mapRef) {
+            mapRef.locate({ setView: false, maxZoom: 16 });
+        }
+    }, [mapRef]);
+
+    const resetMapView = useCallback(() => {
+        if (mapRef) {
+            mapRef.setView(DEFAULT_CENTER, 16);
+        }
+    }, [mapRef]);
+
+    const zoomIn = useCallback(() => {
+        if (mapRef) {
+            mapRef.zoomIn();
+        }
+    }, [mapRef]);
+
+    const zoomOut = useCallback(() => {
+        if (mapRef) {
+            mapRef.zoomOut();
+        }
+    }, [mapRef]);
+
+    // Handle location found
+    const handleLocationFound = useCallback((location: UserLocation) => {
+        setUserLocation(location);
+        setLocationError(null);
+    }, []);
+
+    // Handle location error
+    const handleLocationError = useCallback((error: string) => {
+        setLocationError(error);
+        setUserLocation(null);
+    }, []);
+
+    // Generate heat map data for wait times
+    const generateHeatMapData = useMemo(() => {
+        if (mapView !== 'heatmap' || !waitTimeData) return [];
+
+        return filteredAttractions
+            .filter(attraction => {
+                const data = waitTimeData[attraction.id];
+                return data?.waitTime?.standby && data.status === 'OPERATING';
+            })
+            .map(attraction => {
+                const waitTime = waitTimeData[attraction.id]?.waitTime?.standby || 0;
+                const intensity = Math.min(waitTime / 60, 1); // Normalize to 0-1
+
+                return {
+                    location: attraction.location!,
+                    intensity,
+                    waitTime
+                };
+            });
+    }, [filteredAttractions, waitTimeData, mapView]);
+
+    // Effect to clean up location error after time
+    useEffect(() => {
+        if (locationError) {
+            const timer = setTimeout(() => {
+                setLocationError(null);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [locationError]);
 
     return (
         <div className="space-y-4">
@@ -559,9 +591,24 @@ export default function ParkMap({
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <button
+                                            aria-label="Find My Location"
+                                            className="p-2 rounded-full hover:bg-secondary"
+                                            onClick={requestUserLocation}
+                                        >
+                                            <Locate className="h-4 w-4" />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Find My Location</TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button
                                             aria-label="Zoom In"
                                             className="p-2 rounded-full hover:bg-secondary"
-                                            onClick={() => setZoom(Math.min(zoom + 1, 18))}
+                                            onClick={zoomIn}
                                         >
                                             <Maximize className="h-4 w-4" />
                                         </button>
@@ -576,7 +623,7 @@ export default function ParkMap({
                                         <button
                                             aria-label="Zoom Out"
                                             className="p-2 rounded-full hover:bg-secondary"
-                                            onClick={() => setZoom(Math.max(zoom - 1, 14))}
+                                            onClick={zoomOut}
                                         >
                                             <Minimize className="h-4 w-4" />
                                         </button>
@@ -591,11 +638,9 @@ export default function ParkMap({
                                         <button
                                             aria-label="Reset View"
                                             className="p-2 rounded-full hover:bg-secondary"
-                                            onClick={() => {
-                                                // Reset view in a real map implementation
-                                            }}
+                                            onClick={resetMapView}
                                         >
-                                            <Compass className="h-4 w-4" />
+                                            <RotateCcw className="h-4 w-4" />
                                         </button>
                                     </TooltipTrigger>
                                     <TooltipContent>Reset View</TooltipContent>
@@ -614,52 +659,132 @@ export default function ParkMap({
                         setMaxWaitTime={setMaxWaitTime}
                     />
 
-                    {/* Placeholder Map - in a real application, this would use mapbox-gl or similar */}
-                    <div className={styles.mapContainer}>
-                        {/* Mock Map Background */}
-                        <div className={styles.mapBackground}>
-                            {/* Draw park areas */}
-                            <ParkAreas zoom={zoom} />
+                    {/* Location error message */}
+                    {locationError && (
+                        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                            <div className="flex">
+                                <AlertCircle className="h-5 w-5 text-amber-400 mr-2" />
+                                <div className="text-sm text-amber-700">
+                                    Unable to get your location: {locationError}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
-                            {/* Draw "paths" between areas */}
-                            <PathsBetweenAreas />
+                    {/* Interactive Leaflet Map */}
+                    <div
+                        ref={mapContainerRef}
+                        className={styles.mapContainer}
+                    >
+                        <MapContainer
+                            center={DEFAULT_CENTER}
+                            zoom={16}
+                            className={styles.leafletMapContainer}
+                            ref={setMapRef}
+                        >
+                            {/* Map event handler */}
+                            <MapEventHandler
+                                onLocationFound={handleLocationFound}
+                                onLocationError={handleLocationError}
+                            />
 
-                            {/* Render Attractions */}
-                            {filteredAttractions.map((attraction) => (
-                                <AttractionMarker
-                                    key={attraction.id}
-                                    attraction={attraction}
-                                    mapView={mapView}
-                                    zoom={zoom}
-                                    isSelected={selectedAttraction?.id === attraction.id}
-                                    waitTimeData={waitTimeData}
-                                    onSelect={() => {
-                                        setSelectedAttraction(attraction);
-                                        onSelectAttraction?.(attraction);
-                                    }}
+                            {/* Tile layer */}
+                            <TileLayer
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
+
+                            {/* Park areas overlay */}
+                            <ParkAreasOverlay showAreas={mapView === 'standard' || mapView === 'heatmap'} />
+
+                            {/* Attraction markers */}
+                            {filteredAttractions.map((attraction) => {
+                                if (!attraction.location) return null;
+
+                                const attractionWaitTimeData = waitTimeData?.[attraction.id];
+                                const waitTime = attractionWaitTimeData?.waitTime?.standby;
+                                const status = attractionWaitTimeData?.status || 'CLOSED';
+                                const color = getWaitTimeColor(waitTime || null, status);
+
+                                return (
+                                    <Marker
+                                        key={attraction.id}
+                                        position={[attraction.location.latitude, attraction.location.longitude]}
+                                        icon={createMarkerIcon(
+                                            color,
+                                            attraction.attractionType === 'RIDE' ? 32 : 24,
+                                            mapView === 'waitTimes' ? waitTime : undefined,
+                                            status
+                                        )}
+                                        eventHandlers={{
+                                            click: () => {
+                                                setSelectedAttraction(attraction);
+                                                onSelectAttraction?.(attraction);
+                                            }
+                                        }}
+                                    >
+                                        <Popup>
+                                            <div className="min-w-[200px]">
+                                                <h3 className="font-semibold text-base mb-2">
+                                                    {attraction.name}
+                                                </h3>
+
+                                                {attraction.description && (
+                                                    <p className="text-sm text-gray-600 mb-2">
+                                                        {attraction.description}
+                                                    </p>
+                                                )}
+
+                                                <div className="flex flex-wrap gap-1 mb-2">
+                                                    <Badge variant="outline" className="text-xs">
+                                                        {attraction.attractionType}
+                                                    </Badge>
+                                                    <Badge variant="outline" className="text-xs">
+                                                        {status}
+                                                    </Badge>
+                                                </div>
+
+                                                {waitTime !== undefined && status === 'OPERATING' && (
+                                                    <div className="text-sm">
+                                                        <strong>Wait Time:</strong> {waitTime} minutes
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </Popup>
+                                    </Marker>
+                                );
+                            })}
+
+                            {/* User location marker */}
+                            {userLocation && (
+                                <UserLocationMarker location={userLocation} />
+                            )}
+
+                            {/* Heat map visualization for wait times */}
+                            {mapView === 'heatmap' && generateHeatMapData.map((point, index) => (
+                                <Circle
+                                    key={`heatmap-${index}`}
+                                    center={[point.location.latitude, point.location.longitude]}
+                                    radius={50 + (point.intensity * 100)}
+                                    fillColor={point.waitTime <= 30 ? '#22C55E' : point.waitTime <= 60 ? '#F59E0B' : '#EF4444'}
+                                    fillOpacity={0.4 + (point.intensity * 0.4)}
+                                    color="transparent"
                                 />
                             ))}
+                        </MapContainer>
 
-                            {/* Legend */}
-                            <WaitTimeLegend />
+                        {/* Wait time legend overlay */}
+                        {mapView === 'waitTimes' && <WaitTimeLegend />}
 
-                            {/* User Location (placeholder) */}
-                            <UserLocation />
-
-                            {/* North indicator */}
-                            <NorthIndicator />
+                        {/* North indicator */}
+                        <div className={styles.northIndicator}>
+                            <ArrowUp className={styles.northIcon} />
                         </div>
-
-                        {/* Loading state */}
-                        {isLoadingPark && <LoadingIndicator />}
-
-                        {/* "Coming Soon" message for full implementation */}
-                        <ComingSoonMessage />
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Selected Attraction Info (would render at the bottom or in a modal) */}
+            {/* Selected attraction info */}
             {selectedAttraction && (
                 <SelectedAttractionInfo
                     attraction={selectedAttraction}

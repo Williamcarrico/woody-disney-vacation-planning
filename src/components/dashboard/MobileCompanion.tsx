@@ -18,8 +18,12 @@ export default function MobileCompanion({ vacationId }: MobileCompanionProps) {
                 Scan to download our mobile app and access your trip details on the go
             </p>
             <div className="flex gap-2 mt-2">
-                <Button variant="outline" size="sm">iOS App</Button>
-                <Button variant="outline" size="sm">Android App</Button>
+                <Button variant="outline" size="sm" asChild>
+                    <a href={appDownloadLink} target="_blank" rel="noopener noreferrer">iOS App</a>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                    <a href={appDownloadLink} target="_blank" rel="noopener noreferrer">Android App</a>
+                </Button>
             </div>
         </div>
     )

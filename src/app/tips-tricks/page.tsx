@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
@@ -9,29 +9,45 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
     Search, Calendar, Utensils, Smartphone, Sparkles, Backpack, Sun, Moon,
-    Clock, ChevronRight, MapPin, DollarSign, Award, Heart, Share2, Info
+    Clock, ChevronRight, MapPin, DollarSign, Award, Heart, Share2, Info,
+    ArrowUp, BookMarked, X, SlidersHorizontal
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Input } from '@/components/ui/input';
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { useInView } from 'react-intersection-observer';
+import dynamic from 'next/dynamic';
+import { Toaster } from '@/components/ui/toaster';
+import { useToast } from '@/components/ui/use-toast';
+import confetti from 'canvas-confetti';
+
+// Dynamic import with proper typing
+const ParticleBackground = dynamic(() => import('@/components/ui/particle-background').then(mod => mod.default || mod), {
+    ssr: false,
+    loading: () => null
+});
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
 // Define categories and their icons
 const categories = [
-    { id: 'planning', name: 'Planning', icon: <Calendar size={24} /> },
-    { id: 'dining', name: 'Dining', icon: <Utensils size={24} /> },
-    { id: 'tech', name: 'Tech', icon: <Smartphone size={24} /> },
-    { id: 'hidden', name: 'Hidden Gems', icon: <Sparkles size={24} /> },
-    { id: 'kids', name: 'Kids', icon: <Sun size={24} /> },
-    { id: 'packing', name: 'Packing', icon: <Backpack size={24} /> },
-    { id: 'budget', name: 'Money Saving', icon: <DollarSign size={24} /> },
-    { id: 'adult', name: 'Adult Fun', icon: <Moon size={24} /> },
-    { id: 'seasonal', name: 'Seasonal', icon: <Clock size={24} /> },
-    { id: 'transportation', name: 'Transportation', icon: <MapPin size={24} /> },
+    { id: 'planning', name: 'Planning', icon: <Calendar size={24} />, color: '#4F46E5' },
+    { id: 'dining', name: 'Dining', icon: <Utensils size={24} />, color: '#F97316' },
+    { id: 'tech', name: 'Tech', icon: <Smartphone size={24} />, color: '#06B6D4' },
+    { id: 'hidden', name: 'Hidden Gems', icon: <Sparkles size={24} />, color: '#EAB308' },
+    { id: 'kids', name: 'Kids', icon: <Sun size={24} />, color: '#EC4899' },
+    { id: 'packing', name: 'Packing', icon: <Backpack size={24} />, color: '#22C55E' },
+    { id: 'budget', name: 'Money Saving', icon: <DollarSign size={24} />, color: '#8B5CF6' },
+    { id: 'adult', name: 'Adult Fun', icon: <Moon size={24} />, color: '#3B82F6' },
+    { id: 'seasonal', name: 'Seasonal', icon: <Clock size={24} />, color: '#D946EF' },
+    { id: 'transportation', name: 'Transportation', icon: <MapPin size={24} />, color: '#14B8A6' },
 ];
 
 // Park names for easy reference
@@ -43,8 +59,27 @@ const parks = {
     DS: "Disney Springs"
 };
 
+// Define tip type for TypeScript
+interface TipType {
+    title: string;
+    description: string;
+    difficulty: 'beginner' | 'intermediate' | 'advanced';
+    parks: string[];
+    tags: string[];
+}
+
+// Typed version of tipsData
+type TipsDataType = {
+    [key: string]: TipType[];
+};
+
+// Helper to validate difficulty type
+const isValidDifficulty = (value: string): value is 'beginner' | 'intermediate' | 'advanced' => {
+    return value === 'beginner' || value === 'intermediate' || value === 'advanced';
+}
+
 // Define tips data structure with enhanced content
-const tipsData = {
+const tipsData: TipsDataType = {
     planning: [
         {
             title: 'Rope drop strategy',
@@ -239,7 +274,7 @@ const tipsData = {
         },
         {
             title: 'Advance dining reservation backup plan',
-            description: `If you can't secure desired dining reservations, use MouseDining.com or TouringPlans.com reservation finder services for alerts when openings occur. Many reservations become available 24-48 hours before the date due to cancellations. Check regularly the day before, especially in the evening, as guests finalize plans and cancel unwanted reservations to avoid the $10 per person no-show fee.`,
+            description: `If you can't secure desired dining reservations, use MouseDining.com or TouringPlans.com reservation finder services for alerts when openings occur. Many reservations become available 24-48 hours due to cancellations. Check regularly the day before, especially in the evening, as guests finalize plans and cancel unwanted reservations to avoid the $10 per person no-show fee.`,
             difficulty: 'intermediate',
             parks: ['MK', 'EP', 'HS', 'AK'],
             tags: ['planning', 'tech']
@@ -823,12 +858,17 @@ const tipsData = {
     ]
 };
 
-// Helper functions
-const getTipsForCategory = (category: string): Array<TipType> => {
-    if (!(category in tipsData)) return [];
+// Helper to validate category is a valid key
+const isValidCategory = (category: string): category is keyof TipsDataType & string => {
+    return category in tipsData;
+};
 
-    const categoryKey = category as keyof typeof tipsData;
-    const categoryData = tipsData[categoryKey];
+// Helper to get tips for a category
+const getTipsForCategory = (category: string): Array<TipType> => {
+    if (!isValidCategory(category)) return [];
+
+    // TypeScript now knows category is a valid key after the type predicate
+    const categoryData = tipsData[category];
 
     // Cast the data to ensure it conforms to TipType interface
     return categoryData.map(item => {
@@ -853,41 +893,70 @@ const getFullParkNames = (parkCodes: string[]): string => {
     }).join(", ");
 };
 
-// Define tip type for TypeScript
-interface TipType {
-    title: string;
-    description: string;
-    difficulty: 'beginner' | 'intermediate' | 'advanced';
-    parks: string[];
-    tags: string[];
-}
-
-// Helper to validate difficulty type
-const isValidDifficulty = (value: string): value is 'beginner' | 'intermediate' | 'advanced' => {
-    return value === 'beginner' || value === 'intermediate' || value === 'advanced';
-}
+// Format tag text for display
+const formatTagText = (tag: string): string => {
+    return tag.replace(/-/g, ' ').split(' ').map(word =>
+        word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+};
 
 export default function TipsAndTricksPage() {
+    const { toast } = useToast();
+
     // State for UI interaction
     const [activeCategory, setActiveCategory] = useState('planning');
     const [searchQuery, setSearchQuery] = useState('');
-    const [difficultyFilter, setDifficultyFilter] = useState<string | null>(null);
+    const [showFilters, setShowFilters] = useState(false);
     const [parkFilter, setParkFilter] = useState<string | null>(null);
+    const [difficultyFilter, setDifficultyFilter] = useState<'beginner' | 'intermediate' | 'advanced' | null>(null);
     const [savedTips, setSavedTips] = useState<string[]>([]);
+    const [recentlyViewed, setRecentlyViewed] = useState<string[]>([]);
     const [activeTab, setActiveTab] = useState('browse');
+    const [tipOfTheDay, setTipOfTheDay] = useState<{ category: string, index: number } | null>(null);
+    const [showScrollToTop, setShowScrollToTop] = useState(false);
+    const [showPrintDialog, setShowPrintDialog] = useState(false);
 
-    // Refs for animation and scrolling
-    const pageRef = useRef<HTMLDivElement>(null);
-    const headerRef = useRef<HTMLDivElement>(null);
+    // Refs and elements
     const categoriesRef = useRef<HTMLDivElement>(null);
+    const pageRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
-    const tipCardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+    // Refs for scroll handling
+    const headerRef = useRef<HTMLDivElement>(null);
+    const { ref: headerInViewRef } = useInView({
+        threshold: 0.1,
+    });
+
+    // Create a random tip of the day on mount
+    useEffect(() => {
+        const categories = Object.keys(tipsData);
+        const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+        const tips = tipsData[randomCategory as keyof typeof tipsData];
+        const randomTip = Math.floor(Math.random() * tips.length);
+        setTipOfTheDay({ category: randomCategory, index: randomTip });
+    }, []);
+
+    // Track scroll position
+    useEffect(() => {
+        const handleScroll = () => {
+            const scrollPosition = window.scrollY;
+            setShowScrollToTop(scrollPosition > 500);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     // Load saved tips from localStorage on mount
     useEffect(() => {
         const savedTipsData = localStorage.getItem('savedDisneyTips');
         if (savedTipsData) {
             setSavedTips(JSON.parse(savedTipsData));
+        }
+
+        const recentlyViewedData = localStorage.getItem('recentlyViewedTips');
+        if (recentlyViewedData) {
+            setRecentlyViewed(JSON.parse(recentlyViewedData));
         }
     }, []);
 
@@ -896,18 +965,60 @@ export default function TipsAndTricksPage() {
         localStorage.setItem('savedDisneyTips', JSON.stringify(savedTips));
     }, [savedTips]);
 
+    // Save recently viewed to localStorage
+    useEffect(() => {
+        localStorage.setItem('recentlyViewedTips', JSON.stringify(recentlyViewed));
+    }, [recentlyViewed]);
+
     // Handle saving/unsaving tips
-    const toggleSaveTip = (categoryId: string, tipIndex: number) => {
+    const toggleSaveTip = useCallback((categoryId: string, tipIndex: number) => {
         const tipId = `${categoryId}-${tipIndex}`;
         if (savedTips.includes(tipId)) {
             setSavedTips(savedTips.filter(id => id !== tipId));
+            toast({
+                title: "Tip removed from favorites",
+                description: "This tip has been removed from your saved collection.",
+                variant: "default",
+            });
         } else {
             setSavedTips([...savedTips, tipId]);
+            toast({
+                title: "Tip saved!",
+                description: "This tip has been added to your favorites.",
+                variant: "default",
+            });
+
+            // Trigger confetti effect
+            if (typeof window !== 'undefined') {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6, x: 0.5 }
+                });
+            }
         }
-    };
+    }, [savedTips, toast]);
+
+    // Track viewed tips
+    const markTipAsViewed = useCallback((categoryId: string, tipIndex: number) => {
+        const tipId = `${categoryId}-${tipIndex}`;
+        if (!recentlyViewed.includes(tipId)) {
+            // Keep only the 5 most recent
+            const updatedRecent = [tipId, ...recentlyViewed.slice(0, 4)];
+            setRecentlyViewed(updatedRecent);
+        }
+    }, [recentlyViewed]);
+
+    // Scroll to top
+    const scrollToTop = useCallback(() => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    }, []);
 
     // Get all saved tips data
-    const getSavedTipsData = (): Array<TipType & { category: string, index: number }> => {
+    const getSavedTipsData = useMemo(() => {
         return savedTips.map(tipId => {
             const [category, indexStr] = tipId.split('-');
             const index = parseInt(indexStr, 10);
@@ -933,10 +1044,37 @@ export default function TipsAndTricksPage() {
                 difficulty: validDifficulty
             };
         }).filter((item): item is TipType & { category: string, index: number } => item !== null);
-    };
+    }, [savedTips]);
+
+    // Get recently viewed tips data
+    const getRecentlyViewedData = useMemo(() => {
+        return recentlyViewed.map(tipId => {
+            const [category, indexStr] = tipId.split('-');
+            const index = parseInt(indexStr, 10);
+
+            if (!(category in tipsData)) return null;
+
+            const categoryKey = category as keyof typeof tipsData;
+            const tipData = tipsData[categoryKey]?.[index];
+
+            if (!tipData) return null;
+
+            const difficulty = tipData.difficulty;
+            const validDifficulty = isValidDifficulty(difficulty)
+                ? difficulty
+                : 'beginner' as const;
+
+            return {
+                ...tipData,
+                category,
+                index,
+                difficulty: validDifficulty
+            };
+        }).filter((item): item is TipType & { category: string, index: number } => item !== null);
+    }, [recentlyViewed]);
 
     // Filter tips based on search query and filters
-    const getFilteredTips = () => {
+    const getFilteredTips = useMemo(() => {
         let results: Array<TipType & { category: string, index: number }> = [];
 
         // If no search query but filters are active, apply filters to current category
@@ -985,23 +1123,17 @@ export default function TipsAndTricksPage() {
         }
 
         return results;
-    };
-
-    // Get filtered tips based on current state
-    const filteredTips = getFilteredTips();
-    const savedTipsData = getSavedTipsData();
+    }, [searchQuery, difficultyFilter, parkFilter, activeCategory]);
 
     // Get counts of different difficulty levels for current category
-    const getDifficultyCounts = () => {
+    const getDifficultyCounts = useMemo(() => {
         const tips = getTipsForCategory(activeCategory);
         return {
             beginner: tips.filter(tip => tip.difficulty === 'beginner').length,
             intermediate: tips.filter(tip => tip.difficulty === 'intermediate').length,
             advanced: tips.filter(tip => tip.difficulty === 'advanced').length
         };
-    };
-
-    const difficultyCounts = getDifficultyCounts();
+    }, [activeCategory]);
 
     // GSAP animations
     useGSAP(() => {
@@ -1041,11 +1173,65 @@ export default function TipsAndTricksPage() {
             }
         });
 
+        // Enhanced animations for categories
+        const categoryCards = categoriesRef.current?.querySelectorAll('.category-card');
+        categoryCards?.forEach((card) => {
+            const categoryIcon = card.querySelector('.category-icon');
+
+            gsap.set(categoryIcon, {
+                transformOrigin: 'center center'
+            });
+
+            card.addEventListener('mouseenter', () => {
+                gsap.to(categoryIcon, {
+                    scale: 1.2,
+                    rotation: 5,
+                    duration: 0.3,
+                    ease: 'back.out(1.7)'
+                });
+            });
+
+            card.addEventListener('mouseleave', () => {
+                gsap.to(categoryIcon, {
+                    scale: 1,
+                    rotation: 0,
+                    duration: 0.3,
+                    ease: 'power1.out'
+                });
+            });
+        });
+
+        // Header parallax effect
+        if (headerRef.current) {
+            window.addEventListener('scroll', () => {
+                const scrollPosition = window.scrollY;
+                const castleSilhouette = headerRef.current?.querySelector('.castle-silhouette');
+                if (castleSilhouette) {
+                    gsap.to(castleSilhouette, {
+                        y: scrollPosition * 0.2,
+                        duration: 0.1,
+                        ease: 'none'
+                    });
+                }
+            });
+        }
+
         // Cleanup
         return () => {
             ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+            const categoryCards = categoriesRef.current?.querySelectorAll('.category-card');
+            categoryCards?.forEach((card) => {
+                card.removeEventListener('mouseenter', () => { });
+                card.removeEventListener('mouseleave', () => { });
+            });
         };
     }, [activeCategory, activeTab]);
+
+    // Get filtered tips based on current state
+    const filteredTips = getFilteredTips;
+    const savedTipsData = getSavedTipsData;
+    const recentlyViewedTips = getRecentlyViewedData;
+    const difficultyCounts = getDifficultyCounts;
 
     return (
         <div ref={pageRef} className="min-h-screen bg-gradient-to-b from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
@@ -1055,18 +1241,26 @@ export default function TipsAndTricksPage() {
             <div className="firework absolute top-1/3 right-1/3 w-40 h-40 opacity-10 pointer-events-none"></div>
             <div className="firework absolute bottom-1/4 right-1/5 w-36 h-36 opacity-10 pointer-events-none"></div>
 
+            {/* Floating particles */}
+            <div className="fixed inset-0 pointer-events-none z-0 opacity-20">
+                <ParticleBackground />
+            </div>
+
             {/* Header section */}
             <div
-                ref={headerRef}
+                ref={(el) => {
+                    headerRef.current = el;
+                    headerInViewRef(el);
+                }}
                 className="relative pt-16 pb-10 px-4 sm:px-6 lg:px-8 text-center z-10"
             >
                 <motion.h1
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8 }}
-                    className="text-4xl md:text-5xl font-bold text-indigo-800 dark:text-indigo-200 mb-4"
+                    className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 dark:from-indigo-300 dark:via-purple-300 dark:to-indigo-300 mb-4 font-display"
                 >
-                    Disney World <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">Tips & Tricks</span>
+                    Disney World <span className="font-cursive">Tips & Tricks</span>
                 </motion.h1>
                 <motion.p
                     initial={{ opacity: 0 }}
@@ -1077,14 +1271,58 @@ export default function TipsAndTricksPage() {
                     Expert strategies and insider knowledge to make your Disney vacation truly magical
                 </motion.p>
 
+                {/* Tip of the day */}
+                {tipOfTheDay && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.6, duration: 0.5 }}
+                        className="mt-8 max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border border-indigo-100 dark:border-indigo-800"
+                    >
+                        <div className="relative">
+                            <div className="absolute top-0 right-0 bg-gradient-to-bl from-indigo-500 to-purple-600 text-white py-1 px-3 text-xs font-bold rounded-bl-xl">
+                                TIP OF THE DAY
+                            </div>
+                            <div className="p-6 pt-8">
+                                {tipOfTheDay && tipsData[tipOfTheDay.category] && (
+                                    <>
+                                        <h3 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 mb-2">
+                                            {tipsData[tipOfTheDay.category][tipOfTheDay.index].title}
+                                        </h3>
+                                        <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-2">
+                                            {tipsData[tipOfTheDay.category][tipOfTheDay.index].description}
+                                        </p>
+                                        <div className="flex justify-between items-center">
+                                            <Badge variant="outline" className="bg-indigo-50 dark:bg-indigo-900/30">
+                                                {categories.find(c => c.id === tipOfTheDay.category)?.name}
+                                            </Badge>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-indigo-600 dark:text-indigo-400"
+                                                onClick={() => toggleSaveTip(tipOfTheDay.category, tipOfTheDay.index)}
+                                            >
+                                                <Heart className={`h-4 w-4 mr-1 ${savedTips.includes(`${tipOfTheDay.category}-${tipOfTheDay.index}`) ? 'fill-indigo-600 text-indigo-600 dark:fill-indigo-400 dark:text-indigo-400' : ''}`} />
+                                                {savedTips.includes(`${tipOfTheDay.category}-${tipOfTheDay.index}`) ? 'Saved' : 'Save'}
+                                            </Button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
                 {/* Tabs for Browse and Saved Tips */}
                 <div className="mt-8 max-w-md mx-auto">
                     <Tabs defaultValue="browse" value={activeTab} onValueChange={setActiveTab} className="w-full">
                         <TabsList className="grid w-full grid-cols-2 mb-6">
                             <TabsTrigger value="browse" className="text-base">
+                                <BookMarked className="h-4 w-4 mr-2" />
                                 Browse Tips
                             </TabsTrigger>
                             <TabsTrigger value="saved" className="text-base">
+                                <Heart className="h-4 w-4 mr-2" />
                                 Saved Tips {savedTips.length > 0 && `(${savedTips.length})`}
                             </TabsTrigger>
                         </TabsList>
@@ -1096,13 +1334,23 @@ export default function TipsAndTricksPage() {
                     <div className="mt-4 max-w-md mx-auto">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                            <input
+                            <Input
                                 type="text"
                                 placeholder="Search for tips by keyword..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                                className="w-full pl-10 pr-4 py-6 rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                             />
+                            {searchQuery && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    onClick={() => setSearchQuery('')}
+                                >
+                                    <X size={16} />
+                                </Button>
+                            )}
                         </div>
                     </div>
                 )}
@@ -1110,8 +1358,26 @@ export default function TipsAndTricksPage() {
                 {/* Filter buttons */}
                 {activeTab === 'browse' && (
                     <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                        {/* Filter button for small screens */}
+                        <div className="md:hidden">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowFilters(!showFilters)}
+                                className="flex items-center gap-1"
+                            >
+                                <SlidersHorizontal size={16} />
+                                Filters
+                                {(difficultyFilter || parkFilter) && (
+                                    <Badge variant="secondary" className="ml-1 px-1">
+                                        {(difficultyFilter ? 1 : 0) + (parkFilter ? 1 : 0)}
+                                    </Badge>
+                                )}
+                            </Button>
+                        </div>
+
                         {/* Difficulty Filter */}
-                        <div className="relative">
+                        <div className="relative hidden md:block">
                             <Button
                                 variant={difficultyFilter ? "secondary" : "outline"}
                                 size="sm"
@@ -1166,7 +1432,7 @@ export default function TipsAndTricksPage() {
                         </div>
 
                         {/* Park Filter */}
-                        <div className="relative">
+                        <div className="relative hidden md:block">
                             <Button
                                 variant={parkFilter ? "secondary" : "outline"}
                                 size="sm"
@@ -1230,6 +1496,90 @@ export default function TipsAndTricksPage() {
                 )}
             </div>
 
+            {/* Mobile filters drawer */}
+            <Drawer open={showFilters} onOpenChange={setShowFilters}>
+                <DrawerContent>
+                    <DrawerHeader>
+                        <DrawerTitle>Filter Tips</DrawerTitle>
+                        <DrawerDescription>
+                            Refine tips by difficulty level and park
+                        </DrawerDescription>
+                    </DrawerHeader>
+                    <div className="p-4 space-y-4">
+                        {/* Difficulty filter */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium">Difficulty Level</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                                <Button
+                                    variant={difficultyFilter === 'beginner' ? "default" : "outline"}
+                                    size="sm"
+                                    className="justify-center w-full"
+                                    onClick={() => setDifficultyFilter(difficultyFilter === 'beginner' ? null : 'beginner')}
+                                >
+                                    Beginner
+                                </Button>
+                                <Button
+                                    variant={difficultyFilter === 'intermediate' ? "default" : "outline"}
+                                    size="sm"
+                                    className="justify-center w-full"
+                                    onClick={() => setDifficultyFilter(difficultyFilter === 'intermediate' ? null : 'intermediate')}
+                                >
+                                    Intermediate
+                                </Button>
+                                <Button
+                                    variant={difficultyFilter === 'advanced' ? "default" : "outline"}
+                                    size="sm"
+                                    className="justify-center w-full"
+                                    onClick={() => setDifficultyFilter(difficultyFilter === 'advanced' ? null : 'advanced')}
+                                >
+                                    Advanced
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Park filter */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium">Select Park</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                                {Object.entries(parks).map(([code, name]) => (
+                                    <Button
+                                        key={code}
+                                        variant={parkFilter === code ? "default" : "outline"}
+                                        size="sm"
+                                        className="justify-center w-full"
+                                        onClick={() => setParkFilter(parkFilter === code ? null : code)}
+                                    >
+                                        {name}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Apply and Clear buttons */}
+                        <div className="flex justify-end gap-2 pt-4">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                    setDifficultyFilter(null);
+                                    setParkFilter(null);
+                                    setShowFilters(false);
+                                }}
+                            >
+                                Clear All
+                            </Button>
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => setShowFilters(false)}
+                            >
+                                Apply Filters
+                            </Button>
+                        </div>
+                    </div>
+                </DrawerContent>
+            </Drawer>
+
             {/* Tab content */}
             <AnimatePresence mode="wait">
                 {activeTab === 'browse' ? (
@@ -1249,12 +1599,13 @@ export default function TipsAndTricksPage() {
 
                                 {filteredTips.length > 0 ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {filteredTips.map((tip, index) => (
+                                        {getFilteredTips.map((tip, index) => (
                                             <motion.div
                                                 key={`search-${tip.category}-${tip.index}`}
                                                 initial={{ opacity: 0, y: 20 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 transition={{ duration: 0.5, delay: index * 0.05 }}
+                                                onViewportEnter={() => markTipAsViewed(tip.category, tip.index)}
                                             >
                                                 <Card
                                                     className="tip-card h-full p-5 overflow-hidden border border-indigo-100 dark:border-indigo-900 hover:shadow-lg transition-all"
@@ -1306,7 +1657,7 @@ export default function TipsAndTricksPage() {
                                                                 variant="outline"
                                                                 className="text-xs bg-indigo-50 dark:bg-indigo-900/30"
                                                             >
-                                                                {tag.replace(/-/g, ' ')}
+                                                                {formatTagText(tag)}
                                                             </Badge>
                                                         ))}
                                                     </div>
@@ -1419,9 +1770,7 @@ export default function TipsAndTricksPage() {
                                                 initial={{ opacity: 0, y: 20 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 transition={{ duration: 0.5, delay: index * 0.05 }}
-                                                ref={(el) => {
-                                                    tipCardRefs.current[`${activeCategory}-${index}`] = el;
-                                                }}
+                                                onViewportEnter={() => markTipAsViewed(activeCategory, index)}
                                             >
                                                 <Card
                                                     className={`tip-card relative h-full p-5 overflow-hidden border hover:shadow-lg transition-all ${tip.difficulty === 'beginner'
@@ -1479,7 +1828,7 @@ export default function TipsAndTricksPage() {
                                                                 variant="outline"
                                                                 className="text-xs bg-indigo-50 dark:bg-indigo-900/30"
                                                             >
-                                                                {tag.replace(/-/g, ' ')}
+                                                                {formatTagText(tag)}
                                                             </Badge>
                                                         ))}
                                                     </div>
@@ -1588,7 +1937,7 @@ export default function TipsAndTricksPage() {
                                                         variant="outline"
                                                         className="text-xs bg-indigo-50 dark:bg-indigo-900/30"
                                                     >
-                                                        {tag.replace(/-/g, ' ')}
+                                                        {formatTagText(tag)}
                                                     </Badge>
                                                 ))}
                                             </div>
@@ -1632,7 +1981,7 @@ export default function TipsAndTricksPage() {
                             <span className="text-6xl font-serif">&ldquo;</span>
                         </div>
 
-                        <h2 className="text-2xl md:text-3xl font-bold text-indigo-800 dark:text-indigo-200 mb-4">Final Disney Wisdom</h2>
+                        <h2 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 mb-4 font-display">Final Disney Wisdom</h2>
                         <p className="text-lg text-indigo-700 dark:text-indigo-300 mb-6 italic">
                             &ldquo;Relax and enjoy the magic! Remember, the most important part of any Disney trip is creating magical memories with your loved ones.&rdquo;
                         </p>
@@ -1664,7 +2013,22 @@ export default function TipsAndTricksPage() {
                                 variant="ghost"
                                 size="sm"
                                 className="text-indigo-600 dark:text-indigo-400 flex gap-2 items-center text-sm"
-                                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                                onClick={() => {
+                                    if (navigator.share) {
+                                        navigator.share({
+                                            title: 'Disney Vacation Tips & Tricks',
+                                            text: 'Check out these amazing Disney World tips and tricks!',
+                                            url: window.location.href
+                                        }).catch(err => console.log('Error sharing', err));
+                                    } else {
+                                        navigator.clipboard.writeText(window.location.href);
+                                        toast({
+                                            title: "Link copied!",
+                                            description: "Page link copied to clipboard.",
+                                            variant: "default",
+                                        });
+                                    }
+                                }}
                             >
                                 <Share2 size={16} />
                                 Share these tips
@@ -1680,8 +2044,122 @@ export default function TipsAndTricksPage() {
                 <div className="absolute top-1/4 left-1/4 w-20 h-20 bg-yellow-400 dark:bg-yellow-600 rounded-full opacity-10" />
             </div>
 
+            {/* Recently viewed section */}
+            {recentlyViewedTips.length > 0 && (
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 mb-8">
+                    <h2 className="text-2xl font-bold text-indigo-800 dark:text-indigo-200 mb-6">Recently Viewed Tips</h2>
+                    <div className="overflow-x-auto pb-4">
+                        <div className="flex gap-4 min-w-max">
+                            {recentlyViewedTips.map((tip, index) => (
+                                <div key={`recent-${index}`} className="w-80 flex-shrink-0">
+                                    <Card className="h-full border border-indigo-100 dark:border-indigo-900 hover:shadow-md transition-all p-4">
+                                        <h3 className="text-md font-semibold text-indigo-700 dark:text-indigo-300 mb-2 line-clamp-1">{tip.title}</h3>
+                                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">{tip.description}</p>
+                                        <div className="flex justify-between items-center mt-auto">
+                                            <Badge variant="outline" className="text-xs">
+                                                {categories.find(c => c.id === tip.category)?.name}
+                                            </Badge>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 h-8 w-8 p-0"
+                                                onClick={() => toggleSaveTip(tip.category, tip.index)}
+                                            >
+                                                {savedTips.includes(`${tip.category}-${tip.index}`) ? (
+                                                    <Heart className="h-4 w-4 fill-indigo-600 text-indigo-600 dark:fill-indigo-400 dark:text-indigo-400" />
+                                                ) : (
+                                                    <Heart className="h-4 w-4" />
+                                                )}
+                                            </Button>
+                                        </div>
+                                    </Card>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Scroll to top button */}
+            <AnimatePresence>
+                {showScrollToTop && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        transition={{ duration: 0.2 }}
+                        className="fixed bottom-6 right-6 z-50"
+                    >
+                        <Button
+                            variant="default"
+                            size="icon"
+                            className="h-10 w-10 rounded-full shadow-lg bg-indigo-600 hover:bg-indigo-700 text-white"
+                            onClick={scrollToTop}
+                        >
+                            <ArrowUp size={20} />
+                        </Button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Print dialog */}
+            <Drawer open={showPrintDialog} onOpenChange={setShowPrintDialog}>
+                <DrawerContent>
+                    <DrawerHeader>
+                        <DrawerTitle>Print Saved Tips</DrawerTitle>
+                        <DrawerDescription>
+                            Prepare your Disney tips for offline reference
+                        </DrawerDescription>
+                    </DrawerHeader>
+                    <div className="p-6">
+                        <div className="mb-6">
+                            <h3 className="text-lg font-semibold mb-2">Print Options</h3>
+                            <div className="flex items-center justify-between py-2">
+                                <Label htmlFor="include-descriptions">Include full descriptions</Label>
+                                <Switch id="include-descriptions" defaultChecked />
+                            </div>
+                            <div className="flex items-center justify-between py-2">
+                                <Label htmlFor="include-categories">Sort by category</Label>
+                                <Switch id="include-categories" defaultChecked />
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowPrintDialog(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    setShowPrintDialog(false);
+                                    window.print();
+                                }}
+                            >
+                                Print Tips
+                            </Button>
+                        </div>
+                    </div>
+                </DrawerContent>
+            </Drawer>
+
+            <Toaster />
+
             {/* Add custom CSS for animations in a style tag */}
             <style jsx global>{`
+                /* Import Google Fonts */
+                @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Dancing+Script:wght@600;700&display=swap');
+
+                /* Font classes */
+                .font-display {
+                    font-family: 'Montserrat', sans-serif;
+                }
+
+                .font-cursive {
+                    font-family: 'Dancing Script', cursive;
+                    font-weight: 700;
+                }
+
                 .castle-silhouette {
                     z-index: 0;
                 }
@@ -1736,6 +2214,27 @@ export default function TipsAndTricksPage() {
                 @keyframes sparkle {
                     0% { background-position: 0% 50%; }
                     100% { background-position: 200% 50%; }
+                }
+
+                /* Print styles */
+                @media print {
+                    .tip-card {
+                        break-inside: avoid;
+                        page-break-inside: avoid;
+                    }
+
+                    .no-print {
+                        display: none !important;
+                    }
+
+                    body {
+                        background: white !important;
+                    }
+
+                    .container {
+                        max-width: 100% !important;
+                        width: 100% !important;
+                    }
                 }
             `}</style>
         </div>

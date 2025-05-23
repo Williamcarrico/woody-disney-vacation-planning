@@ -3,6 +3,7 @@
 import { getWeatherIcon } from '@/lib/api/weather'
 import { cn } from '@/lib/utils'
 import React from 'react'
+import type { Icon as MdiIcon } from '@mdi/react'
 
 interface WeatherIconProps {
     weatherCode: number
@@ -33,7 +34,8 @@ function WeatherIcon({
     }[size]
 
     // Dynamic import for icons based on the name
-    const [Icon, setIcon] = React.useState<React.ElementType | null>(null)
+    const [Icon, setIcon] = React.useState<typeof MdiIcon | null>(null)
+    const [iconPath, setIconPath] = React.useState<string | null>(null)
 
     React.useEffect(() => {
         // Dynamically import the icon based on the weather code
@@ -41,16 +43,24 @@ function WeatherIcon({
             // Convert kebab case to camel case for mdi icons (e.g., weather-sunny -> mdiWeatherSunny)
             const iconKey = 'mdi' + iconName.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')
 
-            if (icons[iconKey]) {
+            // Type assertion to ensure we get the correct type - use unknown first to avoid type conflicts
+            const iconValue = (icons as unknown as Record<string, string>)[iconKey]
+
+            if (iconValue && typeof iconValue === 'string') {
+                setIconPath(iconValue)
                 import('@mdi/react').then((module) => {
                     setIcon(() => module.Icon)
                 })
             } else {
                 console.warn(`Icon not found: ${iconKey}`)
-                // Fallback to a default icon
-                import('@mdi/react').then((module) => {
-                    setIcon(() => module.Icon)
-                })
+                // Fallback to a default icon - use mdiWeatherPartlyCloudy as fallback
+                const fallbackIcon = (icons as unknown as Record<string, string>).mdiWeatherPartlyCloudy
+                if (fallbackIcon && typeof fallbackIcon === 'string') {
+                    setIconPath(fallbackIcon)
+                    import('@mdi/react').then((module) => {
+                        setIcon(() => module.Icon)
+                    })
+                }
             }
         })
     }, [iconName])
@@ -74,7 +84,7 @@ function WeatherIcon({
         return ''
     }
 
-    if (!Icon) {
+    if (!Icon || !iconPath) {
         return (
             <div className={cn(sizeClass, 'rounded-full bg-gray-200 animate-pulse', className)} />
         )
@@ -83,7 +93,7 @@ function WeatherIcon({
     return (
         <div className={cn('inline-flex items-center justify-center', getAnimationClass(), className)}>
             <Icon
-                path={`@mdi/js/${iconName}`}
+                path={iconPath}
                 size={size === 'sm' ? 1 : size === 'md' ? 1.5 : size === 'lg' ? 2 : 3}
                 color={color || 'currentColor'}
                 className={cn(sizeClass)}

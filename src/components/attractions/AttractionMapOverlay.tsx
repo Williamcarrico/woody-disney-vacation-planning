@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { getAttractionWaitTimes } from '@/lib/services/map-service';
 import { LocationData } from '@/components/maps/interactive-map';
-import { Clock, Map, Filter, RefreshCw } from 'lucide-react';
+import { Clock, Map, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AttractionMapOverlayProps {
@@ -21,6 +21,7 @@ interface AttractionMapOverlayProps {
 
 type FilterMode = 'all' | 'short' | 'medium' | 'long';
 type SortMode = 'default' | 'waitTime' | 'name';
+type AttractionStatus = "OPERATING" | "DOWN" | "CLOSED" | "REFURBISHMENT" | undefined;
 
 /**
  * AttractionMapOverlay component
@@ -31,7 +32,7 @@ export default function AttractionMapOverlay({
     attractions,
     onFilteredAttractionsChange
 }: AttractionMapOverlayProps) {
-    const [waitTimeData, setWaitTimeData] = useState<Record<string, { waitTime: number; status: string }>>({});
+    const [waitTimeData, setWaitTimeData] = useState<Record<string, { waitTime: number; status: AttractionStatus }>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [maxWaitTime, setMaxWaitTime] = useState(240);
     const [filterMode, setFilterMode] = useState<FilterMode>('all');
@@ -40,18 +41,27 @@ export default function AttractionMapOverlay({
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
     // Fetch wait time data
-    const fetchWaitTimes = async () => {
+    const fetchWaitTimes = useCallback(async () => {
         setIsLoading(true);
         try {
             const data = await getAttractionWaitTimes(parkId);
-            setWaitTimeData(data);
+            // Ensure the data conforms to the expected type
+            const typedData: Record<string, { waitTime: number; status: AttractionStatus }> = {};
+
+            // Convert string status to AttractionStatus
+            Object.entries(data).forEach(([key, value]) => {
+                const status = value.status as AttractionStatus;
+                typedData[key] = { ...value, status };
+            });
+
+            setWaitTimeData(typedData);
             setLastUpdated(new Date());
         } catch (error) {
             console.error('Error fetching wait times:', error);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [parkId]);
 
     // Load wait times initially and set up refresh interval
     useEffect(() => {
@@ -63,7 +73,7 @@ export default function AttractionMapOverlay({
         }, 3 * 60 * 1000);
 
         return () => clearInterval(interval);
-    }, [parkId]);
+    }, [fetchWaitTimes]);
 
     // Merge attraction data with wait times
     const attractionsWithWaitTimes = useMemo(() => {
@@ -72,7 +82,7 @@ export default function AttractionMapOverlay({
             return {
                 ...attraction,
                 waitTime: waitTimeInfo?.waitTime ?? 0,
-                status: waitTimeInfo?.status ?? 'OPERATING'
+                status: waitTimeInfo?.status ?? 'OPERATING' as AttractionStatus
             };
         });
     }, [attractions, waitTimeData]);
@@ -137,7 +147,7 @@ export default function AttractionMapOverlay({
     }, [filteredAttractions, onFilteredAttractionsChange]);
 
     // Determine status badge color
-    const getStatusColor = (status: string, waitTime: number) => {
+    const getStatusColor = (status: AttractionStatus, waitTime: number) => {
         if (status !== 'OPERATING') {
             return status === 'DOWN' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800';
         }
@@ -158,6 +168,20 @@ export default function AttractionMapOverlay({
 
         const minutes = Math.floor(seconds / 60);
         return `${minutes} minutes ago`;
+    };
+
+    // Type guard for filter mode
+    const handleFilterModeChange = (value: string) => {
+        if (value === 'all' || value === 'short' || value === 'medium' || value === 'long') {
+            setFilterMode(value);
+        }
+    };
+
+    // Type guard for sort mode
+    const handleSortModeChange = (value: string) => {
+        if (value === 'default' || value === 'waitTime' || value === 'name') {
+            setSortMode(value);
+        }
     };
 
     return (
@@ -189,12 +213,12 @@ export default function AttractionMapOverlay({
 
             <CardContent className="pt-0">
                 <div className="flex flex-wrap gap-2 mb-3">
-                    <Tabs value={filterMode} onValueChange={(v) => setFilterMode(v as FilterMode)}>
+                    <Tabs value={filterMode} onValueChange={handleFilterModeChange}>
                         <TabsList className="h-8">
                             <TabsTrigger value="all" className="text-xs px-2">All</TabsTrigger>
-                            <TabsTrigger value="short" className="text-xs px-2">Short (<15m)</TabsTrigger>
+                            <TabsTrigger value="short" className="text-xs px-2">Short (&lt;15m)</TabsTrigger>
                             <TabsTrigger value="medium" className="text-xs px-2">Medium (15-45m)</TabsTrigger>
-                            <TabsTrigger value="long" className="text-xs px-2">Long (>45m)</TabsTrigger>
+                            <TabsTrigger value="long" className="text-xs px-2">Long (&gt;45m)</TabsTrigger>
                         </TabsList>
                     </Tabs>
 
@@ -206,7 +230,6 @@ export default function AttractionMapOverlay({
                             id="operating-only"
                             checked={showOnlyOperating}
                             onCheckedChange={setShowOnlyOperating}
-                            size="sm"
                         />
                     </div>
                 </div>
@@ -218,8 +241,9 @@ export default function AttractionMapOverlay({
                     <select
                         id="sort-select"
                         value={sortMode}
-                        onChange={(e) => setSortMode(e.target.value as SortMode)}
+                        onChange={(e) => handleSortModeChange(e.target.value)}
                         className="text-xs p-1 border rounded flex-grow"
+                        aria-label="Sort attractions by"
                     >
                         <option value="default">Default</option>
                         <option value="waitTime">Wait Time</option>
@@ -255,7 +279,7 @@ export default function AttractionMapOverlay({
                                 <span className="text-sm font-medium">{attraction.name}</span>
                                 <Badge className={cn(
                                     "ml-auto",
-                                    getStatusColor(attraction.status as string, attraction.waitTime as number)
+                                    getStatusColor(attraction.status, attraction.waitTime)
                                 )}>
                                     {attraction.status === 'OPERATING'
                                         ? `${attraction.waitTime} min`

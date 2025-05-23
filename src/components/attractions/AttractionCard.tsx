@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import Link from "next/link"
 import { Attraction } from "@/types/attraction"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"

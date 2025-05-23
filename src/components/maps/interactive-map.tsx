@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     Map,
     AdvancedMarker,
@@ -354,7 +354,7 @@ function GroupMemberMarker({ member }: { readonly member: GroupMember }) {
                 title={member.name}
             >
                 <div className="relative cursor-pointer hover:scale-110 transition-transform">
-                    <Avatar className="h-10 w-10 border-2 border-white shadow-md">
+                    <Avatar className="h-10 w-10 shadow-md" style={{ boxShadow: '0 0 0 2px white' }}>
                         <AvatarImage src={member.avatar} alt={member.name} />
                         <AvatarFallback className="bg-primary text-primary-foreground">
                             {member.name.substring(0, 2).toUpperCase()}
@@ -696,7 +696,7 @@ export function InteractiveMap({
 
             // For custom heights, create a style element with a custom class
             const styleId = 'custom-map-heights';
-            let styleEl = document.getElementById(styleId) as HTMLStyleElement;
+            let styleEl = document.getElementById(styleId);
 
             if (!styleEl) {
                 styleEl = document.createElement('style');
@@ -705,7 +705,7 @@ export function InteractiveMap({
             }
 
             const className = `map-h-${height}`;
-            if (!styleEl.innerHTML.includes(className)) {
+            if (styleEl instanceof HTMLStyleElement && !styleEl.innerHTML.includes(className)) {
                 styleEl.innerHTML += `.${className} { height: ${height}px !important; }`;
             }
 
@@ -725,7 +725,7 @@ export function InteractiveMap({
         // For custom widths, create a style element with a custom class
         if (typeof width === 'string' || typeof width === 'number') {
             const styleId = 'custom-map-widths';
-            let styleEl = document.getElementById(styleId) as HTMLStyleElement;
+            let styleEl = document.getElementById(styleId);
 
             if (!styleEl) {
                 styleEl = document.createElement('style');
@@ -736,7 +736,7 @@ export function InteractiveMap({
             const widthValue = typeof width === 'number' ? `${width}px` : width;
             const className = `map-w-${widthValue.replace(/[^a-z0-9]/gi, '-')}`;
 
-            if (!styleEl.innerHTML.includes(className)) {
+            if (styleEl instanceof HTMLStyleElement && !styleEl.innerHTML.includes(className)) {
                 styleEl.innerHTML += `.${className} { width: ${widthValue} !important; }`;
             }
 

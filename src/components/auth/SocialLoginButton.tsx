@@ -73,7 +73,7 @@ export function SocialLoginButton({
             disabled={isLoading}
         >
             {isLoading ? (
-                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-5 h-5 rounded-full animate-spin border-[2px] border-solid border-[currentColor] border-t-transparent" />
             ) : (
                 icons[provider]
             )}

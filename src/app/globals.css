@@ -43,6 +43,228 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Rainbow colors for rainbow button */
+  --color-1: 0 100% 63%;
+  --color-2: 270 100% 63%;
+  --color-3: 210 100% 63%;
+  --color-4: 195 100% 63%;
+  --color-5: 90 100% 63%;
+
+  /* Enhanced Disney Theme Variables */
+  --theme-transition-duration: 500ms;
+  --theme-border-radius: 12px;
+  --theme-shadow-color: rgba(0, 0, 0, 0.1);
+  --theme-glow-intensity: 0.6;
+
+  /* Existing animations */
+  --animate-marquee: marquee var(--duration) infinite linear;
+  --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(calc(-100% - var(--gap)));
+    }
+  }
+  @keyframes marquee-vertical {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(calc(-100% - var(--gap)));
+    }
+  }
+  --animate-background-position-spin: background-position-spin 3000ms infinite
+    alternate;
+  @keyframes background-position-spin {
+    0% {
+      background-position: top center;
+    }
+    100% {
+      background-position: bottom center;
+    }
+  }
+  --animate-shine: shine var(--duration) infinite linear;
+  @keyframes shine {
+    0% {
+      background-position: 0% 0%;
+    }
+    50% {
+      background-position: 100% 100%;
+    }
+    to {
+      background-position: 0% 0%;
+    }
+  }
+
+  /* Enhanced animations for Disney themes */
+  --animate-shimmer: shimmer 3s ease-in-out infinite;
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  --animate-cosmic: cosmic 8s linear infinite;
+  @keyframes cosmic {
+    0% {
+      background-position: 0% 0%;
+    }
+    25% {
+      background-position: 100% 0%;
+    }
+    50% {
+      background-position: 100% 100%;
+    }
+    75% {
+      background-position: 0% 100%;
+    }
+    100% {
+      background-position: 0% 0%;
+    }
+  }
+
+  --animate-wave: wave 4s ease-in-out infinite;
+  @keyframes wave {
+    0%,
+    100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    25% {
+      transform: translateY(-10px) rotate(1deg);
+    }
+    50% {
+      transform: translateY(-5px) rotate(-1deg);
+    }
+    75% {
+      transform: translateY(-15px) rotate(0.5deg);
+    }
+  }
+
+  --animate-magical-glow: magical-glow 2s ease-in-out infinite;
+  @keyframes magical-glow {
+    0% {
+      filter: drop-shadow(0 0 5px var(--theme-accent, #8b5cf6)) brightness(100%);
+    }
+    50% {
+      filter: drop-shadow(0 0 20px var(--theme-accent, #8b5cf6))
+        brightness(110%);
+    }
+    100% {
+      filter: drop-shadow(0 0 5px var(--theme-accent, #8b5cf6)) brightness(100%);
+    }
+  }
+
+  --animate-sparkle-trail: sparkle-trail 1.5s ease-out infinite;
+  @keyframes sparkle-trail {
+    0% {
+      opacity: 0;
+      transform: translateY(100vh) scale(0);
+    }
+    10% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-10vh) scale(1);
+    }
+  }
+
+  --animate-theme-transition: theme-transition var(--theme-transition-duration)
+    ease-in-out;
+  @keyframes theme-transition {
+    0% {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    50% {
+      opacity: 0.5;
+      transform: scale(1.02);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* New animations for MagicUI components */
+  --animate-rainbow: rainbow 2s linear infinite;
+  @keyframes rainbow {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  --animate-gradient: gradient 8s linear infinite;
+  @keyframes gradient {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  --animate-slide: slide 20s linear infinite;
+  @keyframes slide {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-100%);
+    }
+  }
+
+  --animate-spin-around: spin-around calc(var(--speed) * 2) infinite linear;
+  @keyframes spin-around {
+    0% {
+      transform: translateZ(0) rotate(0);
+    }
+    15%,
+    35% {
+      transform: translateZ(0) rotate(90deg);
+    }
+    65%,
+    85% {
+      transform: translateZ(0) rotate(270deg);
+    }
+    100% {
+      transform: translateZ(0) rotate(360deg);
+    }
+  }
+
+  /* Meteor animation for meteors component */
+  --animate-meteor: meteor 1s linear infinite;
+  @keyframes meteor {
+    0% {
+      transform: rotate(var(--angle)) translateX(0);
+      opacity: 1;
+    }
+    70% {
+      opacity: 1;
+    }
+    100% {
+      transform: rotate(var(--angle)) translateX(-500px);
+      opacity: 0;
+    }
+  }
 }
 
 /* Disney-inspired custom font classes */
@@ -56,6 +278,7 @@
   letter-spacing: 0.01em;
 }
 
+/* Enhanced Theme Variables */
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
@@ -92,6 +315,11 @@
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
+
+  /* Default theme accent */
+  --theme-accent: #ff6b35;
+  --theme-gradient: "from-blue-200 via-purple-200 to-pink-200";
+  --theme-animation: "sparkle";
 }
 
 .dark {
@@ -129,6 +357,54 @@
   --foreground-rgb: 255, 255, 255;
   --background-start-rgb: 0, 0, 0;
   --background-end-rgb: 0, 0, 0;
+
+  /* Dark theme accent */
+  --theme-accent: #8b5cf6;
+  --theme-gradient: "from-purple-900 via-blue-900 to-indigo-900";
+  --theme-animation: "glow";
+}
+
+/* Enhanced Theme-Specific Classes */
+.theme-loading {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.theme-container {
+  transition: all var(--theme-transition-duration) ease-in-out;
+}
+
+.theme-content {
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Accessibility Enhancements */
+.reduce-motion {
+  --animate-shimmer: none;
+  --animate-cosmic: none;
+  --animate-wave: none;
+  --animate-magical-glow: none;
+  --animate-sparkle-trail: none;
+  --animate-theme-transition: none;
+}
+
+.reduce-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+.high-contrast {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0 0 0);
+  --border: oklch(0 0 0);
+  filter: contrast(1.5);
+}
+
+.high-contrast.dark {
+  --background: oklch(0 0 0);
+  --foreground: oklch(1 0 0);
+  --border: oklch(1 0 0);
 }
 
 @layer base {
@@ -156,7 +432,7 @@
   }
 }
 
-/* Disney Theme Specific Styles */
+/* Enhanced Disney Theme Specific Styles */
 @keyframes float {
   0% {
     transform: translateY(0px);
@@ -280,8 +556,13 @@
   }
 }
 
+/* Enhanced utility classes */
 .text-glow {
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.bg-theme-accent {
+  background-color: var(--theme-accent);
 }
 
 .animate-float {
@@ -317,12 +598,122 @@
   animation: rotate 10s linear infinite;
 }
 
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.animate-cosmic {
+  background: radial-gradient(
+      circle at 20% 50%,
+      rgba(120, 119, 198, 0.3),
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 80% 20%,
+      rgba(255, 119, 198, 0.3),
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 40% 80%,
+      rgba(120, 199, 255, 0.3),
+      transparent 50%
+    );
+  background-size: 400% 400%;
+  animation: cosmic 8s linear infinite;
+}
+
+.animate-wave {
+  animation: wave 4s ease-in-out infinite;
+}
+
+.animate-magical-glow {
+  animation: magical-glow 2s ease-in-out infinite;
+}
+
+.animate-theme-transition {
+  animation: theme-transition var(--theme-transition-duration) ease-in-out;
+}
+
+/* Theme-specific background utilities */
 .bg-magic-gradient {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .bg-stars {
   background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18l1-1 1 1-1 1-1-1zm3 3l1-1 1 1-1 1-1-1zm4-4l1-1 1 1-1 1-1-1zm6 6l1-1 1 1-1 1-1-1zm-8 8l1-1 1 1-1 1-1-1zm-9-3l1-1 1 1-1 1-1-1zm9 1l1-1 1 1-1 1-1-1zm12-2l1-1 1 1-1 1-1-1zm-6 10l1-1 1 1-1 1-1-1zm-5-5l1-1 1 1-1 1-1-1zm-3-13l1-1 1 1-1 1-1-1zm-6-6l1-1 1 1-1 1-1-1z' fill='%23ffffff' fill-opacity='0.2' fill-rule='evenodd'/%3E%3C/svg%3E");
+}
+
+/* Disney Theme Specific Backgrounds */
+.bg-magical-day {
+  background: linear-gradient(
+    135deg,
+    #74b9ff 0%,
+    #e17055 25%,
+    #fd79a8 50%,
+    #fdcb6e 75%,
+    #55a3ff 100%
+  );
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+}
+
+.bg-starlit-night {
+  background: linear-gradient(
+    135deg,
+    #2d3436 0%,
+    #6c5ce7 25%,
+    #a29bfe 50%,
+    #fd79a8 75%,
+    #2d3436 100%
+  );
+  background-size: 400% 400%;
+  animation: cosmic 20s ease infinite;
+}
+
+.bg-castle-dreams {
+  background: linear-gradient(
+    135deg,
+    #fdcb6e 0%,
+    #e17055 25%,
+    #f39c12 50%,
+    #e67e22 75%,
+    #fdcb6e 100%
+  );
+  background-size: 400% 400%;
+  animation: shimmer 10s ease infinite;
+}
+
+.bg-space-mountain {
+  background: linear-gradient(
+    135deg,
+    #0984e3 0%,
+    #6c5ce7 25%,
+    #00b894 50%,
+    #00cec9 75%,
+    #0984e3 100%
+  );
+  background-size: 400% 400%;
+  animation: cosmic 12s ease infinite;
+}
+
+.bg-under-sea {
+  background: linear-gradient(
+    135deg,
+    #00b894 0%,
+    #00cec9 25%,
+    #74b9ff 50%,
+    #0984e3 75%,
+    #00b894 100%
+  );
+  background-size: 400% 400%;
+  animation: wave 8s ease infinite;
 }
 
 .clip-wave {
@@ -341,6 +732,10 @@
   background-position: bottom;
   background-size: 100% 100px;
   background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg"><path d="M321.39 56.44c58-10.79 114.16-30.13 172-41.86 82.39-16.72 168.19-17.73 250.45-.39C823.78 31 906.67 72 985.66 92.83c70.05 18.48 146.53 26.09 214.34 3V0H0v27.35a600.21 600.21 0 00321.39 29.09z" fill="%23ffffff"/></svg>');
+}
+
+.magic-sparkle {
+  position: relative;
 }
 
 .magic-sparkle::before {
@@ -384,221 +779,4 @@
   }
 }
 
-.castle-silhouette {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  background-image: url("/images/castle-silhouette.svg");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-  opacity: 0.8;
-}
-
-@keyframes firework {
-  0% {
-    transform: translate(var(--x), var(--initialY));
-    width: var(--initialSize);
-    opacity: 1;
-  }
-  50% {
-    width: 0.5vmin;
-    opacity: 1;
-  }
-  100% {
-    width: var(--finalSize);
-    opacity: 0;
-  }
-}
-
-.firework {
-  --initialSize: 0.5vmin;
-  --finalSize: 45vmin;
-  --particleSize: 0.2vmin;
-  --color1: yellow;
-  --color2: khaki;
-  --color3: white;
-  --color4: lime;
-  --color5: gold;
-  --color6: mediumseagreen;
-  --y: -30vmin;
-  --x: -50%;
-  --initialY: 60vmin;
-  position: absolute;
-  left: 50%;
-  top: 0;
-  transform: translate(var(--x), var(--initialY));
-  width: var(--initialSize);
-  z-index: 2;
-}
-
-.firework::before {
-  content: "";
-  display: block;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  position: absolute;
-  transform: translate(-50%, -50%);
-  width: var(--initialSize);
-  height: var(--initialSize);
-  border-radius: 50%;
-  background-color: var(--color3);
-  box-shadow: 0 0 var(--particleSize) var(--color3),
-    0 0 var(--particleSize) var(--color3), 0 0 var(--particleSize) var(--color3),
-    0 0 var(--particleSize) var(--color3), 0 0 var(--particleSize) var(--color3),
-    0 0 var(--particleSize) var(--color3);
-  animation: firework 2s infinite;
-}
-
-.firework:nth-child(2) {
-  --x: 30vmin;
-  --y: -30vmin;
-  --initialY: 60vmin;
-}
-
-.firework:nth-child(2)::before {
-  --color1: mediumseagreen;
-  --color2: gold;
-  --color3: white;
-  --color4: lime;
-  --color5: gold;
-  --color6: mediumseagreen;
-  animation-delay: 0.25s;
-}
-
-.firework:nth-child(3) {
-  --x: -30vmin;
-  --y: -30vmin;
-  --initialY: 60vmin;
-}
-
-.firework:nth-child(3)::before {
-  --color1: gold;
-  --color2: mediumseagreen;
-  --color3: white;
-  --color4: gold;
-  --color5: lime;
-  --color6: gold;
-  animation-delay: 0.4s;
-}
-
-/* Contact page effects */
-.bg-futuristic-gradient {
-  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-  background-size: 400% 400%;
-  animation: gradientFlow 15s ease infinite;
-}
-
-.animate-floating-shadow {
-  animation: floatingShadow 6s ease-in-out infinite;
-}
-
-.animate-futuristic-glow {
-  animation: futuristicGlow 8s ease-in-out infinite;
-}
-
-.animate-ripple {
-  animation: ripple 1.5s ease-out infinite;
-}
-
-.input-futuristic {
-  border: 2px solid transparent;
-  background-clip: padding-box;
-  background-image: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0.1),
-    rgba(255, 255, 255, 0.05)
-  );
-  backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
-}
-
-.input-futuristic:focus {
-  background-image: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0.2),
-    rgba(255, 255, 255, 0.1)
-  );
-  box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
-}
-
-::-webkit-scrollbar {
-  width: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-}
-
-::-webkit-scrollbar-thumb {
-  background-color: rgba(138, 43, 226, 0.5);
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(138, 43, 226, 0.7);
-}
-
-/* Category Color Utilities */
-.category-bg {
-  background-color: var(--category-color-bg);
-}
-
-.category-text {
-  color: var(--category-color);
-}
-
-.category-border {
-  border-color: var(--category-color);
-}
-
-.category-fill {
-  fill: var(--category-color);
-}
-
-/* Progress Bar Utility */
-.w-progress-bar {
-  width: var(--progress-percent);
-}
-
-/* Data attribute versions - CSS custom properties approach */
-[data-category-color],
-[data-category-bg] {
-  --category-color: attr(data-category-color);
-  --category-color-bg: attr(data-category-bg);
-}
-
-[data-progress-percent] {
-  --progress-percent: attr(data-progress-percent);
-}
-
-/* Calendar Specific Styles */
-.calendar-event-height {
-  height: calc(100% - 4px);
-}
-
-/* Z-index using custom properties */
-.fixed[style*="--z-index"] {
-  z-index: var(--z-index);
-}
-
-/* Tour Position Styles */
-.tour-position {
-  position: fixed;
-  top: attr(data-top);
-  right: attr(data-right);
-  bottom: attr(data-bottom);
-  left: attr(data-left);
-  transform: attr(data-transform);
-}
-
-/* Highlight rectangle styles */
-.highlight-rect {
-  position: absolute;
-  top: attr(data-top);
-  left: attr(data-left);
-  width: attr(data-width);
-  height: attr(data-height);
-}
+/* Continue with existing styles... */

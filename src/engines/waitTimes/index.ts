@@ -4,6 +4,85 @@ import EventEmitter from 'events'
 import "server-only"
 
 // =========================================================================================
+// TYPES / INTERFACES
+// =========================================================================================
+
+interface GetWaitTimesProps {
+    parkId: string
+    forceRefresh?: boolean
+    signal?: AbortSignal
+}
+
+interface PredictWaitTimeProps {
+    attractionId: string
+    target: Date
+}
+
+interface AttractionWaitTime {
+    attractionId: string
+    name: string
+    waitMinutes: number
+    lastUpdated: string
+}
+
+interface PredictedWaitTime {
+    attractionId: string
+    predictedMinutes: number
+    confidence: number // 0 – 1
+}
+
+interface HistoricalWaitSample {
+    timestamp: Date
+    waitMinutes: number
+}
+
+interface WaitTimesUpdatePayload {
+    parkId: string
+    data: AttractionWaitTime[]
+}
+
+interface CachedWaitTimes {
+    timestamp: number
+    data: AttractionWaitTime[]
+}
+
+interface AnomalyDetection {
+    adjustment: number
+    confidence: number
+}
+
+interface AttractionMeta {
+    id: string
+    name: string
+    latitude: number
+    longitude: number
+    thrillLevel?: number
+}
+
+interface RawWaitTimeResponse {
+    id: string
+    name: string
+    lastUpdated: string
+    queue?: {
+        STANDBY?: {
+            waitTime: number
+        }
+    }
+}
+
+// Database record types
+interface HistoricalWaitTimeRecord {
+    timestamp: string
+    waitMinutes: number
+}
+
+interface LiveWaitTimeRecord {
+    timestamp: string
+    waitMinutes: number
+    attractionId: string
+}
+
+// =========================================================================================
 // PUBLIC API (Exported Functions)
 // =========================================================================================
 
@@ -20,7 +99,9 @@ export async function getCurrentWaitTimes({
     const cached = waitTimeCache.get(parkId)
     const isCacheValid = cached && Date.now() - cached.timestamp < CACHE_TTL_MS
 
-    if (isCacheValid && !forceRefresh) return cached!.data
+    if (isCacheValid && !forceRefresh) {
+        return cached.data
+    }
 
     const data = await fetchWaitTimesFromApi({ parkId, signal })
     waitTimeCache.set(parkId, { timestamp: Date.now(), data })
@@ -50,7 +131,12 @@ export async function predictWaitTime({
         { value: emaHistorical, weight: 0.4 }
     ])
 
-    const anomaly = detectAnomaly(basePrediction, liveSample.at(-1)!.waitMinutes)
+    const lastLiveSample = liveSample.at(-1)
+    if (!lastLiveSample) {
+        throw new Error(`No live sample data available for attraction ${attractionId}`)
+    }
+
+    const anomaly = detectAnomaly(basePrediction, lastLiveSample.waitMinutes)
 
     return {
         attractionId,
@@ -123,7 +209,11 @@ async function safeFetchWaitTime({
 
         if (!res.ok) throw new Error(`Failed wait-time fetch: ${res.status}`)
 
-        const json = (await res.json()) as RawWaitTimeResponse
+        const json = await res.json()
+        // Validate the response structure before transforming
+        if (!isValidRawWaitTimeResponse(json)) {
+            throw new Error('Invalid wait time response format')
+        }
         return transformRawWaitTime(json)
     } catch (error) {
         console.error('waitTimes.safeFetchWaitTime', { attractionId, error })
@@ -134,6 +224,19 @@ async function safeFetchWaitTime({
             lastUpdated: new Date().toISOString()
         }
     }
+}
+
+function isValidRawWaitTimeResponse(data: unknown): data is RawWaitTimeResponse {
+    return (
+        typeof data === 'object' &&
+        data !== null &&
+        'id' in data &&
+        'name' in data &&
+        'lastUpdated' in data &&
+        typeof (data as Record<string, unknown>).id === 'string' &&
+        typeof (data as Record<string, unknown>).name === 'string' &&
+        typeof (data as Record<string, unknown>).lastUpdated === 'string'
+    )
 }
 
 function transformRawWaitTime(raw: RawWaitTimeResponse): AttractionWaitTime {
@@ -158,9 +261,16 @@ async function getAttractionsForPark(parkId: string): Promise<AttractionMeta[]> 
         next: { revalidate: 60 * 60 } // one hour
     })
     if (!res.ok) throw new Error('Unable to fetch attractions list')
-    const data = (await res.json()) as AttractionMeta[]
-    systemCache.set(key, data, 60 * 60)
-    return data
+
+    const data = await res.json()
+    // Validate that the response is an array
+    if (!Array.isArray(data)) {
+        throw new Error('Expected array of attractions from API')
+    }
+
+    const typedData = data as AttractionMeta[]
+    systemCache.set(key, typedData, 60 * 60)
+    return typedData
 }
 
 async function getHistoricalWaitTimes({
@@ -178,11 +288,12 @@ async function getHistoricalWaitTimes({
         .eq('attractionId', attractionId)
         .order('timestamp', { ascending: true })
         .limit(HISTORICAL_SAMPLE_LIMIT)
+        .returns<HistoricalWaitTimeRecord[]>()
 
     if (error) throw error
     if (!data) return []
 
-    const parsed = data.map(({ timestamp, waitMinutes }) => ({
+    const parsed = data.map(({ timestamp, waitMinutes }: HistoricalWaitTimeRecord) => ({
         timestamp: new Date(timestamp),
         waitMinutes
     }))
@@ -204,11 +315,15 @@ async function getLiveSample({
         .eq('attractionId', attractionId)
         .gte('timestamp', past.toISOString())
         .order('timestamp', { ascending: true })
+        .returns<Pick<LiveWaitTimeRecord, 'timestamp' | 'waitMinutes'>[]>()
 
     if (error) throw error
     if (!data) return []
 
-    return data.map(d => ({ timestamp: new Date(d.timestamp), waitMinutes: d.waitMinutes }))
+    return data.map((d: Pick<LiveWaitTimeRecord, 'timestamp' | 'waitMinutes'>) => ({
+        timestamp: new Date(d.timestamp),
+        waitMinutes: d.waitMinutes
+    }))
 }
 
 function ensureRealtimeChannel(parkId: string) {
@@ -216,20 +331,33 @@ function ensureRealtimeChannel(parkId: string) {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return // realtime optional
 
     const channel = supabase.channel(`waitTimes:${parkId}`)
-    channel.on('postgres_changes', { event: '*', schema: 'public', table: 'live_wait_times' }, payload => {
-        const row = payload.new as { attractionId: string; waitMinutes: number; timestamp: string }
-        eventBus.emit('waitTimes:update', {
-            parkId,
-            data: [
-                {
-                    attractionId: row.attractionId,
-                    name: '—',
-                    waitMinutes: row.waitMinutes,
-                    lastUpdated: row.timestamp
-                }
-            ]
-        })
-    })
+    channel.on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'live_wait_times' },
+        (payload: unknown) => {
+            // Type guard to ensure payload structure
+            if (
+                payload &&
+                typeof payload === 'object' &&
+                'new' in payload &&
+                payload.new &&
+                typeof payload.new === 'object'
+            ) {
+                const row = payload.new as LiveWaitTimeRecord
+                eventBus.emit('waitTimes:update', {
+                    parkId,
+                    data: [
+                        {
+                            attractionId: row.attractionId,
+                            name: '—',
+                            waitMinutes: row.waitMinutes,
+                            lastUpdated: row.timestamp
+                        }
+                    ]
+                })
+            }
+        }
+    )
     channel.subscribe()
     realtimeChannels.set(parkId, channel)
 }
@@ -309,70 +437,3 @@ const systemCache = {
 const internalSystemCache = new Map<string, { value: unknown; expiry: number }>()
 
 const realtimeChannels = new Map<string, ReturnType<SupabaseClient['channel']>>()
-
-// =========================================================================================
-// TYPES / INTERFACES
-// =========================================================================================
-
-interface GetWaitTimesProps {
-    parkId: string
-    forceRefresh?: boolean
-    signal?: AbortSignal
-}
-
-interface PredictWaitTimeProps {
-    attractionId: string
-    target: Date
-}
-
-interface AttractionWaitTime {
-    attractionId: string
-    name: string
-    waitMinutes: number
-    lastUpdated: string
-}
-
-interface PredictedWaitTime {
-    attractionId: string
-    predictedMinutes: number
-    confidence: number // 0 – 1
-}
-
-interface HistoricalWaitSample {
-    timestamp: Date
-    waitMinutes: number
-}
-
-interface WaitTimesUpdatePayload {
-    parkId: string
-    data: AttractionWaitTime[]
-}
-
-interface CachedWaitTimes {
-    timestamp: number
-    data: AttractionWaitTime[]
-}
-
-interface AnomalyDetection {
-    adjustment: number
-    confidence: number
-}
-
-interface AttractionMeta {
-    id: string
-    name: string
-    latitude: number
-    longitude: number
-    thrillLevel?: number
-}
-
-interface RawWaitTimeResponse {
-    id: string
-    name: string
-    lastUpdated: string
-    queue?: {
-        STANDBY?: {
-            waitTime: number
-        }
-    }
-}

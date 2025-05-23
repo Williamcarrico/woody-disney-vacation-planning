@@ -648,9 +648,8 @@ export default function DisneyWorldTimeline() {
                                     >
                                         {/* Timeline node */}
                                         <div
-                                            className={`absolute left-[15px] w-[16px] h-[16px] rounded-full z-10 border-2 ${item.status === 'closed' ? 'bg-white border-gray-400' : 'bg-white border-blue-500'
+                                            className={`absolute left-[15px] w-[16px] h-[16px] rounded-full z-10 border-2 top-6 ${item.status === 'closed' ? 'bg-white border-gray-400' : 'bg-white border-blue-500'
                                                 }`}
-                                            style={{ top: '24px' }}
                                         />
 
                                         {/* Content card */}

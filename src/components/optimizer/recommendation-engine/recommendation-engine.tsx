@@ -1,8 +1,8 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Loader2, AlertTriangle, ListFilter, LayoutGrid, Rows, SearchX } from "lucide-react"
+import { AlertTriangle, LayoutGrid, Rows, SearchX } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useRecommendationLogic } from "./use-recommendation-logic.hook"
@@ -11,7 +11,6 @@ import { RecommendationFilters } from "./recommendation-filters"
 import {
     RecommendationEngineProps,
     RecommendableItem,
-    Recommendation,
     RecommendationFilters as RecommendationFiltersType,
 } from "./types"
 import { DEFAULT_RECOMMENDATION_FILTERS } from "./constants"
@@ -116,7 +115,7 @@ export function RecommendationEngine(props: RecommendationEngineProps) {
 
     const handleFiltersChange = (newFilters: RecommendationFiltersType) => {
         setActiveFilters(newFilters)
-        applyFilters(newFilters, recommendations) // Pass current recommendations to be filtered
+        applyFilters(newFilters)
     }
 
     const handleAddToItinerary = (item: RecommendableItem) => {
@@ -188,7 +187,7 @@ export function RecommendationEngine(props: RecommendationEngineProps) {
                     <AlertTriangle size={48} className="mb-3 text-red-500" />
                     <h3 className="text-xl font-semibold mb-2">Oops! Something went wrong.</h3>
                     <p>{error}</p>
-                    <Button onClick={() => applyFilters(activeFilters, recommendations)} variant="outline" className="mt-4 text-red-300 border-red-500 hover:bg-red-800/50 hover:text-red-200">
+                    <Button onClick={() => applyFilters(activeFilters)} variant="outline" className="mt-4 text-red-300 border-red-500 hover:bg-red-800/50 hover:text-red-200">
                         Try Reloading Suggestions
                     </Button>
                 </motion.div>
@@ -211,7 +210,7 @@ export function RecommendationEngine(props: RecommendationEngineProps) {
                     <SearchX size={64} className="mb-6 text-purple-400" />
                     <h3 className="text-2xl font-semibold mb-3 text-slate-200">No Recommendations Found</h3>
                     <p className="max-w-md">
-                        We couldn't find any recommendations matching your current preferences and filters.
+                        We couldn&apos;t find any recommendations matching your current preferences and filters.
                         Try adjusting your filter settings or broadening your choices!
                     </p>
                 </motion.div>

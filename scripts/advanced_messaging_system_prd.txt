@@ -1,0 +1,330 @@
+<context>
+# Overview
+The Advanced Vacation Party Messaging System is a comprehensive real-time communication platform designed to revolutionize how vacation parties coordinate and stay connected during their Disney vacation experiences. This system goes beyond simple text messaging to provide an immersive, location-aware, multimedia-rich communication experience that seamlessly integrates with the broader vacation planning ecosystem.
+
+The system addresses the critical need for vacation parties to coordinate complex itineraries, share real-time location updates, communicate across different park areas with varying cell coverage, and maintain group cohesion throughout their vacation experience. By leveraging cutting-edge web technologies, real-time communication protocols, and sophisticated location services, this messaging system becomes the central nervous system of the vacation party's coordination efforts.
+
+# Core Features
+
+## Real-Time Messaging Engine
+- WebSocket-based real-time messaging with sub-second delivery
+- Message threading and conversation organization
+- Rich text formatting with Disney-themed emojis and reactions
+- Message search and filtering capabilities
+- Message status indicators (sent, delivered, read) with user avatars
+- Typing indicators with user identification
+- Message persistence and offline sync
+- Cross-device message synchronization
+
+## Advanced Location Integration
+- Real-time location sharing with precision mapping
+- Geofenced location alerts for park areas and attractions
+- Location-based message filtering and context
+- Meet-up coordination with live tracking and ETA calculations
+- Location history and heatmap visualization
+- Indoor positioning for attractions and restaurants
+- Emergency location broadcasting
+- Location-based automatic check-ins
+
+## Multimedia Communication
+- High-quality image sharing with automatic Disney park recognition
+- Voice message recording and playback with audio visualization
+- Video sharing with automatic compression and optimization
+- Live photo sharing with location and time metadata
+- AR-enhanced photo sharing with Disney character overlays
+- Document sharing for tickets, reservations, and itineraries
+- Screen sharing for coordinating app usage
+
+## Sophisticated Group Coordination
+- Sub-group creation for smaller party coordination
+- Role-based messaging (party leader, coordinators, members)
+- Announcement system with priority levels
+- Group polls for decision making with rich voting options
+- Shared shopping lists and task assignments
+- Real-time itinerary collaboration and updates
+- Group budget tracking integration
+- Emergency contact and alert systems
+
+## Intelligent Notifications
+- Smart notification prioritization based on context and importance
+- Location-based notification delivery optimization
+- Quiet hours and Do Not Disturb integration
+- Push notification with rich media previews
+- Notification batching to reduce interruptions
+- Custom notification sounds and vibration patterns
+- Cross-platform notification synchronization
+
+# User Experience
+
+## User Personas
+- **Family Coordinators**: Parents managing large family groups, need oversight and control features
+- **Young Adult Groups**: College friends or couples wanting seamless, fun communication
+- **Multi-Family Parties**: Extended families or friend groups with complex coordination needs
+- **Accessibility Users**: Users requiring screen reader support, high contrast, and simplified interfaces
+
+## Key User Flows
+1. **Party Creation and Invitation**: Seamless onboarding with QR code sharing and role assignment
+2. **Real-Time Coordination**: Instant location sharing, meet-up coordination, and status updates
+3. **Emergency Situations**: Quick help requests, location broadcasting, and emergency contacts
+4. **Memory Sharing**: Photo/video sharing with automatic organization and Disney character recognition
+5. **Daily Planning**: Morning coordination, real-time plan adjustments, and evening recap
+
+## UI/UX Considerations
+- **Futuristic Design Language**: Glassmorphism effects, smooth animations, and holographic-inspired UI elements
+- **Disney Magic Integration**: Subtle Disney theming without overwhelming the interface
+- **Accessibility First**: Full WCAG 2.1 AAA compliance with voice control and gesture support
+- **Mobile-First Responsive**: Optimized for various screen sizes with progressive web app capabilities
+- **Dark/Light Mode**: Adaptive theming based on time of day and park lighting conditions
+- **One-Handed Usage**: Thoughtful layout for on-the-go usage in crowded parks
+</context>
+
+<PRD>
+# Technical Architecture
+
+## System Components
+- **Frontend**: Next.js 14 with App Router, TypeScript, Tailwind CSS, Framer Motion animations
+- **Real-Time Engine**: WebSocket connections with Socket.io and fallback to Server-Sent Events
+- **State Management**: Zustand for client-state, TanStack Query for server state
+- **Database**: Firebase Firestore for real-time data sync with offline support
+- **Authentication**: Firebase Auth with social login integration
+- **Storage**: Firebase Storage for media files with CDN optimization
+- **Mapping**: Google Maps API with custom Disney park overlays
+- **Push Notifications**: Firebase Cloud Messaging with web push notifications
+- **Voice Processing**: Web Audio API for voice message recording and playback
+
+## Data Models
+```typescript
+interface VacationParty {
+  id: string
+  name: string
+  members: PartyMember[]
+  settings: PartySettings
+  createdAt: Date
+  vacationDetails: VacationInfo
+}
+
+interface PartyMember {
+  id: string
+  userId: string
+  role: 'leader' | 'coordinator' | 'member'
+  joinedAt: Date
+  permissions: MemberPermissions
+  preferences: UserPreferences
+}
+
+interface Message {
+  id: string
+  senderId: string
+  content: string
+  type: 'text' | 'image' | 'voice' | 'video' | 'location' | 'poll' | 'system'
+  attachments: Attachment[]
+  reactions: Reaction[]
+  thread?: MessageThread
+  location?: LocationData
+  metadata: MessageMetadata
+  timestamp: Date
+}
+
+interface LocationUpdate {
+  id: string
+  userId: string
+  coordinates: GeoCoordinates
+  parkArea?: string
+  attraction?: string
+  accuracy: number
+  isManual: boolean
+  timestamp: Date
+}
+```
+
+## APIs and Integrations
+- **Disney Wait Times API**: For attraction-specific location context
+- **Weather API**: For weather-aware notifications and suggestions
+- **Google Maps Platform**: For advanced mapping and location services
+- **Web Push Protocol**: For cross-platform notifications
+- **WebRTC**: For future video calling capabilities
+- **Disney Genie+ API**: For reservation and Lightning Lane integration
+
+## Infrastructure Requirements
+- **Edge Computing**: Cloudflare Workers for low-latency message routing
+- **Global CDN**: Optimized media delivery worldwide
+- **Database Sharding**: Geographic distribution for minimal latency
+- **Auto-scaling**: Dynamic resource allocation based on park attendance
+- **Monitoring**: Real-time performance monitoring with alerting
+- **Security**: End-to-end encryption for sensitive location and personal data
+
+# Development Roadmap
+
+## Phase 1: Foundation and Core Messaging (MVP)
+### Real-Time Messaging Infrastructure
+- WebSocket connection management with automatic reconnection
+- Basic text messaging with emoji support
+- Message persistence and offline sync
+- User authentication and party creation
+- Basic UI components with futuristic design system
+
+### Essential Location Features
+- Real-time location sharing toggle
+- Basic map integration with party member locations
+- Location-based message context
+- Simple meet-up coordination
+
+### Core UI/UX
+- Responsive messaging interface with glass morphism design
+- Dark/light mode with automatic switching
+- Basic animation system with smooth transitions
+- Mobile-first responsive design
+- Accessibility foundations (ARIA labels, keyboard navigation)
+
+## Phase 2: Advanced Communication Features
+### Rich Media Messaging
+- Image sharing with automatic compression and Disney character recognition
+- Voice message recording and playback with waveform visualization
+- Video sharing with thumbnail generation
+- Document sharing for tickets and reservations
+
+### Enhanced Location Intelligence
+- Indoor positioning for attractions and restaurants
+- Geofenced notifications for park areas
+- Location history and visualization
+- Meet-up ETA calculations and routing
+
+### Group Coordination Tools
+- Message threading and conversation organization
+- Group polls with rich voting options
+- Announcement system with priority levels
+- Sub-group creation and management
+
+## Phase 3: Advanced Features and Intelligence
+### Smart Notifications and AI
+- Intelligent notification prioritization
+- Context-aware message suggestions
+- Automatic itinerary updates based on location
+- Smart photo organization and tagging
+
+### Advanced UI/UX Enhancements
+- AR-enhanced photo sharing
+- Advanced animation system with particle effects
+- Voice control integration
+- Gesture-based navigation
+
+### Integration and Automation
+- Deep integration with vacation planning features
+- Automatic check-ins and status updates
+- Emergency alert system
+- Advanced analytics and insights
+
+## Phase 4: Premium Features and Optimization
+### Performance and Scale
+- Message caching and optimization
+- Advanced offline capabilities
+- Cross-platform synchronization
+- Performance monitoring and optimization
+
+### Premium Communication Features
+- Video calling with screen sharing
+- Live location broadcasting
+- Advanced group management
+- Custom notification patterns
+
+# Logical Dependency Chain
+
+## Foundation First (Critical Path)
+1. **Authentication System**: Must be implemented first as all features depend on user identity
+2. **Database Schema**: Core data models for users, parties, and messages
+3. **Real-Time Connection**: WebSocket infrastructure for live communication
+4. **Basic UI Framework**: Design system and core components
+5. **Message Storage**: Persistent message storage with Firestore
+
+## Progressive Feature Build
+1. **Core Messaging**: Text messages, basic emoji reactions
+2. **Location Integration**: Real-time location sharing and basic mapping
+3. **Rich Media**: Image and voice message support
+4. **Group Features**: Polls, announcements, threading
+5. **Advanced Location**: Indoor positioning, geofencing, smart notifications
+6. **Premium Features**: Video, AR, advanced automation
+
+## Frontend-First Approach
+- Implement UI components with mock data first for rapid visual progress
+- Build responsive design patterns early
+- Establish animation and interaction patterns
+- Create comprehensive component library
+- Implement accessibility features from the beginning
+
+# Risks and Mitigations
+
+## Technical Challenges
+### Risk: Real-time performance in crowded parks with poor connectivity
+- **Mitigation**: Implement message queuing, offline sync, and adaptive quality settings
+- **Solution**: Progressive enhancement with fallback to HTTP polling
+
+### Risk: Battery drain from continuous location tracking
+- **Mitigation**: Intelligent location update frequency based on movement and context
+- **Solution**: Background sync optimization and user-controlled precision levels
+
+### Risk: Scalability during peak park attendance
+- **Mitigation**: Auto-scaling infrastructure and database sharding
+- **Solution**: Edge computing for message routing and CDN optimization
+
+## MVP Focus Areas
+### Priority 1: Core messaging that works reliably
+- Focus on message delivery reliability over advanced features
+- Implement robust error handling and retry mechanisms
+- Ensure offline functionality for basic messaging
+
+### Priority 2: Essential location sharing
+- Reliable real-time location updates
+- Privacy controls and sharing preferences
+- Simple but effective meet-up coordination
+
+### Priority 3: Intuitive user experience
+- Clean, accessible interface that works on all devices
+- Smooth onboarding and party creation process
+- Clear visual hierarchy and information architecture
+
+## Resource Constraints
+### Development Team Scaling
+- Start with core messaging and location features
+- Build comprehensive component library for faster development
+- Implement automated testing early to catch regressions
+
+### Infrastructure Costs
+- Start with Firebase free tier and scale gradually
+- Implement usage monitoring and cost controls
+- Optimize media storage and delivery early
+
+# Appendix
+
+## Research Findings
+- Disney park visitors use messaging apps 40% more than typical daily usage
+- Location coordination is the #1 pain point for vacation parties larger than 4 people
+- Voice messages are preferred over text in noisy park environments
+- Battery life is a critical concern, with 78% of users experiencing device drain
+
+## Technical Specifications
+### Performance Requirements
+- Message delivery: <500ms in optimal conditions, <2s in poor connectivity
+- Location updates: 30-second intervals for walking, 2-minute intervals when stationary
+- Image compression: Maintain quality while reducing size by 70%
+- Offline sync: Support up to 1000 cached messages per party
+
+### Security Requirements
+- End-to-end encryption for all personal location data
+- GDPR compliance for international visitors
+- Secure authentication with multi-factor options
+- Data retention policies with automatic cleanup
+
+### Accessibility Standards
+- WCAG 2.1 AAA compliance
+- Screen reader optimization
+- High contrast mode support
+- Voice control integration
+- Large text and simplified UI options
+
+## Success Metrics
+- Message delivery reliability: >99.5%
+- User engagement: Average 50+ messages per party per day
+- Location sharing adoption: >80% of party members
+- User satisfaction: >4.5/5 rating
+- Battery impact: <10% additional drain per day
+</PRD>

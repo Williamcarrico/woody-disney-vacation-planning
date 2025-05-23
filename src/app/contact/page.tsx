@@ -415,7 +415,7 @@ export default function ContactPage() {
                         {/* Replace GoogleMap with our new InteractiveMap component */}
                         <InteractiveMap
                             initialCenter={disneyWorldLocation}
-                            zoom={15}
+                            initialZoom={15}
                             height="100%"
                             width="100%"
                             showSearch={true}

@@ -1103,7 +1103,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
                                     <div className="space-y-4">
                                         {isLoadingMessages ? (
                                             <div className="flex justify-center py-8">
-                                                <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+                                                <div className="animate-spin h-6 w-6 border border-primary/20 border-t-primary rounded-full"></div>
                                             </div>
                                         ) : (
                                             <MessageList
@@ -1188,7 +1188,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
                                         if (isLoadingLocations) {
                                             return (
                                                 <div className="flex justify-center py-4">
-                                                    <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+                                                    <div className="animate-spin h-6 w-6 border border-primary/20 border-t-primary rounded-full"></div>
                                                 </div>
                                             );
                                         }
@@ -1231,7 +1231,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
 
                                 {isLoadingPolls ? (
                                     <div className="flex justify-center py-8">
-                                        <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+                                        <div className="animate-spin h-6 w-6 border border-primary/20 border-t-primary rounded-full"></div>
                                     </div>
                                 ) : (() => {
                                     if (polls?.length === 0) {
@@ -1273,7 +1273,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
                                     if (isLoadingNotifications) {
                                         return (
                                             <div className="flex justify-center py-8">
-                                                <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+                                                <div className="animate-spin h-6 w-6 border border-primary/20 border-t-primary rounded-full"></div>
                                             </div>
                                         );
                                     }
@@ -1312,7 +1312,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
                         if (isLoadingMembers) {
                             return (
                                 <div className="flex justify-center py-4">
-                                    <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+                                    <div className="animate-spin h-6 w-6 border border-primary/20 border-t-primary rounded-full"></div>
                                 </div>
                             )
                         }
@@ -1464,7 +1464,7 @@ export default function GroupCoordination({ vacationId }: GroupCoordinationProps
                         >
                             {isCreatingPoll ? (
                                 <>
-                                    <div className="animate-spin h-4 w-4 mr-2 border-2 border-current border-t-transparent rounded-full"></div>
+                                    <div className="animate-spin h-4 w-4 mr-2 border border-current/20 border-t-current rounded-full"></div>
                                     Creating...
                                 </>
                             ) : (

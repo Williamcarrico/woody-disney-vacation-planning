@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { MagnifyingGlassIcon, BoltIcon, CalendarIcon, MapIcon, QuestionMarkCircleIcon, ClockIcon } from "@heroicons/react/24/outline"
+import { motion, AnimatePresence } from "framer-motion"
 
 // FAQ data organized by categories
 const faqData: FAQCategory = {
@@ -182,15 +183,15 @@ export default function FAQPage() {
     const getCategoryIcon = (category: string) => {
         switch (category) {
             case "lightning-lane":
-                return <BoltIcon className="h-5 w-5" />
+                return <BoltIcon className="h-5 w-5 text-amber-500" />
             case "virtual-queue":
-                return <ClockIcon className="h-5 w-5" />
+                return <ClockIcon className="h-5 w-5 text-teal-500" />
             case "crowd-calendar":
-                return <CalendarIcon className="h-5 w-5" />
+                return <CalendarIcon className="h-5 w-5 text-blue-500" />
             case "park-strategies":
-                return <MapIcon className="h-5 w-5" />
+                return <MapIcon className="h-5 w-5 text-purple-500" />
             default:
-                return <QuestionMarkCircleIcon className="h-5 w-5" />
+                return <QuestionMarkCircleIcon className="h-5 w-5 text-indigo-500" />
         }
     }
 
@@ -212,30 +213,66 @@ export default function FAQPage() {
 
     // Extracted function for rendering search results when no results found
     const renderNoSearchResults = () => (
-        <div className="py-10 text-center">
-            <QuestionMarkCircleIcon className="h-12 w-12 mx-auto text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">No results found</h3>
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="py-10 text-center"
+        >
+            <motion.div
+                animate={{
+                    scale: [1, 1.1, 1],
+                    rotate: [0, 5, -5, 0]
+                }}
+                transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    repeatType: "reverse"
+                }}
+            >
+                <QuestionMarkCircleIcon className="h-16 w-16 mx-auto text-purple-400" />
+            </motion.div>
+            <h3 className="mt-4 text-lg font-medium font-display">No results found</h3>
             <p className="mt-2 text-muted-foreground">
                 Try adjusting your search query or browse categories
             </p>
-        </div>
+        </motion.div>
     )
 
     // Extracted function for rendering accordion items
-    const renderAccordionItem = (item: FAQItem) => (
-        <AccordionItem key={item.question} value={item.question}>
-            <AccordionTrigger
-                onClick={() => toggleAccordion(item.question)}
-                className="hover:bg-muted/50 px-4 rounded-lg transition-colors"
-            >
-                {item.question}
-            </AccordionTrigger>
-            <AccordionContent className="px-4">
-                <div className="prose dark:prose-invert max-w-none">
-                    <p>{item.answer}</p>
-                </div>
-            </AccordionContent>
-        </AccordionItem>
+    const renderAccordionItem = (item: FAQItem, index: number) => (
+        <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.05 }}
+            key={item.question}
+        >
+            <AccordionItem value={item.question} className="border border-slate-200 dark:border-slate-800 rounded-lg mb-4 overflow-hidden">
+                <AccordionTrigger
+                    onClick={() => toggleAccordion(item.question)}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-900 px-5 py-4 group transition-all duration-300"
+                >
+                    <div className="flex items-start gap-3 text-left">
+                        <div className="bg-blue-100 dark:bg-blue-900 rounded-full p-1 mt-0.5 text-blue-600 dark:text-blue-300">
+                            <QuestionMarkCircleIcon className="h-4 w-4" />
+                        </div>
+                        <span className="font-display group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+                            {item.question}
+                        </span>
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-5 pb-5 pt-1">
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.5 }}
+                        className="prose dark:prose-invert max-w-none pl-8 font-body"
+                    >
+                        <p>{item.answer}</p>
+                    </motion.div>
+                </AccordionContent>
+            </AccordionItem>
+        </motion.div>
     )
 
     // Extracted function for rendering search results
@@ -246,22 +283,30 @@ export default function FAQPage() {
 
         return (
             <Accordion type="multiple" className="w-full">
-                {searchResults.map(item => renderAccordionItem(item))}
+                {searchResults.map((item, index) => renderAccordionItem(item, index))}
             </Accordion>
         )
     }
 
     // Extracted function for rendering a category of FAQ items
     const renderCategoryItems = (category: string, items: FAQItem[]) => (
-        <div key={category} className="mb-10">
-            <div className="flex items-center gap-2 mb-4">
-                {getCategoryIcon(category)}
-                <h2 className="text-xl font-bold">{getCategoryName(category)}</h2>
+        <motion.div
+            key={category}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-12"
+        >
+            <div className="flex items-center gap-3 mb-6">
+                <div className={`p-2 rounded-lg bg-gradient-to-br ${getCategoryGradient(category)}`}>
+                    {getCategoryIcon(category)}
+                </div>
+                <h2 className="text-2xl font-bold font-display tracking-tight">{getCategoryName(category)}</h2>
             </div>
             <Accordion type="multiple" className="w-full">
-                {items.map(item => renderAccordionItem(item))}
+                {items.map((item, index) => renderAccordionItem(item, index))}
             </Accordion>
-        </div>
+        </motion.div>
     )
 
     // Extracted function for rendering items for a specific tab
@@ -269,7 +314,7 @@ export default function FAQPage() {
         const items = faqData[activeTab as keyof typeof faqData] || []
         return (
             <Accordion type="multiple" className="w-full">
-                {items.map(item => renderAccordionItem(item))}
+                {items.map((item, index) => renderAccordionItem(item, index))}
             </Accordion>
         )
     }
@@ -298,117 +343,255 @@ export default function FAQPage() {
 
     // Extracted function for rendering category preview items
     const renderCategoryPreviewItems = (category: string) => (
-        <ul className="text-sm space-y-1">
-            {faqData[category as keyof typeof faqData].slice(0, 3).map(item => (
-                <li key={item.question} className="truncate text-muted-foreground">
-                    • {item.question}
+        <ul className="text-sm space-y-2">
+            {faqData[category as keyof typeof faqData].slice(0, 3).map((item, index) => (
+                <li key={item.question}>
+                    <motion.div
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                        className="flex items-center gap-2 text-muted-foreground group cursor-pointer"
+                        onClick={() => {
+                            setActiveTab(category);
+                            const newExpandedItems = new Set(expandedItems);
+                            newExpandedItems.add(item.question);
+                            setExpandedItems(newExpandedItems);
+                        }}
+                    >
+                        <span className={`h-2 w-2 rounded-full ${getCategoryDot(category)}`}></span>
+                        <span className="truncate group-hover:text-foreground transition-colors duration-300">{item.question}</span>
+                    </motion.div>
                 </li>
             ))}
             {faqData[category as keyof typeof faqData].length > 3 && (
-                <li className="text-primary font-medium">• And {faqData[category as keyof typeof faqData].length - 3} more...</li>
+                <li>
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3, delay: 0.4 }}
+                        className="text-primary font-medium cursor-pointer hover:underline mt-1"
+                        onClick={() => setActiveTab(category)}
+                    >
+                        + {faqData[category as keyof typeof faqData].length - 3} more questions...
+                    </motion.div>
+                </li>
             )}
         </ul>
     )
 
     // Extracted function for rendering popular categories section
     const renderPopularCategories = () => (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            {Object.keys(faqData).map(category => (
-                <Card
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+            {Object.keys(faqData).map((category, index) => (
+                <motion.div
                     key={category}
-                    className="overflow-hidden transition-all hover:shadow-lg cursor-pointer border-t-4"
-                    style={{ borderTopColor: getCategoryColor(category) }}
-                    onClick={() => setActiveTab(category)}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    whileHover={{ y: -8, transition: { duration: 0.3 } }}
                 >
-                    <CardHeader className="pb-2">
-                        <div className="flex items-center gap-2">
-                            {getCategoryIcon(category)}
-                            <CardTitle>{getCategoryName(category)}</CardTitle>
-                        </div>
-                        <CardDescription>
-                            {faqData[category as keyof typeof faqData].length} questions
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {renderCategoryPreviewItems(category)}
-                    </CardContent>
-                </Card>
+                    <Card
+                        className="overflow-hidden transition-all hover:shadow-xl cursor-pointer bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 h-full border-t-4"
+                        style={{ borderTopColor: getCategoryColor(category) }}
+                        onClick={() => setActiveTab(category)}
+                    >
+                        <CardHeader className="pb-2">
+                            <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-full ${getCategoryBg(category)}`}>
+                                    {getCategoryIcon(category)}
+                                </div>
+                                <CardTitle className="font-display tracking-tight">{getCategoryName(category)}</CardTitle>
+                            </div>
+                            <CardDescription className="font-body">
+                                {faqData[category as keyof typeof faqData].length} questions
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {renderCategoryPreviewItems(category)}
+                        </CardContent>
+                    </Card>
+                </motion.div>
             ))}
         </div>
     )
 
     return (
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            {/* Hero section */}
-            <div className="text-center mb-12">
-                <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 pb-2">
-                    Frequently Asked Questions
-                </h1>
-                <p className="mt-4 text-xl text-muted-foreground max-w-3xl mx-auto">
-                    Find answers to the most common questions about planning your Disney vacation
-                </p>
-            </div>
+        <>
+            <style jsx global>{`
+                @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Nunito:wght@300;400;500;600;700&display=swap');
 
-            {/* Search section */}
-            <Card className="mb-8">
-                <CardContent className="pt-6">
-                    <div className="relative">
-                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            type="search"
-                            placeholder="Search for answers..."
-                            className="pl-10 h-12 text-base"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+                :root {
+                    --font-display: 'Montserrat', sans-serif;
+                    --font-body: 'Nunito', sans-serif;
+                }
+
+                .font-display {
+                    font-family: var(--font-display);
+                }
+
+                .font-body {
+                    font-family: var(--font-body);
+                }
+
+                .prose p {
+                    font-family: var(--font-body);
+                    line-height: 1.7;
+                }
+            `}</style>
+
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 font-body">
+                {/* Hero section with animated background */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.8 }}
+                    className="relative text-center mb-16 pb-4"
+                >
+                    <div className="absolute inset-0 -z-10 overflow-hidden">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.2),transparent_40%),radial-gradient(circle_at_70%_60%,rgba(255,188,0,0.15),transparent_50%)]"></div>
                     </div>
-                </CardContent>
-            </Card>
 
-            {/* Tab navigation */}
-            <div className="mb-8">
-                <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="w-full justify-start overflow-x-auto flex-nowrap mb-2">
-                        <TabsTrigger value="all" className="flex items-center gap-1">
-                            <QuestionMarkCircleIcon className="h-4 w-4" />
-                            <span>All Questions</span>
-                        </TabsTrigger>
-                        {Object.keys(faqData).map((category) => (
-                            <TabsTrigger key={category} value={category} className="flex items-center gap-1">
-                                {getCategoryIcon(category)}
-                                <span>{getCategoryName(category)}</span>
+                    <motion.h1
+                        initial={{ y: -20 }}
+                        animate={{ y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.1 }}
+                        className="text-4xl font-extrabold tracking-tight sm:text-5xl bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 pb-2 font-display"
+                    >
+                        Disney Vacation FAQ
+                    </motion.h1>
+
+                    <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
+                    >
+                        <p className="mt-4 text-xl text-muted-foreground max-w-3xl mx-auto font-body">
+                            Find answers to the most common questions about planning your magical Disney experience
+                        </p>
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.5, delay: 0.3 }}
+                        className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full"
+                    ></motion.div>
+                </motion.div>
+
+                {/* Search section */}
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
+                >
+                    <Card className="mb-10 overflow-hidden border-none shadow-lg bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+                        <CardContent className="pt-6 pb-6">
+                            <div className="relative">
+                                <MagnifyingGlassIcon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    type="search"
+                                    placeholder="What are you looking for? Try 'Genie+' or 'Virtual Queue'..."
+                                    className="pl-12 h-14 text-base rounded-full border-2 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                                {searchQuery && (
+                                    <motion.button
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.8 }}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 rounded-full"
+                                        onClick={() => setSearchQuery("")}
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </motion.button>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+
+                {/* Tab navigation */}
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.5 }}
+                    className="mb-10"
+                >
+                    <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
+                        <TabsList className="w-full justify-start overflow-x-auto flex-nowrap mb-6 p-1 bg-slate-100/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-xl">
+                            <TabsTrigger value="all" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-md transition-all duration-300">
+                                <QuestionMarkCircleIcon className="h-4 w-4" />
+                                <span>All Questions</span>
                             </TabsTrigger>
-                        ))}
-                    </TabsList>
+                            {Object.keys(faqData).map((category) => (
+                                <TabsTrigger
+                                    key={category}
+                                    value={category}
+                                    className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-md transition-all duration-300"
+                                >
+                                    {getCategoryIcon(category)}
+                                    <span>{getCategoryName(category)}</span>
+                                </TabsTrigger>
+                            ))}
+                        </TabsList>
 
-                    {/* Tab content (handled by renderFAQItems) */}
-                    <TabsContent value={activeTab}>
-                        {renderFAQItems()}
-                    </TabsContent>
-                </Tabs>
+                        {/* Tab content */}
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeTab + (isSearching ? 'search' : '')}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                <TabsContent value={activeTab} className="mt-0">
+                                    {renderFAQItems()}
+                                </TabsContent>
+                            </motion.div>
+                        </AnimatePresence>
+                    </Tabs>
+                </motion.div>
+
+                {/* Popular categories */}
+                {!isSearching && activeTab === "all" && renderPopularCategories()}
+
+                {/* Still have questions section */}
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.6 }}
+                >
+                    <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/40 dark:to-purple-950/40 mt-16 border-none shadow-lg overflow-hidden">
+                        <CardContent className="flex flex-col md:flex-row items-center justify-between gap-6 p-8">
+                            <div>
+                                <h3 className="text-2xl font-bold font-display bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">Still have questions?</h3>
+                                <p className="text-muted-foreground mt-2">Contact our Disney vacation planning experts for personalized assistance</p>
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <motion.button
+                                    whileHover={{ scale: 1.05, boxShadow: "0 10px 25px -5px rgba(59, 130, 246, 0.4)" }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-semibold py-3 px-7 rounded-full transition-all duration-300"
+                                >
+                                    Contact Support
+                                </motion.button>
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 font-semibold py-3 px-7 rounded-full transition-colors duration-300"
+                                >
+                                    Visit Help Center
+                                </motion.button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
             </div>
-
-            {/* Popular categories */}
-            {!isSearching && activeTab === "all" && renderPopularCategories()}
-
-            {/* Still have questions section */}
-            <Card className="bg-muted/50 mt-12">
-                <CardContent className="flex flex-col md:flex-row items-center justify-between gap-4 p-6">
-                    <div>
-                        <h3 className="text-xl font-bold">Still have questions?</h3>
-                        <p className="text-muted-foreground">Contact our Disney vacation planning experts for personalized assistance</p>
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                        <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
-                            Contact Support
-                        </button>
-                        <button className="bg-transparent hover:bg-muted border border-input font-semibold py-2 px-6 rounded-lg transition-colors">
-                            Visit Help Center
-                        </button>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+        </>
     )
 }
 
@@ -416,14 +599,62 @@ export default function FAQPage() {
 function getCategoryColor(category: string): string {
     switch (category) {
         case "lightning-lane":
-            return "#3b82f6" // blue
-        case "virtual-queue":
-            return "#10b981" // green
-        case "crowd-calendar":
             return "#f59e0b" // amber
+        case "virtual-queue":
+            return "#10b981" // emerald
+        case "crowd-calendar":
+            return "#3b82f6" // blue
         case "park-strategies":
             return "#8b5cf6" // purple
         default:
             return "#6b7280" // gray
+    }
+}
+
+// Helper function to get background color for category icons
+function getCategoryBg(category: string): string {
+    switch (category) {
+        case "lightning-lane":
+            return "bg-amber-100 dark:bg-amber-900/30"
+        case "virtual-queue":
+            return "bg-emerald-100 dark:bg-emerald-900/30"
+        case "crowd-calendar":
+            return "bg-blue-100 dark:bg-blue-900/30"
+        case "park-strategies":
+            return "bg-purple-100 dark:bg-purple-900/30"
+        default:
+            return "bg-slate-100 dark:bg-slate-800"
+    }
+}
+
+// Helper function to get gradient colors for category headers
+function getCategoryGradient(category: string): string {
+    switch (category) {
+        case "lightning-lane":
+            return "from-amber-100 to-amber-50 dark:from-amber-900/20 dark:to-amber-900/10"
+        case "virtual-queue":
+            return "from-emerald-100 to-emerald-50 dark:from-emerald-900/20 dark:to-emerald-900/10"
+        case "crowd-calendar":
+            return "from-blue-100 to-blue-50 dark:from-blue-900/20 dark:to-blue-900/10"
+        case "park-strategies":
+            return "from-purple-100 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/10"
+        default:
+            return "from-slate-100 to-slate-50 dark:from-slate-800/20 dark:to-slate-800/10"
+    }
+}
+
+// Helper function to get dot colors for category items
+function getCategoryDot(category: string): string {
+    switch (category) {
+        case "lightning-lane":
+            return "bg-amber-500"
+        case "virtual-queue":
+            return "bg-emerald-500"
+        case "crowd-calendar":
+            return "bg-blue-500"
+        case "park-strategies":
+            return "bg-purple-500"
+        default:
+            return "bg-slate-500"
     }
 }

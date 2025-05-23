@@ -1,55 +1,70 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMemo, useEffect, useCallback, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import advancedFormat from 'dayjs/plugin/advancedFormat';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
+import isoWeek from 'dayjs/plugin/isoWeek';
+import duration from 'dayjs/plugin/duration';
+import relativeTime from 'dayjs/plugin/relativeTime';
+
+// Extend dayjs with plugins
 dayjs.extend(advancedFormat);
 dayjs.extend(customParseFormat);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
+dayjs.extend(timezone);
+dayjs.extend(utc);
+dayjs.extend(weekOfYear);
+dayjs.extend(isoWeek);
+dayjs.extend(duration);
+dayjs.extend(relativeTime);
+
+// Framer Motion for animations
+import { motion, AnimatePresence } from 'framer-motion';
+
+// React Hook Form for advanced forms
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+// Icons
 import {
-    Calendar as CalendarIcon,
     ChevronLeft,
     ChevronRight,
-    Map,
-    Clock,
-    Utensils,
-    Ticket,
-    PlusCircle,
     MoreHorizontal,
-    Sun,
-    CloudRain,
-    Zap,
+    Search,
+    Filter,
+    Download,
+    Settings,
+    Share2,
+    Printer,
+    RefreshCw,
+    AlertCircle,
+    CalendarPlus,
+    CalendarHeart,
     CalendarDays,
-    BadgeInfo
+    CalendarRange,
+    List,
+    MapPin,
+    Activity,
+    BarChart3,
 } from 'lucide-react';
 
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
+// UI Components
+import { toast } from "@/components/ui/use-toast";
+import { Toaster } from "@/components/ui/toaster";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -59,18 +74,328 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from '@/lib/utils';
+import {
+    TooltipProvider,
+} from "@/components/ui/tooltip";
+import {
+    Tabs,
+    TabsList,
+    TabsTrigger,
+} from "@/components/ui/tabs";
+
+// Magic UI Components - Only import what exists
+import { AnimatedGridPattern } from "@/components/magicui/animated-grid-pattern";
+import { ShimmerButton } from "@/components/magicui/shimmer-button";
+import { AvatarCircles } from "@/components/magicui/avatar-circles";
+
+// Custom hooks and utilities
 import { Vacation } from '@/lib/firebase/vacations';
 import { Timestamp } from "firebase/firestore";
 
-// Mock Timestamp class for testing
+// Calendar Events Service
+import { updateCalendarEvent, CalendarEventServiceError } from '@/lib/services/calendar-events';
+
+// Enhanced Types and Interfaces
+interface WeatherData {
+    condition: 'sunny' | 'cloudy' | 'rainy' | 'stormy' | 'snowy' | 'foggy' | 'partly-cloudy' | 'windy';
+    highTemp: number;
+    lowTemp: number;
+    precipitation: number;
+    humidity: number;
+    windSpeed: number;
+    uvIndex: number;
+    visibility: number;
+    sunrise: string;
+    sunset: string;
+    moonPhase: 'new' | 'waxing-crescent' | 'first-quarter' | 'waxing-gibbous' | 'full' | 'waning-gibbous' | 'last-quarter' | 'waning-crescent';
+    alerts?: Array<{
+        type: 'warning' | 'watch' | 'advisory';
+        title: string;
+        description: string;
+    }>;
+}
+
+interface ParkHours {
+    parkId: string;
+    openTime: string;
+    closeTime: string;
+    magicHours?: {
+        morning?: { start: string; end: string };
+        evening?: { start: string; end: string };
+    };
+    specialEvents?: Array<{
+        name: string;
+        startTime: string;
+        endTime: string;
+        requiresTicket: boolean;
+    }>;
+}
+
+interface CrowdLevel {
+    level: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+    label: 'ghost-town' | 'very-light' | 'light' | 'moderate' | 'heavy' | 'very-heavy' | 'packed' | 'insane';
+    waitTimeMultiplier: number;
+    recommendations: string[];
+}
+
+interface CalendarEvent {
+    id: string;
+    title: string;
+    date: Date;
+    startTime?: string;
+    endTime?: string;
+    type: 'park' | 'dining' | 'resort' | 'travel' | 'rest' | 'event' | 'note' | 'fastpass' | 'photo' | 'shopping' | 'entertainment';
+    priority: 'low' | 'medium' | 'high' | 'critical';
+    status: 'planned' | 'confirmed' | 'completed' | 'cancelled' | 'modified';
+    parkId?: string;
+    attractionId?: string;
+    locationName?: string;
+    isHighlighted?: boolean;
+    notes?: string;
+    tags?: string[];
+    color?: string;
+    icon?: string;
+    participants?: string[];
+    reminder?: {
+        enabled: boolean;
+        time: string;
+        type: 'notification' | 'email' | 'sms';
+    };
+    reservation?: {
+        id: string;
+        name: string;
+        time: string;
+        partySize: number;
+        confirmed: boolean;
+        confirmationNumber?: string;
+        specialRequests?: string;
+        cost?: number;
+        prepaid?: boolean;
+    };
+    weather?: WeatherData;
+    parkHours?: ParkHours;
+    crowdLevel?: CrowdLevel;
+    attachments?: Array<{
+        type: 'image' | 'document' | 'link';
+        url: string;
+        title: string;
+        thumbnail?: string;
+    }>;
+    recurring?: {
+        pattern: 'daily' | 'weekly' | 'monthly';
+        interval: number;
+        endDate?: Date;
+        exceptions?: Date[];
+    };
+    budget?: {
+        estimated: number;
+        actual?: number;
+        currency: string;
+        category: string;
+    };
+    transportation?: {
+        type: 'bus' | 'monorail' | 'boat' | 'skyliner' | 'car' | 'uber' | 'walk';
+        pickupLocation?: string;
+        pickupTime?: string;
+        duration?: number;
+    };
+    checklist?: Array<{
+        id: string;
+        task: string;
+        completed: boolean;
+        dueTime?: string;
+    }>;
+}
+
+interface CalendarPreferences {
+    defaultView: 'month' | 'week' | 'day' | 'schedule' | 'timeline' | 'year';
+    weekStartsOn: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+    timeFormat: '12h' | '24h';
+    dateFormat: string;
+    showWeekNumbers: boolean;
+    showWeather: boolean;
+    showCrowdLevels: boolean;
+    showParkHours: boolean;
+    compactMode: boolean;
+    colorScheme: 'default' | 'pastel' | 'vibrant' | 'monochrome' | 'custom';
+    eventColors: Record<CalendarEvent['type'], string>;
+    animations: boolean;
+    hapticFeedback: boolean;
+    autoSave: boolean;
+    syncEnabled: boolean;
+    notifications: {
+        enabled: boolean;
+        defaultTime: string;
+        types: CalendarEvent['type'][];
+    };
+}
+
+interface CalendarFilters {
+    types: CalendarEvent['type'][];
+    parks: string[];
+    participants: string[];
+    priority: CalendarEvent['priority'][];
+    status: CalendarEvent['status'][];
+    tags: string[];
+    dateRange?: {
+        start: Date;
+        end: Date;
+    };
+    searchQuery?: string;
+}
+
+interface CalendarAnalytics {
+    totalEvents: number;
+    eventsByType: Record<CalendarEvent['type'], number>;
+    completionRate: number;
+    averageEventsPerDay: number;
+    busiestDay: Date;
+    totalBudget: number;
+    spentBudget: number;
+    upcomingReminders: number;
+    weatherAlerts: number;
+    conflictingEvents: Array<{
+        event1: CalendarEvent;
+        event2: CalendarEvent;
+        type: 'time' | 'location';
+    }>;
+    recommendations: Array<{
+        type: 'tip' | 'warning' | 'suggestion';
+        title: string;
+        description: string;
+        action?: () => void;
+    }>;
+}
+
+type CalendarViewType = 'month' | 'week' | 'day' | 'schedule' | 'timeline' | 'year' | 'agenda' | 'photos' | 'map';
+
+interface Collaborator {
+    id: string;
+    name: string;
+    avatar?: string;
+    color: string;
+    permissions: 'view' | 'edit' | 'admin';
+}
+
+interface ParkDay {
+    date: Timestamp;
+    startTime?: string;
+    endTime?: string;
+    parkId: string;
+    notes?: string;
+}
+
+interface WeatherDataEntry {
+    date: Date;
+    weather: WeatherData;
+}
+
+interface VacationCalendarProps {
+    readonly vacationId: string;
+    readonly initialDate?: Date;
+    readonly view?: CalendarViewType;
+    readonly preferences?: Partial<CalendarPreferences>;
+    readonly filters?: Partial<CalendarFilters>;
+    readonly readOnly?: boolean;
+    readonly collaborators?: Collaborator[];
+}
+
+// Event validation schema
+const eventFormSchema = z.object({
+    title: z.string().min(1, "Title is required").max(100),
+    type: z.enum(['park', 'dining', 'resort', 'travel', 'rest', 'event', 'note', 'fastpass', 'photo', 'shopping', 'entertainment']),
+    date: z.date(),
+    startTime: z.string().optional(),
+    endTime: z.string().optional(),
+    priority: z.enum(['low', 'medium', 'high', 'critical']),
+    status: z.enum(['planned', 'confirmed', 'completed', 'cancelled', 'modified']),
+    locationName: z.string().optional(),
+    notes: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    participants: z.array(z.string()).optional(),
+    reminderEnabled: z.boolean().optional(),
+    reminderTime: z.string().optional(),
+    budget: z.number().optional(),
+});
+
+type EventFormData = z.infer<typeof eventFormSchema>;
+
+// Animation variants
+const calendarAnimations = {
+    container: {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.02,
+                delayChildren: 0.1,
+            }
+        }
+    },
+    item: {
+        hidden: { opacity: 0, scale: 0.8, y: 20 },
+        show: {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            transition: {
+                type: "spring",
+                damping: 20,
+                stiffness: 300
+            }
+        }
+    },
+    slideIn: {
+        hidden: { x: -20, opacity: 0 },
+        show: { x: 0, opacity: 1 }
+    },
+    fadeIn: {
+        hidden: { opacity: 0 },
+        show: { opacity: 1 }
+    },
+    scaleIn: {
+        hidden: { scale: 0.9, opacity: 0 },
+        show: { scale: 1, opacity: 1 }
+    }
+};
+
+// Default preferences
+const defaultPreferences: CalendarPreferences = {
+    defaultView: 'month',
+    weekStartsOn: 0,
+    timeFormat: '12h',
+    dateFormat: 'MM/DD/YYYY',
+    showWeekNumbers: false,
+    showWeather: true,
+    showCrowdLevels: true,
+    showParkHours: true,
+    compactMode: false,
+    colorScheme: 'vibrant',
+    eventColors: {
+        park: '#22c55e',
+        dining: '#f59e0b',
+        resort: '#3b82f6',
+        travel: '#8b5cf6',
+        rest: '#14b8a6',
+        event: '#ec4899',
+        note: '#6b7280',
+        fastpass: '#f97316',
+        photo: '#a855f7',
+        shopping: '#84cc16',
+        entertainment: '#06b6d4'
+    },
+    animations: true,
+    hapticFeedback: true,
+    autoSave: true,
+    syncEnabled: true,
+    notifications: {
+        enabled: true,
+        defaultTime: '1h',
+        types: ['park', 'dining', 'event', 'fastpass']
+    }
+};
+
+// Mock functions with enhanced data
 const createMockTimestamp = (date: Date): Timestamp => {
     const seconds = Math.floor(date.getTime() / 1000);
     const nanoseconds = (date.getTime() % 1000) * 1000000;
@@ -89,22 +414,15 @@ const createMockTimestamp = (date: Date): Timestamp => {
 // Mock functions to replace the missing Firebase functions
 // These would be replaced with actual implementations in a real app
 const getVacation = async (vacationId: string): Promise<Vacation & {
-    parkDays?: Array<{
-        date: Timestamp;
-        startTime?: string;
-        endTime?: string;
-        parkId: string;
-        notes?: string
-    }>
+    parkDays?: ParkDay[]
 }> => {
-    const startDate = createMockTimestamp(new Date('2023-10-01'));
-    const endDate = createMockTimestamp(new Date('2023-10-08'));
+    const startDate = createMockTimestamp(new Date('2024-03-01'));
+    const endDate = createMockTimestamp(new Date('2024-03-08'));
     const now = createMockTimestamp(new Date());
 
-    // Mock implementation
     return {
         id: vacationId,
-        name: 'Disney World Vacation',
+        name: 'Magical Disney World Adventure 2024',
         startDate,
         endDate,
         destination: 'Walt Disney World',
@@ -114,105 +432,184 @@ const getVacation = async (vacationId: string): Promise<Vacation & {
         status: 'planning',
         parkDays: [
             {
-                date: createMockTimestamp(new Date('2023-10-02')),
+                date: createMockTimestamp(new Date('2024-03-02')),
                 parkId: 'magickingdom',
-                startTime: '09:00',
-                endTime: '21:00',
-                notes: 'Magic Kingdom day!'
+                startTime: '08:00',
+                endTime: '23:00',
+                notes: 'Early Magic Hours - Rope drop Seven Dwarfs Mine Train!'
             },
             {
-                date: createMockTimestamp(new Date('2023-10-03')),
+                date: createMockTimestamp(new Date('2024-03-03')),
                 parkId: 'epcot',
-                startTime: '10:00',
+                startTime: '09:00',
                 endTime: '21:00',
-                notes: 'Epcot day!'
+                notes: 'Flower & Garden Festival - Lunch at Space 220'
+            },
+            {
+                date: createMockTimestamp(new Date('2024-03-04')),
+                parkId: 'hollywoodstudios',
+                startTime: '08:30',
+                endTime: '21:30',
+                notes: 'Rise of the Resistance boarding group strategy'
+            },
+            {
+                date: createMockTimestamp(new Date('2024-03-05')),
+                parkId: 'animalkingdom',
+                startTime: '08:00',
+                endTime: '20:00',
+                notes: 'Flight of Passage first thing - Tusker House breakfast'
             }
         ]
     };
 };
 
-const getVacationItineraries = async () => {
-    // Mock implementation
-    return [];
-};
-
-// Type for calendar event
-interface CalendarEvent {
-    id: string;
-    title: string;
-    date: Date;
-    startTime?: string;
-    endTime?: string;
-    type: 'park' | 'dining' | 'resort' | 'travel' | 'rest' | 'event' | 'note';
-    parkId?: string;
-    attractionId?: string;
-    locationName?: string;
-    isHighlighted?: boolean;
-    notes?: string;
-    reservation?: {
-        id: string;
-        name: string;
-        time: string;
-        partySize: number;
-        confirmed: boolean;
-    };
-    weather?: {
-        condition: 'sunny' | 'cloudy' | 'rainy' | 'stormy';
-        highTemp: number;
-        lowTemp: number;
-        precipitation: number;
-    };
-}
-
-type CalendarViewType = 'month' | 'week' | 'schedule';
-
-interface VacationCalendarProps {
-    readonly vacationId: string;
-    readonly initialDate?: Date;
-    readonly onEventClick?: (event: CalendarEvent) => void;
-    readonly onAddEvent?: (date: Date) => void;
-    readonly view?: CalendarViewType;
-}
-
+// Component definition
 export default function VacationCalendar({
     vacationId,
-    initialDate = new Date(),
-    onEventClick,
-    onAddEvent,
+    initialDate,
     view: initialView = 'month',
+    preferences: userPreferences,
+    filters: initialFilters,
+    readOnly = false,
+    collaborators = []
 }: VacationCalendarProps) {
-    const [currentDate, setCurrentDate] = useState(initialDate);
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-    const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-    const [showEventDialog, setShowEventDialog] = useState(false);
-    const [showAddEventDialog, setShowAddEventDialog] = useState(false);
-    const [newEventType, setNewEventType] = useState<CalendarEvent['type']>('note');
-    const [newEventTitle, setNewEventTitle] = useState('');
-    const [newEventNotes, setNewEventNotes] = useState('');
-    const [newEventTime, setNewEventTime] = useState('');
-    const [view, setView] = useState<CalendarViewType>(initialView);
+    const queryClient = useQueryClient();
 
-    // Query to fetch vacation details
-    const { data: vacation, isLoading: isLoadingVacation } = useQuery({
+    // State management
+    const [currentDate, setCurrentDate] = useState(initialDate || new Date());
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [view, setView] = useState<CalendarViewType>(initialView);
+    const [showFilterPanel, setShowFilterPanel] = useState(false);
+    const [showAnalyticsPanel, setShowAnalyticsPanel] = useState(false);
+
+    // Preferences
+    const preferences = useMemo(() => ({
+        ...defaultPreferences,
+        ...userPreferences
+    }), [userPreferences]);
+
+    // Filters
+    const [filters] = useState<CalendarFilters>({
+        types: initialFilters?.types || ['park', 'dining', 'resort', 'travel', 'rest', 'event', 'note', 'fastpass', 'photo', 'shopping', 'entertainment'],
+        parks: initialFilters?.parks || [],
+        participants: initialFilters?.participants || [],
+        priority: initialFilters?.priority || ['low', 'medium', 'high', 'critical'],
+        status: initialFilters?.status || ['planned', 'confirmed', 'completed', 'cancelled', 'modified'],
+        tags: initialFilters?.tags || [],
+        dateRange: initialFilters?.dateRange,
+        searchQuery: initialFilters?.searchQuery
+    });
+
+    // Form setup
+    const eventForm = useForm<EventFormData>({
+        resolver: zodResolver(eventFormSchema),
+        defaultValues: {
+            type: 'note',
+            priority: 'medium',
+            status: 'planned'
+        }
+    });
+
+    // Query for vacation data
+    const {
+        data: vacation,
+        isLoading: isLoadingVacation,
+        error: vacationError
+    } = useQuery({
         queryKey: ['vacation', vacationId],
         queryFn: () => getVacation(vacationId),
+        staleTime: 5 * 60 * 1000, // 5 minutes
     });
 
-    // Query to fetch vacation itineraries - not used in this component currently
-    useQuery({
-        queryKey: ['vacationItineraries', vacationId],
-        queryFn: () => getVacationItineraries(),
-        enabled: !!vacation,
+    // Mock weather data (in real app, this would be another query)
+    const weatherData = useMemo(() => {
+        if (!vacation) return [];
+
+        const days = dayjs(vacation.endDate.toDate()).diff(dayjs(vacation.startDate.toDate()), 'day') + 1;
+        return Array.from({ length: days }, (_, i) => ({
+            date: dayjs(vacation.startDate.toDate()).add(i, 'day').toDate(),
+            weather: {
+                condition: 'sunny' as const,
+                highTemp: 82,
+                lowTemp: 68,
+                precipitation: 10,
+                humidity: 65,
+                windSpeed: 8,
+                uvIndex: 8,
+                visibility: 10,
+                sunrise: '06:45',
+                sunset: '19:30',
+                moonPhase: 'waxing-gibbous' as const
+            }
+        }));
+    }, [vacation]);
+
+    // Mutation for event updates
+    const updateEventMutation = useMutation({
+        mutationFn: async (event: CalendarEvent) => {
+            // Use the real API service instead of mock
+            try {
+                const updatedEvent = await updateCalendarEvent(
+                    vacationId,
+                    event.id,
+                    {
+                        title: event.title,
+                        date: event.date,
+                        startTime: event.startTime,
+                        endTime: event.endTime,
+                        type: event.type,
+                        priority: event.priority,
+                        status: event.status,
+                        parkId: event.parkId,
+                        attractionId: event.attractionId,
+                        locationName: event.locationName,
+                        isHighlighted: event.isHighlighted,
+                        notes: event.notes,
+                        tags: event.tags,
+                        color: event.color,
+                        icon: event.icon,
+                        participants: event.participants,
+                        reminder: event.reminder,
+                        reservation: event.reservation,
+                        weather: event.weather,
+                        budget: event.budget,
+                        transportation: event.transportation,
+                        checklist: event.checklist,
+                        attachments: event.attachments
+                    }
+                );
+                return updatedEvent;
+            } catch (error) {
+                // Handle different types of errors appropriately
+                if (error instanceof CalendarEventServiceError) {
+                    // Re-throw service errors with context
+                    throw new Error(`${error.message} (${error.code})`);
+                }
+
+                // Handle unexpected errors
+                console.error('Unexpected error updating calendar event:', error);
+                throw new Error('An unexpected error occurred while updating the event');
+            }
+        },
+        onSuccess: (event) => {
+            queryClient.invalidateQueries({ queryKey: ['events', vacationId] });
+            queryClient.invalidateQueries({ queryKey: ['vacation', vacationId] });
+            toast({
+                title: "Event updated",
+                description: `${event.title} has been updated successfully.`,
+            });
+        },
+        onError: (error: Error) => {
+            console.error('Failed to update event:', error);
+            toast({
+                title: "Error",
+                description: error.message || "Failed to update event. Please try again.",
+                variant: "destructive",
+            });
+        }
     });
 
-    // Helper function to determine weather condition
-    const getWeatherCondition = (dayIndex: number): 'sunny' | 'cloudy' | 'rainy' | 'stormy' => {
-        if (dayIndex % 4 === 0) return 'rainy';
-        if (dayIndex % 3 === 0) return 'cloudy';
-        return 'sunny';
-    };
-
-    // Generate calendar events based on vacation data
+    // Generate comprehensive events based on vacation data
     const events = useMemo(() => {
         const allEvents: CalendarEvent[] = [];
 
@@ -221,266 +618,474 @@ export default function VacationCalendar({
         const startDate = vacation.startDate.toDate();
         const endDate = vacation.endDate.toDate();
 
-        // Add park days
+        // Add park days with enhanced data
         if (vacation.parkDays) {
-            vacation.parkDays.forEach((day: {
-                date: Timestamp;
-                startTime?: string;
-                endTime?: string;
-                parkId: string;
-                notes?: string
-            }) => {
+            vacation.parkDays.forEach((day: ParkDay, index: number) => {
                 const parkDate = day.date.toDate();
+                const parkNames: Record<string, string> = {
+                    'magickingdom': 'Magic Kingdom',
+                    'epcot': 'EPCOT',
+                    'hollywoodstudios': 'Hollywood Studios',
+                    'animalkingdom': 'Animal Kingdom'
+                };
 
+                // Add park day event
                 allEvents.push({
                     id: `park-${parkDate.toISOString()}`,
-                    title: `Park Day: ${day.parkId}`,
+                    title: `${parkNames[day.parkId]} Adventure`,
                     date: parkDate,
                     startTime: day.startTime,
                     endTime: day.endTime,
                     type: 'park',
+                    priority: 'high',
+                    status: 'confirmed',
                     parkId: day.parkId,
                     notes: day.notes,
                     isHighlighted: true,
+                    tags: ['theme-park', 'main-event'],
+                    participants: collaborators.map((c: Collaborator) => c.id),
+                    parkHours: {
+                        parkId: day.parkId,
+                        openTime: day.startTime || '09:00',
+                        closeTime: day.endTime || '22:00',
+                        magicHours: index === 0 ? {
+                            morning: { start: '08:00', end: '09:00' }
+                        } : undefined,
+                        specialEvents: day.parkId === 'magickingdom' && index === 0 ? [{
+                            name: 'Happily Ever After Fireworks',
+                            startTime: '21:00',
+                            endTime: '21:30',
+                            requiresTicket: false
+                        }] : undefined
+                    },
+                    crowdLevel: {
+                        level: Math.min(10, Math.max(1, 5 + Math.floor(Math.random() * 5))) as CrowdLevel['level'],
+                        label: 'moderate',
+                        waitTimeMultiplier: 1.5,
+                        recommendations: [
+                            'Use Genie+ for popular attractions',
+                            'Take midday break to avoid crowds',
+                            'Mobile order lunch to save time'
+                        ]
+                    },
+                    checklist: [
+                        {
+                            id: `checklist-${index}-1`,
+                            task: 'Pack sunscreen and ponchos',
+                            completed: false,
+                            dueTime: day.startTime
+                        },
+                        {
+                            id: `checklist-${index}-2`,
+                            task: 'Charge MagicBands',
+                            completed: false,
+                            dueTime: dayjs(parkDate).subtract(1, 'day').format('HH:mm')
+                        },
+                        {
+                            id: `checklist-${index}-3`,
+                            task: 'Review park map and plan',
+                            completed: false
+                        }
+                    ]
                 });
+
+                // Add Lightning Lane reservations
+                if (day.parkId === 'magickingdom') {
+                    allEvents.push({
+                        id: `ll-${index}-1`,
+                        title: 'Seven Dwarfs Mine Train - Lightning Lane',
+                        date: parkDate,
+                        startTime: '10:00',
+                        endTime: '11:00',
+                        type: 'fastpass',
+                        priority: 'high',
+                        status: 'confirmed',
+                        parkId: day.parkId,
+                        attractionId: 'seven-dwarfs',
+                        locationName: 'Fantasyland',
+                        tags: ['lightning-lane', 'must-do'],
+                        participants: collaborators.map((c: Collaborator) => c.id),
+                        reminder: {
+                            enabled: true,
+                            time: '15m',
+                            type: 'notification'
+                        }
+                    });
+
+                    allEvents.push({
+                        id: `ll-${index}-2`,
+                        title: 'Space Mountain - Lightning Lane',
+                        date: parkDate,
+                        startTime: '14:00',
+                        endTime: '15:00',
+                        type: 'fastpass',
+                        priority: 'medium',
+                        status: 'confirmed',
+                        parkId: day.parkId,
+                        attractionId: 'space-mountain',
+                        locationName: 'Tomorrowland',
+                        tags: ['lightning-lane', 'thrill-ride'],
+                        participants: collaborators.map((c: Collaborator) => c.id)
+                    });
+                }
             });
         }
 
-        // Generate mock travel days (first and last day)
+        // Add travel days with detailed info
         allEvents.push({
             id: `travel-arrival`,
-            title: 'Arrival Day',
+            title: 'Magical Journey Begins! ✈️',
             date: startDate,
+            startTime: '10:00',
+            endTime: '14:00',
             type: 'travel',
+            priority: 'critical',
+            status: 'confirmed',
             locationName: 'Orlando International Airport',
-            notes: 'Flight arrival',
+            notes: 'Southwest Flight 1234 - Gate B15\nConfirmation: ABC123\nMagical Express pickup at 14:30',
+            tags: ['arrival', 'transportation'],
+            participants: collaborators.map((c: Collaborator) => c.id),
+            transportation: {
+                type: 'bus',
+                pickupLocation: 'Level 1, Spot B',
+                pickupTime: '14:30',
+                duration: 45
+            },
+            checklist: [
+                {
+                    id: 'arrival-1',
+                    task: 'Check-in online 24 hours before',
+                    completed: false,
+                    dueTime: dayjs(startDate).subtract(1, 'day').format('HH:mm')
+                },
+                {
+                    id: 'arrival-2',
+                    task: 'Print boarding passes',
+                    completed: false
+                },
+                {
+                    id: 'arrival-3',
+                    task: 'Pack carry-on with essentials',
+                    completed: false
+                }
+            ],
+            budget: {
+                estimated: 0,
+                currency: 'USD',
+                category: 'transportation'
+            }
         });
 
         allEvents.push({
             id: `travel-departure`,
-            title: 'Departure Day',
+            title: 'Until Next Time! 👋',
             date: endDate,
+            startTime: '15:00',
+            endTime: '19:00',
             type: 'travel',
+            priority: 'critical',
+            status: 'planned',
             locationName: 'Orlando International Airport',
-            notes: 'Flight departure',
-        });
-
-        // Generate mock dining reservations (for demonstration purposes)
-        allEvents.push({
-            id: 'dining-1',
-            title: 'Dinner at Be Our Guest',
-            date: dayjs(startDate).add(1, 'day').toDate(),
-            startTime: '18:30',
-            endTime: '20:00',
-            type: 'dining',
-            locationName: 'Be Our Guest Restaurant',
-            reservation: {
-                id: 'res-123',
-                name: 'Be Our Guest Restaurant',
-                time: '18:30',
-                partySize: 4,
-                confirmed: true,
+            notes: 'Southwest Flight 5678 - Gate A22\nLeave resort by 12:00 PM',
+            tags: ['departure', 'transportation'],
+            participants: collaborators.map((c: Collaborator) => c.id),
+            transportation: {
+                type: 'bus',
+                pickupLocation: 'Resort Lobby',
+                pickupTime: '12:00',
+                duration: 45
             },
+            reminder: {
+                enabled: true,
+                time: '12h',
+                type: 'notification'
+            }
         });
 
+        // Add resort check-in
         allEvents.push({
-            id: 'dining-2',
-            title: 'Lunch at Cosmic Ray\'s',
-            date: dayjs(startDate).add(2, 'day').toDate(),
-            startTime: '12:00',
-            endTime: '13:00',
-            type: 'dining',
-            locationName: 'Cosmic Ray\'s Starlight Café',
+            id: 'resort-checkin',
+            title: 'Check-in at Grand Floridian Resort',
+            date: startDate,
+            startTime: '15:00',
+            type: 'resort',
+            priority: 'high',
+            status: 'confirmed',
+            locationName: "Disney's Grand Floridian Resort & Spa",
+            notes: 'Reservation: 123456789\nRoom type: Theme Park View\nOnline check-in available',
+            tags: ['resort', 'check-in'],
+            participants: collaborators.map((c: Collaborator) => c.id),
+            attachments: [{
+                type: 'document',
+                url: '/reservations/grand-floridian.pdf',
+                title: 'Resort Reservation'
+            }]
         });
 
-        // Generate mock rest days
-        allEvents.push({
-            id: 'rest-1',
-            title: 'Resort Day',
-            date: dayjs(startDate).add(3, 'day').toDate(),
-            type: 'rest',
-            locationName: 'Resort Pool',
-            notes: 'Relaxing day at the resort',
+        // Add dining reservations with rich details
+        const diningReservations = [
+            {
+                id: 'dining-1',
+                title: "Be Our Guest Restaurant",
+                date: dayjs(startDate).add(1, 'day').toDate(),
+                startTime: '18:30',
+                endTime: '20:00',
+                locationName: 'Fantasyland, Magic Kingdom',
+                notes: 'Pre-order available in My Disney Experience app',
+                cost: 280,
+                specialRequests: 'Window seat requested, celebrating anniversary'
+            },
+            {
+                id: 'dining-2',
+                title: "Space 220 Restaurant",
+                date: dayjs(startDate).add(2, 'day').toDate(),
+                startTime: '13:00',
+                endTime: '14:30',
+                locationName: 'Mission: SPACE, EPCOT',
+                notes: 'Prix fixe menu - $79 per adult',
+                cost: 320,
+                specialRequests: 'Vegetarian option for one guest'
+            },
+            {
+                id: 'dining-3',
+                title: "Tusker House - Character Breakfast",
+                date: dayjs(startDate).add(4, 'day').toDate(),
+                startTime: '08:30',
+                endTime: '10:00',
+                locationName: 'Africa, Animal Kingdom',
+                notes: 'Donald Duck and friends character dining',
+                cost: 180,
+                prepaid: true
+            },
+            {
+                id: 'dining-4',
+                title: "California Grill",
+                date: dayjs(startDate).add(5, 'day').toDate(),
+                startTime: '20:00',
+                endTime: '22:00',
+                locationName: "Contemporary Resort",
+                notes: 'Fireworks viewing - arrive early for balcony access',
+                cost: 350,
+                specialRequests: 'Anniversary celebration - dessert surprise'
+            }
+        ];
+
+        diningReservations.forEach(reservation => {
+            allEvents.push({
+                ...reservation,
+                type: 'dining',
+                priority: 'high',
+                status: 'confirmed',
+                tags: ['dining', 'table-service'],
+                participants: collaborators.map((c: Collaborator) => c.id),
+                reservation: {
+                    id: reservation.id,
+                    name: reservation.title,
+                    time: reservation.startTime,
+                    partySize: collaborators.length || 4,
+                    confirmed: true,
+                    confirmationNumber: `WDW${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+                    specialRequests: reservation.specialRequests,
+                    cost: reservation.cost,
+                    prepaid: reservation.prepaid || false
+                },
+                reminder: {
+                    enabled: true,
+                    time: '24h',
+                    type: 'notification'
+                },
+                budget: {
+                    estimated: reservation.cost,
+                    currency: 'USD',
+                    category: 'dining'
+                }
+            });
         });
 
-        // Generate mock special events
+        // Add special events and entertainment
         allEvents.push({
             id: 'event-1',
-            title: 'Mickey\'s Not-So-Scary Halloween Party',
-            date: dayjs(startDate).add(4, 'day').toDate(),
+            title: "Mickey's Not-So-Scary Halloween Party",
+            date: dayjs(startDate).add(3, 'day').toDate(),
             startTime: '19:00',
-            endTime: '24:00',
+            endTime: '00:00',
             type: 'event',
+            priority: 'high',
+            status: 'confirmed',
             parkId: 'magickingdom',
+            locationName: 'Magic Kingdom (Special Ticketed Event)',
+            notes: 'Special parade, fireworks, and trick-or-treating\nCostumes encouraged!\nParty-exclusive character meet & greets',
+            tags: ['special-event', 'halloween', 'after-hours'],
+            participants: collaborators.map((c: Collaborator) => c.id),
             isHighlighted: true,
+            budget: {
+                estimated: 500,
+                actual: 489,
+                currency: 'USD',
+                category: 'entertainment'
+            },
+            checklist: [
+                {
+                    id: 'mnsshp-1',
+                    task: 'Pack costumes',
+                    completed: false
+                },
+                {
+                    id: 'mnsshp-2',
+                    task: 'Bring trick-or-treat bags',
+                    completed: false
+                },
+                {
+                    id: 'mnsshp-3',
+                    task: 'Review party map for exclusive offerings',
+                    completed: false
+                }
+            ]
         });
 
-        // Generate mock weather data for each day
-        const tripDays = dayjs(endDate).diff(dayjs(startDate), 'day') + 1;
-        for (let i = 0; i < tripDays; i++) {
-            const date = dayjs(startDate).add(i, 'day').toDate();
-
-            // Find existing event for this date or create new one
-            let dayEvent = allEvents.find(e =>
-                dayjs(e.date).isSame(date, 'day') && e.type === 'note'
-            );
-
-            if (!dayEvent) {
-                dayEvent = {
-                    id: `day-${i}`,
-                    title: `Day ${i + 1}`,
-                    date,
-                    type: 'note',
-                };
-                allEvents.push(dayEvent);
+        // Add resort/rest day activities
+        allEvents.push({
+            id: 'rest-1',
+            title: 'Resort Pool Day & Spa',
+            date: dayjs(startDate).add(3, 'day').toDate(),
+            startTime: '10:00',
+            endTime: '16:00',
+            type: 'rest',
+            priority: 'medium',
+            status: 'planned',
+            locationName: 'Grand Floridian Pool & Spa',
+            notes: "Spa appointment at 14:00 - Swedish Massage\nPool cabana reserved\nLunch at Narcoossee's",
+            tags: ['relaxation', 'resort-day'],
+            participants: collaborators.slice(0, 2).map((c: Collaborator) => c.id),
+            budget: {
+                estimated: 450,
+                currency: 'USD',
+                category: 'recreation'
             }
+        });
 
-            // Calculate precipitation value
-            let precipitationValue = 0;
-            if (i % 4 === 0) {
-                precipitationValue = 60;
-            } else if (i % 3 === 0) {
-                precipitationValue = 20;
+        // Add shopping experiences
+        allEvents.push({
+            id: 'shopping-1',
+            title: 'Disney Springs Shopping & Dining',
+            date: dayjs(startDate).add(5, 'day').toDate(),
+            startTime: '17:00',
+            endTime: '22:00',
+            type: 'shopping',
+            priority: 'low',
+            status: 'planned',
+            locationName: 'Disney Springs',
+            notes: 'World of Disney for souvenirs\nDinner at The BOATHOUSE\nCatch live entertainment at the Amphitheater',
+            tags: ['shopping', 'dining', 'entertainment'],
+            participants: collaborators.map((c: Collaborator) => c.id),
+            transportation: {
+                type: 'boat',
+                pickupLocation: 'Grand Floridian Boat Dock',
+                pickupTime: '16:30',
+                duration: 20
+            },
+            budget: {
+                estimated: 300,
+                currency: 'USD',
+                category: 'shopping'
             }
+        });
 
-            // Add mock weather data
-            dayEvent.weather = {
-                condition: getWeatherCondition(i),
-                highTemp: 75 + Math.floor(Math.random() * 15),
-                lowTemp: 65 + Math.floor(Math.random() * 10),
-                precipitation: precipitationValue,
-            };
+        // Add photo opportunities
+        allEvents.push({
+            id: 'photo-1',
+            title: 'Capture the Magic Photo Package',
+            date: dayjs(startDate).add(1, 'day').toDate(),
+            type: 'photo',
+            priority: 'medium',
+            status: 'confirmed',
+            locationName: 'All Parks',
+            notes: 'Memory Maker purchased - unlimited PhotoPass downloads\nSpecial photo ops at each park\nMagic Shots available',
+            tags: ['photography', 'memories'],
+            participants: collaborators.map((c: Collaborator) => c.id),
+            attachments: [{
+                type: 'link',
+                url: 'https://mydisneyphotopass.disney.go.com',
+                title: 'PhotoPass Website'
+            }]
+        });
+
+        // Add weather data to each day
+        if (weatherData) {
+            weatherData.forEach(({ date, weather }: WeatherDataEntry) => {
+                const dateStr = dayjs(date).format('YYYY-MM-DD');
+                const dayEvent = allEvents.find(e =>
+                    dayjs(e.date).format('YYYY-MM-DD') === dateStr &&
+                    e.type === 'park'
+                );
+
+                if (dayEvent) {
+                    dayEvent.weather = weather;
+                }
+            });
         }
 
         return allEvents;
-    }, [vacation]);
+    }, [vacation, collaborators, weatherData]);
 
-    // Event sorting function - extracted to reduce nesting
-    const sortEventsByTypeAndTime = (a: CalendarEvent, b: CalendarEvent) => {
-        // Sort by type (park days first)
-        if (a.type === 'park' && b.type !== 'park') return -1;
-        if (a.type !== 'park' && b.type === 'park') return 1;
-
-        // Then by time
-        if (a.startTime && b.startTime) {
-            return a.startTime.localeCompare(b.startTime);
-        }
-
-        return 0;
-    };
-
-    // Event time filtering function - extracted to reduce nesting
-    const filterEventsByHour = (events: CalendarEvent[], hour: number) => {
+    // Filter events based on current filters
+    const filteredEvents = useMemo(() => {
         return events.filter(event => {
-            if (!event.startTime) return false;
-            const [eventHour] = event.startTime.split(':').map(Number);
-            return eventHour === hour;
-        });
-    };
+            // Type filter
+            if (!filters.types.includes(event.type)) return false;
 
-    // Event handling functions - moved to component level
-    const createEventButtonClickHandler = (event: CalendarEvent) => (e: React.MouseEvent) => {
-        e.stopPropagation();
-        handleEventClick(event);
-    };
+            // Status filter
+            if (!filters.status.includes(event.status)) return false;
 
-    // Render event button function
-    const renderEventButton = (event: CalendarEvent, onClick: (e: React.MouseEvent) => void) => (
-        <button
-            key={event.id}
-            className={cn(
-                "text-[10px] px-1.5 py-0.5 rounded border truncate cursor-pointer w-full text-left",
-                getEventTypeColor(event.type, event.isHighlighted)
-            )}
-            onClick={onClick}
-            aria-label={`View details for ${event.title}`}
-        >
-            {event.startTime && (
-                <span className="font-medium mr-1">{event.startTime}</span>
-            )}
-            {event.title}
-        </button>
-    );
+            // Priority filter
+            if (!filters.priority.includes(event.priority)) return false;
 
-    // Render event button for hour events - move outside of nested callbacks
-    const renderHourEvent = (event: CalendarEvent) => (
-        <button
-            key={event.id}
-            className={cn(
-                "absolute top-0 left-0 right-0 m-0.5 p-1 text-xs rounded border overflow-hidden text-left calendar-event-height",
-                getEventTypeColor(event.type, event.isHighlighted)
-            )}
-            onClick={() => handleEventClick(event)}
-            aria-label={`View details for ${event.title}`}
-        >
-            <div className="font-medium truncate">{event.title}</div>
-            <div className="text-[10px] truncate">
-                {event.startTime} {event.endTime && `- ${event.endTime}`}
-            </div>
-        </button>
-    );
+            // Park filter
+            if (filters.parks.length > 0 && event.parkId && !filters.parks.includes(event.parkId)) return false;
 
-    // Get date range for current view
-    const dateRange = useMemo(() => {
-        if (view === 'month') {
-            // For month view, we need all days in the month
-            const daysInMonth = dayjs(currentDate).daysInMonth();
-            return Array.from({ length: daysInMonth }, (_, i) => {
-                return dayjs(currentDate).date(i + 1).toDate();
-            });
-        } else if (view === 'week') {
-            // For week view, get days from start of week to end of week
-            const start = dayjs(currentDate).startOf('week').toDate();
-            const end = dayjs(currentDate).endOf('week').toDate();
-            const days = [];
-
-            let day = start;
-            while (dayjs(day).isSameOrBefore(end)) {
-                days.push(new Date(day));
-                day = dayjs(day).add(1, 'day').toDate();
+            // Participant filter
+            if (filters.participants.length > 0 && event.participants) {
+                const hasParticipant = event.participants.some(p => filters.participants.includes(p));
+                if (!hasParticipant) return false;
             }
 
-            return days;
-        } else {
-            // For schedule view, show the entire vacation
-            if (!vacation) return [];
+            // Tag filter
+            if (filters.tags.length > 0 && event.tags) {
+                const hasTag = event.tags.some(t => filters.tags.includes(t));
+                if (!hasTag) return false;
+            }
 
-            const startDate = vacation.startDate.toDate();
-            const endDate = vacation.endDate.toDate();
-            const tripDays = dayjs(endDate).diff(dayjs(startDate), 'day') + 1;
+            // Date range filter
+            if (filters.dateRange) {
+                const eventDate = dayjs(event.date);
+                if (!eventDate.isSameOrAfter(filters.dateRange.start) ||
+                    !eventDate.isSameOrBefore(filters.dateRange.end)) {
+                    return false;
+                }
+            }
 
-            return Array.from({ length: tripDays }, (_, i) => {
-                return dayjs(startDate).add(i, 'day').toDate();
-            });
-        }
-    }, [currentDate, view, vacation]);
+            // Search query
+            if (filters.searchQuery) {
+                const query = filters.searchQuery.toLowerCase();
+                const searchableText = [
+                    event.title,
+                    event.notes,
+                    event.locationName,
+                    ...(event.tags || [])
+                ].filter(Boolean).join(' ').toLowerCase();
 
-    // Filter events for current view
-    const currentEvents = useMemo(() => {
-        if (view === 'month') {
-            // For month view, show all events in the current month
-            return events.filter(event =>
-                dayjs(event.date).isSame(currentDate, 'month')
-            );
-        } else if (view === 'week') {
-            // For week view, show events in the current week
-            const start = dayjs(currentDate).startOf('week').toDate();
-            const end = dayjs(currentDate).endOf('week').toDate();
+                if (!searchableText.includes(query)) return false;
+            }
 
-            return events.filter(event =>
-                dayjs(event.date).isSameOrAfter(start) && dayjs(event.date).isSameOrBefore(end)
-            );
-        } else {
-            // For schedule view, show all events
-            return events;
-        }
-    }, [events, currentDate, view]);
+            return true;
+        });
+    }, [events, filters]);
 
-    // Group events by date for easy rendering
+    // Group events by date
     const eventsByDate = useMemo(() => {
-        const grouped: { [key: string]: CalendarEvent[] } = {};
+        const grouped: Record<string, CalendarEvent[]> = {};
 
-        currentEvents.forEach(event => {
+        filteredEvents.forEach(event => {
             const dateStr = dayjs(event.date).format('YYYY-MM-DD');
             if (!grouped[dateStr]) {
                 grouped[dateStr] = [];
@@ -488,770 +1093,777 @@ export default function VacationCalendar({
             grouped[dateStr].push(event);
         });
 
-        return grouped;
-    }, [currentEvents]);
+        // Sort events within each date
+        Object.keys(grouped).forEach(date => {
+            grouped[date].sort((a, b) => {
+                // Sort by time first
+                if (a.startTime && b.startTime) {
+                    return a.startTime.localeCompare(b.startTime);
+                }
+                // Then by priority
+                const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+                return priorityOrder[a.priority] - priorityOrder[b.priority];
+            });
+        });
 
-    // Navigate to previous period
+        return grouped;
+    }, [filteredEvents]);
+
+    // Calculate analytics
+    const analytics = useMemo((): CalendarAnalytics => {
+        const typeCount = filteredEvents.reduce((acc, event) => {
+            acc[event.type] = (acc[event.type] || 0) + 1;
+            return acc;
+        }, {} as Record<CalendarEvent['type'], number>);
+
+        const completedEvents = filteredEvents.filter(e => e.status === 'completed').length;
+        const totalBudget = filteredEvents.reduce((sum, event) =>
+            sum + (event.budget?.estimated || 0), 0
+        );
+        const spentBudget = filteredEvents.reduce((sum, event) =>
+            sum + (event.budget?.actual || 0), 0
+        );
+
+        // Find conflicting events
+        const conflicts: CalendarAnalytics['conflictingEvents'] = [];
+        filteredEvents.forEach((event1, i) => {
+            filteredEvents.slice(i + 1).forEach(event2 => {
+                // Check time conflicts
+                if (event1.startTime && event1.endTime &&
+                    event2.startTime && event2.endTime &&
+                    dayjs(event1.date).isSame(event2.date, 'day')) {
+
+                    const start1 = dayjs(`2000-01-01 ${event1.startTime}`);
+                    const end1 = dayjs(`2000-01-01 ${event1.endTime}`);
+                    const start2 = dayjs(`2000-01-01 ${event2.startTime}`);
+                    const end2 = dayjs(`2000-01-01 ${event2.endTime}`);
+
+                    if ((start1.isSameOrAfter(start2) && start1.isBefore(end2)) ||
+                        (end1.isAfter(start2) && end1.isSameOrBefore(end2))) {
+                        conflicts.push({ event1, event2, type: 'time' });
+                    }
+                }
+            });
+        });
+
+        // Generate recommendations
+        const recommendations: CalendarAnalytics['recommendations'] = [];
+
+        if (conflicts.length > 0) {
+            recommendations.push({
+                type: 'warning',
+                title: 'Schedule Conflicts Detected',
+                description: `You have ${conflicts.length} overlapping events that need attention.`,
+                action: () => setShowAnalyticsPanel(true)
+            });
+        }
+
+        const upcomingReminders = filteredEvents.filter(e =>
+            e.reminder?.enabled &&
+            dayjs(e.date).isAfter(dayjs()) &&
+            dayjs(e.date).isBefore(dayjs().add(7, 'days'))
+        ).length;
+
+        if (upcomingReminders > 0) {
+            recommendations.push({
+                type: 'tip',
+                title: 'Upcoming Reminders',
+                description: `You have ${upcomingReminders} events with reminders in the next week.`
+            });
+        }
+
+        return {
+            totalEvents: filteredEvents.length,
+            eventsByType: typeCount,
+            completionRate: filteredEvents.length > 0 ? (completedEvents / filteredEvents.length) * 100 : 0,
+            averageEventsPerDay: vacation ? filteredEvents.length / dayjs(vacation.endDate.toDate()).diff(dayjs(vacation.startDate.toDate()), 'day') : 0,
+            busiestDay: Object.entries(eventsByDate).reduce((busiest, [date, events]) =>
+                events.length > (eventsByDate[dayjs(busiest).format('YYYY-MM-DD')]?.length || 0) ? new Date(date) : busiest,
+                new Date()
+            ),
+            totalBudget,
+            spentBudget,
+            upcomingReminders,
+            weatherAlerts: weatherData?.filter((w: WeatherDataEntry) => w.weather.alerts && w.weather.alerts.length > 0).length || 0,
+            conflictingEvents: conflicts,
+            recommendations
+        };
+    }, [filteredEvents, eventsByDate, vacation, weatherData, setShowAnalyticsPanel]);
+
+    // Event handlers
+    const handleDateClick = useCallback((date: Date) => {
+        if (readOnly) return;
+
+        setSelectedDate(date);
+        eventForm.reset({
+            date,
+            type: 'note',
+            priority: 'medium',
+            status: 'planned'
+        });
+    }, [readOnly, eventForm]);
+
+    // Event update handler that uses the mutation
+    const handleEventUpdate = useCallback((updatedEvent: CalendarEvent, options?: {
+        skipValidation?: boolean;
+        skipConflictCheck?: boolean;
+        showToast?: boolean;
+        optimistic?: boolean;
+    }) => {
+        if (readOnly) {
+            toast({
+                title: "Read-only mode",
+                description: "Calendar is in read-only mode. Changes cannot be saved.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        const {
+            skipValidation = false,
+            skipConflictCheck = false,
+            showToast = true,
+            optimistic = true
+        } = options || {};
+
+        // Validate event data unless explicitly skipped
+        if (!skipValidation) {
+            try {
+                // Basic validation
+                if (!updatedEvent.id || !updatedEvent.title?.trim()) {
+                    throw new Error("Event must have an ID and title");
+                }
+
+                if (!updatedEvent.date || isNaN(updatedEvent.date.getTime())) {
+                    throw new Error("Event must have a valid date");
+                }
+
+                // Validate time format if provided
+                if (updatedEvent.startTime && !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(updatedEvent.startTime)) {
+                    throw new Error("Start time must be in HH:MM format");
+                }
+
+                if (updatedEvent.endTime && !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(updatedEvent.endTime)) {
+                    throw new Error("End time must be in HH:MM format");
+                }
+
+                // Validate time sequence
+                if (updatedEvent.startTime && updatedEvent.endTime) {
+                    const start = dayjs(`2000-01-01 ${updatedEvent.startTime}`);
+                    const end = dayjs(`2000-01-01 ${updatedEvent.endTime}`);
+                    if (end.isSameOrBefore(start)) {
+                        throw new Error("End time must be after start time");
+                    }
+                }
+
+                // Validate vacation date range
+                if (vacation) {
+                    const eventDate = dayjs(updatedEvent.date);
+                    const vacationStart = dayjs(vacation.startDate.toDate());
+                    const vacationEnd = dayjs(vacation.endDate.toDate());
+
+                    if (eventDate.isBefore(vacationStart, 'day') || eventDate.isAfter(vacationEnd, 'day')) {
+                        throw new Error("Event date must be within vacation dates");
+                    }
+                }
+
+                // Validate budget if provided
+                if (updatedEvent.budget && updatedEvent.budget.estimated < 0) {
+                    throw new Error("Budget amount cannot be negative");
+                }
+
+                // Validate party size for reservations
+                if (updatedEvent.reservation && updatedEvent.reservation.partySize < 1) {
+                    throw new Error("Party size must be at least 1");
+                }
+
+            } catch (validationError) {
+                if (showToast) {
+                    toast({
+                        title: "Validation Error",
+                        description: validationError instanceof Error ? validationError.message : "Invalid event data",
+                        variant: "destructive",
+                    });
+                }
+                return;
+            }
+        }
+
+        // Check for conflicts unless explicitly skipped
+        if (!skipConflictCheck) {
+            const conflicts = events.filter(existingEvent => {
+                // Skip self
+                if (existingEvent.id === updatedEvent.id) return false;
+
+                // Check time conflicts on the same date
+                if (updatedEvent.startTime && updatedEvent.endTime &&
+                    existingEvent.startTime && existingEvent.endTime &&
+                    dayjs(updatedEvent.date).isSame(existingEvent.date, 'day')) {
+
+                    const newStart = dayjs(`2000-01-01 ${updatedEvent.startTime}`);
+                    const newEnd = dayjs(`2000-01-01 ${updatedEvent.endTime}`);
+                    const existingStart = dayjs(`2000-01-01 ${existingEvent.startTime}`);
+                    const existingEnd = dayjs(`2000-01-01 ${existingEvent.endTime}`);
+
+                    return (newStart.isSameOrAfter(existingStart) && newStart.isBefore(existingEnd)) ||
+                        (newEnd.isAfter(existingStart) && newEnd.isSameOrBefore(existingEnd)) ||
+                        (newStart.isBefore(existingStart) && newEnd.isAfter(existingEnd));
+                }
+
+                // Check for duplicate reservations
+                if (updatedEvent.type === 'dining' && existingEvent.type === 'dining' &&
+                    updatedEvent.reservation && existingEvent.reservation &&
+                    updatedEvent.locationName === existingEvent.locationName &&
+                    dayjs(updatedEvent.date).isSame(existingEvent.date, 'day')) {
+                    return true;
+                }
+
+                return false;
+            });
+
+            if (conflicts.length > 0) {
+                const conflictNames = conflicts.map(c => c.title).join(', ');
+                if (showToast) {
+                    toast({
+                        title: "Schedule Conflict",
+                        description: `This event conflicts with: ${conflictNames}. Continue anyway?`,
+                        variant: "destructive",
+                    });
+                }
+                // In a real app, you might want to show a confirmation dialog here
+                // For now, we'll proceed with a warning
+                console.warn('Schedule conflicts detected:', conflicts);
+            }
+        }
+
+        // Perform optimistic update if enabled
+        if (optimistic) {
+            queryClient.setQueryData(['events', vacationId], (oldEvents: CalendarEvent[] | undefined) => {
+                if (!oldEvents) return [updatedEvent];
+
+                const eventIndex = oldEvents.findIndex(e => e.id === updatedEvent.id);
+                if (eventIndex >= 0) {
+                    const newEvents = [...oldEvents];
+                    newEvents[eventIndex] = updatedEvent;
+                    return newEvents;
+                } else {
+                    return [...oldEvents, updatedEvent];
+                }
+            });
+
+            // Update analytics immediately for better UX
+            queryClient.invalidateQueries({ queryKey: ['analytics', vacationId] });
+        }
+
+        // Development logging
+        if (process.env.NODE_ENV === 'development') {
+            console.log('Event update requested:', {
+                id: updatedEvent.id,
+                title: updatedEvent.title,
+                type: updatedEvent.type,
+                date: updatedEvent.date,
+                changes: options
+            });
+        }
+
+        // Trigger the mutation
+        updateEventMutation.mutate(updatedEvent, {
+            onSuccess: (savedEvent) => {
+                if (showToast) {
+                    // Show different messages based on update type
+                    let message = `${savedEvent.title} has been updated successfully.`;
+
+                    if (updatedEvent.status === 'completed') {
+                        message = `${savedEvent.title} marked as completed! 🎉`;
+                    } else if (updatedEvent.status === 'cancelled') {
+                        message = `${savedEvent.title} has been cancelled.`;
+                    } else if (updatedEvent.priority === 'critical') {
+                        message = `${savedEvent.title} marked as high priority! ⚠️`;
+                    }
+
+                    toast({
+                        title: "Event updated",
+                        description: message,
+                    });
+                }
+
+                // Handle side effects based on event type and changes
+                if (updatedEvent.type === 'park' && updatedEvent.status === 'completed') {
+                    // Check if this completes all park days
+                    const parkEvents = events.filter(e => e.type === 'park');
+                    const completedParks = parkEvents.filter(e => e.status === 'completed').length;
+
+                    if (completedParks === parkEvents.length) {
+                        toast({
+                            title: "Vacation Complete! 🎊",
+                            description: "You've completed all your park days! Hope you had a magical time!",
+                        });
+                    }
+                }
+
+                // Auto-update related events if needed
+                if (updatedEvent.type === 'travel' && updatedEvent.status === 'completed') {
+                    // Mark check-in events as ready if arrival is complete
+                    const checkInEvents = events.filter(e =>
+                        e.type === 'resort' &&
+                        e.title.toLowerCase().includes('check-in') &&
+                        dayjs(e.date).isSame(updatedEvent.date, 'day')
+                    );
+
+                    checkInEvents.forEach(checkIn => {
+                        if (checkIn.status === 'planned') {
+                            // Auto-update check-in status
+                            handleEventUpdate(
+                                { ...checkIn, status: 'confirmed' },
+                                { skipConflictCheck: true, showToast: false }
+                            );
+                        }
+                    });
+                }
+
+                // Handle reminder updates
+                if (updatedEvent.reminder?.enabled &&
+                    dayjs(updatedEvent.date).isAfter(dayjs()) &&
+                    dayjs(updatedEvent.date).isBefore(dayjs().add(24, 'hours'))) {
+
+                    // Schedule notification for upcoming events (in a real app)
+                    console.log('Scheduling reminder for:', updatedEvent.title);
+                }
+            },
+            onError: (error) => {
+                // Revert optimistic update on error
+                if (optimistic) {
+                    queryClient.invalidateQueries({ queryKey: ['events', vacationId] });
+                }
+
+                if (showToast) {
+                    toast({
+                        title: "Update failed",
+                        description: error.message || "Failed to update event. Please try again.",
+                        variant: "destructive",
+                    });
+                }
+
+                console.error('Failed to update event:', error);
+            }
+        });
+
+        // Update selected date if the event date changed
+        if (selectedDate && !dayjs(selectedDate).isSame(updatedEvent.date, 'day')) {
+            setSelectedDate(updatedEvent.date);
+        }
+
+        // Haptic feedback on mobile devices (if supported and enabled)
+        if (preferences.hapticFeedback && 'vibrate' in navigator) {
+            navigator.vibrate(50);
+        }
+    }, [
+        readOnly,
+        vacation,
+        events,
+        queryClient,
+        vacationId,
+        updateEventMutation,
+        selectedDate,
+        setSelectedDate,
+        preferences.hapticFeedback
+    ]);
+
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyPress = (e: KeyboardEvent) => {
+            // Cmd/Ctrl + N for new event
+            if ((e.metaKey || e.ctrlKey) && e.key === 'n' && !readOnly) {
+                e.preventDefault();
+                handleDateClick(selectedDate || new Date());
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyPress);
+        return () => window.removeEventListener('keydown', handleKeyPress);
+    }, [readOnly, selectedDate, handleDateClick]);
+
+    // Auto-save effect
+    useEffect(() => {
+        if (!preferences.autoSave || readOnly) return;
+
+        const saveTimer = setTimeout(() => {
+            // In a real app, save to backend
+            console.log('Auto-saving calendar data...');
+        }, 2000);
+
+        return () => clearTimeout(saveTimer);
+    }, [filteredEvents, preferences.autoSave, readOnly]);
+
+    // Navigation functions
     const navigatePrevious = () => {
         if (view === 'month') {
             setCurrentDate(dayjs(currentDate).subtract(1, 'month').toDate());
         } else if (view === 'week') {
             setCurrentDate(dayjs(currentDate).subtract(1, 'week').toDate());
-        } else {
-            // For schedule view, do nothing as it shows the entire vacation
         }
     };
 
-    // Navigate to next period
     const navigateNext = () => {
         if (view === 'month') {
             setCurrentDate(dayjs(currentDate).add(1, 'month').toDate());
         } else if (view === 'week') {
             setCurrentDate(dayjs(currentDate).add(1, 'week').toDate());
-        } else {
-            // For schedule view, do nothing as it shows the entire vacation
         }
     };
 
-    // Handle clicking on a date
-    const handleDateClick = (date: Date) => {
-        setSelectedDate(date);
-
-        if (onAddEvent) {
-            setNewEventTitle('');
-            setNewEventNotes('');
-            setNewEventTime('');
-            setShowAddEventDialog(true);
+    // Get date range for current view
+    const dateRange = useMemo(() => {
+        if (view === 'month') {
+            const daysInMonth = dayjs(currentDate).daysInMonth();
+            return Array.from({ length: daysInMonth }, (_, i) =>
+                dayjs(currentDate).date(i + 1).toDate()
+            );
+        } else if (view === 'week') {
+            const start = dayjs(currentDate).startOf('week');
+            return Array.from({ length: 7 }, (_, i) =>
+                start.add(i, 'day').toDate()
+            );
+        } else if (view === 'schedule' || view === 'timeline') {
+            if (!vacation) return [];
+            const start = dayjs(vacation.startDate.toDate());
+            const end = dayjs(vacation.endDate.toDate());
+            const days = end.diff(start, 'day') + 1;
+            return Array.from({ length: days }, (_, i) =>
+                start.add(i, 'day').toDate()
+            );
         }
-    };
+        return [];
+    }, [currentDate, view, vacation]);
 
-    // Handle clicking on an event
-    const handleEventClick = (event: CalendarEvent) => {
-        setSelectedEvent(event);
-        setShowEventDialog(true);
-
-        if (onEventClick) {
-            onEventClick(event);
-        }
-    };
-
-    // Handle adding a new event
-    const handleAddEvent = () => {
-        // In a real app, this would save to Firebase
-        console.log('Adding event:', {
-            title: newEventTitle,
-            date: selectedDate,
-            type: newEventType,
-            time: newEventTime,
-            notes: newEventNotes,
-        });
-
-        // Close the dialog
-        setShowAddEventDialog(false);
-    };
-
-    // Get friendly label for event type
-    const getEventTypeLabel = (type: CalendarEvent['type']) => {
-        switch (type) {
-            case 'park': return 'Park Day';
-            case 'dining': return 'Dining';
-            case 'resort': return 'Resort';
-            case 'travel': return 'Travel';
-            case 'rest': return 'Rest Day';
-            case 'event': return 'Special Event';
-            case 'note': return 'Note';
-            default: return 'Event';
-        }
-    };
-
-    // Get icon for event type
-    const getEventTypeIcon = (type: CalendarEvent['type']) => {
-        switch (type) {
-            case 'park': return <Map className="h-4 w-4" />;
-            case 'dining': return <Utensils className="h-4 w-4" />;
-            case 'resort': return <Clock className="h-4 w-4" />;
-            case 'travel': return <Ticket className="h-4 w-4" />;
-            case 'rest': return <Sun className="h-4 w-4" />;
-            case 'event': return <CalendarIcon className="h-4 w-4" />;
-            case 'note': return <BadgeInfo className="h-4 w-4" />;
-            default: return <CalendarIcon className="h-4 w-4" />;
-        }
-    };
-
-    // Get color for event type
-    const getEventTypeColor = (type: CalendarEvent['type'], highlighted: boolean = false) => {
-        if (highlighted) {
-            return "border-primary bg-primary/10 text-primary";
-        }
-
-        switch (type) {
-            case 'park': return "border-green-400 bg-green-50 text-green-700";
-            case 'dining': return "border-amber-400 bg-amber-50 text-amber-700";
-            case 'resort': return "border-blue-400 bg-blue-50 text-blue-700";
-            case 'travel': return "border-purple-400 bg-purple-50 text-purple-700";
-            case 'rest': return "border-teal-400 bg-teal-50 text-teal-700";
-            case 'event': return "border-pink-400 bg-pink-50 text-pink-700";
-            case 'note': return "border-gray-400 bg-gray-50 text-gray-700";
-            default: return "border-gray-400 bg-gray-50 text-gray-700";
-        }
-    };
-
-    // Get weather icon based on condition
-    const getWeatherIcon = (condition: string) => {
-        switch (condition) {
-            case 'sunny': return <Sun className="h-4 w-4 text-amber-500" />;
-            case 'rainy': return <CloudRain className="h-4 w-4 text-blue-500" />;
-            case 'cloudy': return <Cloud className="h-4 w-4 text-gray-500" />;
-            case 'stormy': return <Zap className="h-4 w-4 text-purple-500" />;
-            default: return <Sun className="h-4 w-4 text-amber-500" />;
-        }
-    };
-
-    // Render month view
-    const renderMonthView = () => {
-        const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-        const startingDayOfWeek = firstDay.getDay(); // 0 = Sunday, 1 = Monday, ...
-
-        return (
-            <div className="grid grid-cols-7 gap-1">
-                {/* Day headers */}
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                    <div key={day} className="text-center text-xs font-medium p-1">
-                        {day}
-                    </div>
-                ))}
-
-                {/* Empty cells for days before the first day of the month */}
-                {Array.from({ length: startingDayOfWeek }, (_, i) => (
-                    <div key={`empty-${i}`} className="h-24 p-1 border border-dashed border-gray-200 bg-gray-50/50 rounded-lg"></div>
-                ))}
-
-                {/* Days of the month */}
-                {dateRange.map((date) => {
-                    const dateStr = dayjs(date).format('YYYY-MM-DD');
-                    const dayEvents = eventsByDate[dateStr] || [];
-                    const isToday = dayjs(date).isSame(new Date(), 'day');
-
-                    return (
-                        <button
-                            key={dateStr}
-                            type="button"
-                            className={cn(
-                                "h-24 p-1 border border-gray-200 rounded-lg overflow-hidden w-full text-left",
-                                isToday ? "bg-primary/5 border-primary" : "bg-card hover:bg-secondary/10 transition-colors"
-                            )}
-                            onClick={() => handleDateClick(date)}
-                            aria-label={`Add event on ${dayjs(date).format('MMMM D, YYYY')}`}
-                        >
-                            <div className="flex items-center justify-between">
-                                <span className={cn(
-                                    "text-xs font-medium",
-                                    isToday && "text-primary"
-                                )}>
-                                    {dayjs(date).format('D')}
-                                </span>
-
-                                {/* Weather for the day */}
-                                {dayEvents[0]?.weather && (
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <div className="flex items-center text-xs">
-                                                    {getWeatherIcon(dayEvents[0].weather.condition)}
-                                                    <span className="ml-1">{dayEvents[0].weather.highTemp}°</span>
-                                                </div>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <div className="text-xs">
-                                                    <p>{dayEvents[0].weather.condition} | {dayEvents[0].weather.lowTemp}° - {dayEvents[0].weather.highTemp}°</p>
-                                                    <p>Precipitation: {dayEvents[0].weather.precipitation}%</p>
-                                                </div>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                )}
-                            </div>
-
-                            {/* Events for the day */}
-                            <div className="mt-1 space-y-1 max-h-[calc(100%-20px)] overflow-hidden">
-                                {dayEvents
-                                    .toSorted(sortEventsByTypeAndTime)
-                                    .slice(0, 3) // Show only first 3 events
-                                    .map(event =>
-                                        renderEventButton(event, createEventButtonClickHandler(event))
-                                    )
-                                }
-
-                                {/* "More events" indicator */}
-                                {dayEvents.length > 3 && (
-                                    <div className="text-[10px] text-center text-muted-foreground">
-                                        +{dayEvents.length - 3} more
-                                    </div>
-                                )}
-                            </div>
-                        </button>
-                    );
-                })}
-            </div>
-        );
-    };
-
-    // Render week view
-    const renderWeekView = () => {
-        const dayStartHour = 8; // 8 AM
-        const dayEndHour = 22; // 10 PM
-        const hourSlots = Array.from(
-            { length: dayEndHour - dayStartHour + 1 },
-            (_, i) => dayStartHour + i
-        );
-
-        return (
-            <div className="grid grid-cols-[50px_repeat(7,1fr)] gap-0 border rounded-lg overflow-hidden">
-                {/* Header row with day names */}
-                <div className="sticky top-0 bg-card z-10 border-b border-r h-16">
-                    {/* Time column header */}
-                </div>
-                {dateRange.map((date) => {
-                    const dateStr = dayjs(date).format('YYYY-MM-DD');
-                    const dayEvents = eventsByDate[dateStr] || [];
-                    const isToday = dayjs(date).isSame(new Date(), 'day');
-
-                    return (
-                        <div
-                            key={dateStr}
-                            className={cn(
-                                "sticky top-0 z-10 p-2 border-b border-r text-center h-16",
-                                isToday ? "bg-primary/5" : "bg-card"
-                            )}
-                        >
-                            <div className="text-sm font-medium">{dayjs(date).format('ddd')}</div>
-                            <div className={cn(
-                                "text-xs",
-                                isToday && "text-primary font-medium"
-                            )}>
-                                {dayjs(date).format('MMM D')}
-                            </div>
-
-                            {/* Weather indicator */}
-                            {dayEvents[0]?.weather && (
-                                <div className="flex items-center justify-center text-xs mt-1">
-                                    {getWeatherIcon(dayEvents[0].weather.condition)}
-                                    <span className="ml-1">{dayEvents[0].weather.highTemp}°</span>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-
-                {/* Time grid */}
-                {hourSlots.map((hour) => (
-                    <React.Fragment key={hour}>
-                        {/* Time column */}
-                        <div className="border-r border-b p-1 text-xs text-right text-muted-foreground h-16">
-                            {hour}:00
-                        </div>
-
-                        {/* Day columns */}
-                        {dateRange.map((date) => {
-                            const dateStr = dayjs(date).format('YYYY-MM-DD');
-
-                            // Filter events for this hour slot
-                            const hourEvents = filterEventsByHour((eventsByDate[dateStr] || []), hour);
-
-                            return (
-                                <div
-                                    key={`${dateStr}-${hour}`}
-                                    className="border-r border-b min-h-[64px] relative"
-                                >
-                                    {hourEvents.map(renderHourEvent)}
-                                </div>
-                            );
-                        })}
-                    </React.Fragment>
-                ))}
-            </div>
-        );
-    };
-
-    // Render schedule view
-    const renderScheduleView = () => {
-        return (
-            <div className="space-y-6">
-                {dateRange.map((date) => {
-                    const dateStr = dayjs(date).format('YYYY-MM-DD');
-                    const dayEvents = eventsByDate[dateStr] || [];
-                    const isToday = dayjs(date).isSame(new Date(), 'day');
-
-                    return (
-                        <Card key={dateStr} className={cn(
-                            isToday && "border-primary bg-primary/5"
-                        )}>
-                            <CardHeader className="pb-2">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <CardTitle className={cn(
-                                            "text-lg",
-                                            isToday && "text-primary"
-                                        )}>
-                                            {dayjs(date).format('dddd, MMMM D')}
-                                        </CardTitle>
-                                        <CardDescription>
-                                            {dayEvents
-                                                .filter(e => e.type === 'park')
-                                                .map(e => e.title)
-                                                .join(' • ')}
-                                        </CardDescription>
-                                    </div>
-
-                                    {/* Weather card */}
-                                    {dayEvents[0]?.weather && (
-                                        <div className="flex items-center bg-secondary/30 rounded-lg px-2 py-1 text-xs min-w-[100px] justify-between">
-                                            <div className="flex items-center">
-                                                {getWeatherIcon(dayEvents[0].weather.condition)}
-                                                <span className="text-sm font-medium ml-1">
-                                                    {dayEvents[0].weather.highTemp}°
-                                                </span>
-                                            </div>
-                                            <span className="text-xs text-muted-foreground">
-                                                {dayEvents[0].weather.lowTemp}° | {dayEvents[0].weather.precipitation}%
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-2">
-                                    {dayEvents
-                                        .toSorted((a, b) => {
-                                            // Sort by time first
-                                            if (a.startTime && b.startTime) {
-                                                return a.startTime.localeCompare(b.startTime);
-                                            }
-
-                                            // Then by type using our existing function
-                                            return sortEventsByTypeAndTime(a, b);
-                                        })
-                                        .map(event => {
-                                            return (
-                                                <button
-                                                    key={event.id}
-                                                    className={cn(
-                                                        "p-2 rounded-lg border flex items-start cursor-pointer hover:bg-secondary/10 transition-colors w-full text-left",
-                                                        event.isHighlighted && "border-primary/50"
-                                                    )}
-                                                    onClick={() => handleEventClick(event)}
-                                                    aria-label={`View details for ${event.title}`}
-                                                >
-                                                    <div className={cn(
-                                                        "w-8 h-8 rounded-full flex items-center justify-center mr-3",
-                                                        getEventTypeColor(event.type, event.isHighlighted)
-                                                    )}>
-                                                        {getEventTypeIcon(event.type)}
-                                                    </div>
-
-                                                    <div className="flex-1">
-                                                        <div className="font-medium">{event.title}</div>
-
-                                                        <div className="flex flex-wrap gap-2 mt-1">
-                                                            {event.startTime && (
-                                                                <div className="text-xs bg-secondary rounded-full px-2 py-0.5 flex items-center">
-                                                                    <Clock className="h-3 w-3 mr-1" />
-                                                                    {event.startTime}
-                                                                    {event.endTime && ` - ${event.endTime}`}
-                                                                </div>
-                                                            )}
-
-                                                            {event.locationName && (
-                                                                <div className="text-xs bg-secondary rounded-full px-2 py-0.5 flex items-center">
-                                                                    <Map className="h-3 w-3 mr-1" />
-                                                                    {event.locationName}
-                                                                </div>
-                                                            )}
-
-                                                            {event.type === 'dining' && event.reservation && (
-                                                                <div className={cn(
-                                                                    "text-xs rounded-full px-2 py-0.5 flex items-center",
-                                                                    event.reservation.confirmed
-                                                                        ? "bg-green-100 text-green-700"
-                                                                        : "bg-amber-100 text-amber-700"
-                                                                )}>
-                                                                    <Utensils className="h-3 w-3 mr-1" />
-                                                                    {event.reservation.confirmed ? 'Confirmed' : 'Pending'}
-                                                                </div>
-                                                            )}
-                                                        </div>
-
-                                                        {event.notes && (
-                                                            <div className="mt-2 text-sm text-muted-foreground">
-                                                                {event.notes}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </button>
-                                            );
-                                        })
-                                    }
-
-                                    {dayEvents.length === 0 && (
-                                        <div className="text-center py-4 text-muted-foreground">
-                                            No events planned for this day.
-                                        </div>
-                                    )}
-                                </div>
-                            </CardContent>
-                            <CardFooter className="pt-0">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="ml-auto"
-                                    onClick={() => { handleDateClick(date); }}
-                                >
-                                    <PlusCircle className="h-4 w-4 mr-2" />
-                                    Add Event
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    );
-                })}
-            </div>
-        );
-    };
-
-    // Loading state
+    // Loading states
     if (isLoadingVacation) {
         return (
-            <div className="flex justify-center py-8">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+            <div className="space-y-4">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-[600px] w-full" />
             </div>
         );
     }
 
-    if (!vacation) {
+    if (vacationError || !vacation) {
         return (
-            <div className="text-center py-8 text-muted-foreground">
-                Vacation not found.
-            </div>
+            <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>
+                    Failed to load vacation details. Please try again later.
+                </AlertDescription>
+            </Alert>
         );
     }
 
     return (
-        <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                <div>
-                    <h2 className="text-2xl font-bold">
-                        {vacation.name}
-                    </h2>
-                    <p className="text-muted-foreground">
-                        {dayjs(vacation.startDate.toDate()).format('MMM D')} - {dayjs(vacation.endDate.toDate()).format('MMM D, YYYY')}
-                    </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    {view !== 'schedule' && (
-                        <>
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={navigatePrevious}
-                            >
-                                <ChevronLeft className="h-4 w-4" />
-                            </Button>
-
-                            <div className="font-medium text-sm min-w-[120px] text-center">
-                                {view === 'month'
-                                    ? dayjs(currentDate).format('MMMM YYYY')
-                                    : `Week of ${dayjs(dateRange[0]).format('MMM D')}`
-                                }
-                            </div>
-
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={navigateNext}
-                            >
-                                <ChevronRight className="h-4 w-4" />
-                            </Button>
-                        </>
-                    )}
-
-                    <Separator orientation="vertical" className="h-8" />
-
-                    <Tabs
-                        value={view}
-                        onValueChange={(value) => {
-                            if (value === 'month' || value === 'week' || value === 'schedule') {
-                                setView(value);
-                            }
-                        }}
-                    >
-                        <TabsList>
-                            <TabsTrigger value="month" className="text-xs">
-                                <CalendarIcon className="h-3.5 w-3.5 mr-1" />
-                                Month
-                            </TabsTrigger>
-                            <TabsTrigger value="week" className="text-xs">
-                                <CalendarDays className="h-3.5 w-3.5 mr-1" />
-                                Week
-                            </TabsTrigger>
-                            <TabsTrigger value="schedule" className="text-xs">
-                                <CalendarDays className="h-3.5 w-3.5 mr-1" />
-                                Schedule
-                            </TabsTrigger>
-                        </TabsList>
-                    </Tabs>
-                </div>
-            </div>
-
-            {/* Calendar Content */}
-            <ScrollArea className={view === 'week' ? "h-[calc(100vh-220px)] overflow-auto" : undefined}>
-                {view === 'month' && renderMonthView()}
-                {view === 'week' && renderWeekView()}
-                {view === 'schedule' && renderScheduleView()}
-            </ScrollArea>
-
-            {/* Event Detail Dialog */}
-            <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
-                <DialogContent>
-                    <DialogHeader>
-                        <div className="flex items-center gap-2">
-                            <div className={cn(
-                                "w-8 h-8 rounded-full flex items-center justify-center",
-                                selectedEvent && getEventTypeColor(selectedEvent.type, selectedEvent.isHighlighted)
-                            )}>
-                                {selectedEvent && getEventTypeIcon(selectedEvent.type)}
-                            </div>
-                            <DialogTitle>{selectedEvent?.title}</DialogTitle>
-                        </div>
-                        <DialogDescription>
-                            {selectedEvent && dayjs(selectedEvent.date).format('dddd, MMMM D, YYYY')}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    {selectedEvent && (
-                        <div className="space-y-4">
-                            <div className="flex flex-wrap gap-3">
-                                {selectedEvent.startTime && (
-                                    <Badge variant="outline" className="flex items-center">
-                                        <Clock className="h-3.5 w-3.5 mr-2" />
-                                        {selectedEvent.startTime}
-                                        {selectedEvent.endTime && ` - ${selectedEvent.endTime}`}
-                                    </Badge>
-                                )}
-
-                                <Badge variant="outline" className="flex items-center">
-                                    {getEventTypeIcon(selectedEvent.type)}
-                                    <span className="ml-2">{getEventTypeLabel(selectedEvent.type)}</span>
-                                </Badge>
-
-                                {selectedEvent.locationName && (
-                                    <Badge variant="outline" className="flex items-center">
-                                        <Map className="h-3.5 w-3.5 mr-2" />
-                                        {selectedEvent.locationName}
-                                    </Badge>
-                                )}
-                            </div>
-
-                            {selectedEvent.notes && (
-                                <div className="bg-secondary/20 p-3 rounded-lg">
-                                    <h4 className="text-sm font-medium mb-1">Notes</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                        {selectedEvent.notes}
-                                    </p>
-                                </div>
-                            )}
-
-                            {/* Dining reservation details */}
-                            {selectedEvent.type === 'dining' && selectedEvent.reservation && (
-                                <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
-                                    <h4 className="text-sm font-medium text-amber-800 mb-1 flex items-center">
-                                        <Utensils className="h-4 w-4 mr-2" />
-                                        Dining Reservation
-                                    </h4>
-                                    <div className="text-sm text-amber-700 space-y-1">
-                                        <div className="flex justify-between">
-                                            <span>Restaurant:</span>
-                                            <span className="font-medium">{selectedEvent.reservation.name}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>Time:</span>
-                                            <span className="font-medium">{selectedEvent.reservation.time}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>Party Size:</span>
-                                            <span className="font-medium">{selectedEvent.reservation.partySize} people</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>Status:</span>
-                                            <span className={cn(
-                                                "font-medium",
-                                                selectedEvent.reservation.confirmed ? "text-green-600" : "text-amber-600"
-                                            )}>
-                                                {selectedEvent.reservation.confirmed ? 'Confirmed' : 'Pending'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Weather details */}
-                            {selectedEvent.weather && (
-                                <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
-                                    <h4 className="text-sm font-medium text-blue-800 mb-1 flex items-center">
-                                        {getWeatherIcon(selectedEvent.weather.condition)}
-                                        <span className="ml-2">Weather Forecast</span>
-                                    </h4>
-                                    <div className="text-sm text-blue-700 space-y-1">
-                                        <div className="flex justify-between">
-                                            <span>Condition:</span>
-                                            <span className="font-medium capitalize">{selectedEvent.weather.condition}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>Temperature:</span>
-                                            <span className="font-medium">
-                                                {selectedEvent.weather.lowTemp}° - {selectedEvent.weather.highTemp}°F
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>Precipitation:</span>
-                                            <span className="font-medium">{selectedEvent.weather.precipitation}%</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    <DialogFooter>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                    <MoreHorizontal className="h-4 w-4 mr-2" />
-                                    Options
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuGroup>
-                                    <DropdownMenuItem>
-                                        Edit Event
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem>
-                                        Share Event
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem className="text-destructive">
-                                        Delete Event
-                                    </DropdownMenuItem>
-                                </DropdownMenuGroup>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-
-                        <Button>
-                            View Details
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Add Event Dialog */}
-            <Dialog open={showAddEventDialog} onOpenChange={setShowAddEventDialog}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Add Event</DialogTitle>
-                        <DialogDescription>
-                            {selectedDate && dayjs(selectedDate).format('dddd, MMMM D, YYYY')}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="event-title">Event Title</Label>
-                            <Input
-                                id="event-title"
-                                placeholder="Enter event title"
-                                value={newEventTitle}
-                                onChange={(e) => setNewEventTitle(e.target.value)}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="event-type">Event Type</Label>
-                            <select
-                                id="event-type"
-                                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
-                                value={newEventType}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    if (value === 'note' || value === 'dining' || value === 'resort' ||
-                                        value === 'travel' || value === 'rest' || value === 'event' || value === 'park') {
-                                        setNewEventType(value);
-                                    }
-                                }}
-                                aria-label="Select event type"
-                            >
-                                <option value="note">Note</option>
-                                <option value="dining">Dining</option>
-                                <option value="rest">Rest Day</option>
-                                <option value="travel">Travel</option>
-                                <option value="event">Special Event</option>
-                            </select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="event-time">Time (optional)</Label>
-                            <Input
-                                id="event-time"
-                                type="time"
-                                value={newEventTime}
-                                onChange={(e) => setNewEventTime(e.target.value)}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="event-notes">Notes (optional)</Label>
-                            <textarea
-                                id="event-notes"
-                                className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                                placeholder="Enter notes"
-                                value={newEventNotes}
-                                onChange={(e) => setNewEventNotes(e.target.value)}
-                            />
-                        </div>
+        <TooltipProvider>
+            <div className="relative min-h-screen">
+                {/* Background Pattern */}
+                {preferences.animations && (
+                    <div className="absolute inset-0 -z-10 opacity-5">
+                        <AnimatedGridPattern
+                            width={40}
+                            height={40}
+                            className="h-full w-full"
+                        />
                     </div>
+                )}
 
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowAddEventDialog(false)}>
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={handleAddEvent}
-                            disabled={!newEventTitle.trim()}
-                        >
-                            Add Event
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </div>
-    );
-}
+                {/* Main Content */}
+                <motion.div
+                    initial="hidden"
+                    animate="show"
+                    variants={calendarAnimations.container}
+                    className="space-y-6"
+                >
+                    {/* Header */}
+                    <motion.div
+                        variants={calendarAnimations.item}
+                        className="bg-card/80 backdrop-blur-sm rounded-xl border shadow-sm p-6"
+                    >
+                        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                            {/* Title Section */}
+                            <div className="flex-1">
+                                <div className="flex items-center gap-3">
+                                    <div className="relative">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full blur-xl opacity-20" />
+                                        <CalendarHeart className="h-8 w-8 text-purple-600 relative" />
+                                    </div>
+                                    <div>
+                                        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                                            {vacation.name}
+                                        </h1>
+                                        <div className="flex items-center gap-4 mt-1">
+                                            <span className="text-sm text-muted-foreground">
+                                                {dayjs(vacation.startDate.toDate()).format('MMM D')} - {dayjs(vacation.endDate.toDate()).format('MMM D, YYYY')}
+                                            </span>
+                                            <Badge variant="outline" className="text-xs">
+                                                {dayjs(vacation.endDate.toDate()).diff(dayjs(vacation.startDate.toDate()), 'day') + 1} days
+                                            </Badge>
+                                            {analytics.totalEvents > 0 && (
+                                                <Badge variant="secondary" className="text-xs">
+                                                    <Activity className="h-3 w-3 mr-1" />
+                                                    {analytics.totalEvents} events
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-function Cloud(props: Readonly<React.SVGProps<SVGSVGElement>>) {
-    return (
-        <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
-        </svg>
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-2">
+                                {/* Search Button */}
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="relative"
+                                >
+                                    <Search className="h-4 w-4" />
+                                    <span className="sr-only">Search events</span>
+                                </Button>
+
+                                {/* Filter Button */}
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => setShowFilterPanel(!showFilterPanel)}
+                                    className="relative"
+                                >
+                                    <Filter className="h-4 w-4" />
+                                    {Object.values(filters).some(f =>
+                                        Array.isArray(f) ? f.length > 0 : !!f
+                                    ) && (
+                                            <span className="absolute -top-1 -right-1 h-2 w-2 bg-primary rounded-full" />
+                                        )}
+                                </Button>
+
+                                {/* Analytics Button */}
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => setShowAnalyticsPanel(!showAnalyticsPanel)}
+                                >
+                                    <BarChart3 className="h-4 w-4" />
+                                </Button>
+
+                                {/* More Options */}
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="icon">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-56">
+                                        <DropdownMenuLabel>Calendar Options</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuGroup>
+                                            <DropdownMenuItem>
+                                                <Settings className="h-4 w-4 mr-2" />
+                                                Settings
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem>
+                                                <Share2 className="h-4 w-4 mr-2" />
+                                                Share Calendar
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem>
+                                                <Download className="h-4 w-4 mr-2" />
+                                                Export Events
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem>
+                                                <Printer className="h-4 w-4 mr-2" />
+                                                Print Calendar
+                                            </DropdownMenuItem>
+                                        </DropdownMenuGroup>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem>
+                                            <RefreshCw className="h-4 w-4 mr-2" />
+                                            Sync Calendar
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+
+                                {/* Add Event Button */}
+                                {!readOnly && (
+                                    <ShimmerButton
+                                        onClick={() => handleDateClick(selectedDate || new Date())}
+                                        className="gap-2"
+                                    >
+                                        <CalendarPlus className="h-4 w-4" />
+                                        Add Event
+                                    </ShimmerButton>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Collaborators */}
+                        {collaborators.length > 0 && (
+                            <div className="flex items-center gap-4 mt-4 pt-4 border-t">
+                                <span className="text-sm text-muted-foreground">Collaborators:</span>
+                                <AvatarCircles
+                                    avatarUrls={collaborators.map((c: Collaborator) => ({
+                                        imageUrl: c.avatar || '/default-avatar.png',
+                                        profileUrl: `/profile/${c.id}`
+                                    }))}
+                                    numPeople={collaborators.length}
+                                />
+                            </div>
+                        )}
+
+                        {/* Weather Alerts */}
+                        {analytics.weatherAlerts > 0 && (
+                            <Alert className="mt-4">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertTitle>Weather Alert</AlertTitle>
+                                <AlertDescription>
+                                    {analytics.weatherAlerts} weather {analytics.weatherAlerts === 1 ? 'alert' : 'alerts'} for your trip dates.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                    </motion.div>
+
+                    {/* View Controls */}
+                    <motion.div
+                        variants={calendarAnimations.item}
+                        className="bg-card/80 backdrop-blur-sm rounded-xl border shadow-sm p-4"
+                    >
+                        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                            {/* Navigation */}
+                            <div className="flex items-center gap-2">
+                                {(view === 'month' || view === 'week') && (
+                                    <>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={navigatePrevious}
+                                        >
+                                            <ChevronLeft className="h-4 w-4" />
+                                        </Button>
+
+                                        <div className="min-w-[200px] text-center">
+                                            <h2 className="text-lg font-semibold">
+                                                {view === 'month'
+                                                    ? dayjs(currentDate).format('MMMM YYYY')
+                                                    : `Week of ${dayjs(dateRange[0]).format('MMM D, YYYY')}`
+                                                }
+                                            </h2>
+                                        </div>
+
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={navigateNext}
+                                        >
+                                            <ChevronRight className="h-4 w-4" />
+                                        </Button>
+
+                                        <Separator orientation="vertical" className="h-8 mx-2" />
+
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setCurrentDate(new Date())}
+                                        >
+                                            Today
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* View Selector */}
+                            <Tabs value={view} onValueChange={(v) => setView(v as CalendarViewType)}>
+                                <TabsList className="grid grid-cols-5 w-full sm:w-auto">
+                                    <TabsTrigger value="month" className="gap-1">
+                                        <CalendarDays className="h-3.5 w-3.5" />
+                                        <span className="hidden sm:inline">Month</span>
+                                    </TabsTrigger>
+                                    <TabsTrigger value="week" className="gap-1">
+                                        <CalendarRange className="h-3.5 w-3.5" />
+                                        <span className="hidden sm:inline">Week</span>
+                                    </TabsTrigger>
+                                    <TabsTrigger value="schedule" className="gap-1">
+                                        <List className="h-3.5 w-3.5" />
+                                        <span className="hidden sm:inline">Schedule</span>
+                                    </TabsTrigger>
+                                    <TabsTrigger value="timeline" className="gap-1">
+                                        <Activity className="h-3.5 w-3.5" />
+                                        <span className="hidden sm:inline">Timeline</span>
+                                    </TabsTrigger>
+                                    <TabsTrigger value="map" className="gap-1">
+                                        <MapPin className="h-3.5 w-3.5" />
+                                        <span className="hidden sm:inline">Map</span>
+                                    </TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                        </div>
+                    </motion.div>
+
+                    {/* Main Calendar Content */}
+                    <motion.div
+                        variants={calendarAnimations.item}
+                        className="bg-card/80 backdrop-blur-sm rounded-xl border shadow-sm overflow-hidden"
+                    >
+                        <AnimatePresence mode="wait">
+                            {view === 'month' && (
+                                <motion.div
+                                    key="month-view"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    {/* Month view implementation will go here */}
+                                    <div className="p-6">
+                                        <div className="text-center text-muted-foreground">
+                                            Month view - Enhanced implementation coming...
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {view === 'week' && (
+                                <motion.div
+                                    key="week-view"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    {/* Week view implementation will go here */}
+                                    <div className="p-6">
+                                        <div className="text-center text-muted-foreground">
+                                            Week view - Enhanced implementation coming...
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {view === 'schedule' && (
+                                <motion.div
+                                    key="schedule-view"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    {/* Schedule view implementation will go here */}
+                                    <div className="p-6">
+                                        <div className="text-center text-muted-foreground">
+                                            Schedule view - Enhanced implementation coming...
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </motion.div>
+                </motion.div>
+
+                {/* Toaster for notifications */}
+                <Toaster />
+            </div>
+        </TooltipProvider>
     );
 }

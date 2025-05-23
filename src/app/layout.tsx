@@ -7,6 +7,7 @@ import Footer from "@/components/shared/Footer";
 import { AuthProviderWrapper } from '@/components/auth/AuthProvider';
 import MapProvider from "@/providers/map-provider";
 import ReactQueryProvider from "@/providers/react-query-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 import { APP_FULL_NAME, APP_DESCRIPTION } from "@/lib/utils/constants";
 
 const geistSans = Geist({
@@ -46,21 +47,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${luckiestGuy.variable} ${cabinSketch.variable} antialiased min-h-screen`}
       >
-        <ReactQueryProvider>
-          <AuthProviderWrapper>
-            <MapProvider>
-              <Navbar />
-              <main className="min-h-screen pt-20">
-                {children}
-              </main>
-              <Footer />
-            </MapProvider>
-          </AuthProviderWrapper>
-        </ReactQueryProvider>
+        <ThemeProvider
+          defaultTheme="system"
+          defaultDisneyTheme="dark"
+          enableSystem
+          attribute="class"
+          storageKey="disney-vacation-theme"
+        >
+          <ReactQueryProvider>
+            <AuthProviderWrapper>
+              <MapProvider>
+                <Navbar />
+                <main className="min-h-screen pt-20">
+                  {children}
+                </main>
+                <Footer />
+              </MapProvider>
+            </AuthProviderWrapper>
+          </ReactQueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { AttractionType, Park, RideCategory } from "@/types/attraction"
+import { AttractionType, Park } from "@/types/attraction"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -25,7 +25,6 @@ import {
     Filter,
     Map,
     Clock,
-    Sparkles,
     Check,
     Ruler,
     Baby,
@@ -93,7 +92,11 @@ export default function AttractionFilterBar({
                 <div className="flex gap-3">
                     <Select
                         value={selectedPark}
-                        onValueChange={(value) => setSelectedPark(value as Park | "all")}
+                        onValueChange={(value: string) => {
+                            if (value === "all" || Object.values(Park).includes(value as Park)) {
+                                setSelectedPark(value as Park | "all");
+                            }
+                        }}
                     >
                         <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="Select Park" />
@@ -108,7 +111,11 @@ export default function AttractionFilterBar({
 
                     <Select
                         value={selectedType}
-                        onValueChange={(value) => setSelectedType(value as AttractionType | "all")}
+                        onValueChange={(value: string) => {
+                            if (value === "all" || Object.values(AttractionType).includes(value as AttractionType)) {
+                                setSelectedType(value as AttractionType | "all");
+                            }
+                        }}
                     >
                         <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="Attraction Type" />
@@ -217,13 +224,13 @@ export default function AttractionFilterBar({
                                         checked={heightFilters.includes("under40")}
                                         onCheckedChange={() => toggleFilter(heightFilters, "under40", setHeightFilters)}
                                     >
-                                        Under 40" (102cm)
+                                        Under 40&quot; (102cm)
                                     </DropdownMenuCheckboxItem>
                                     <DropdownMenuCheckboxItem
                                         checked={heightFilters.includes("under48")}
                                         onCheckedChange={() => toggleFilter(heightFilters, "under48", setHeightFilters)}
                                     >
-                                        Under 48" (122cm)
+                                        Under 48&quot; (122cm)
                                     </DropdownMenuCheckboxItem>
                                 </div>
                             </div>
@@ -306,7 +313,7 @@ export default function AttractionFilterBar({
                     {heightFilters.includes("under40") && (
                         <Badge variant="secondary" className="flex items-center gap-1">
                             <Baby className="h-3 w-3" />
-                            Under 40"
+                            Under 40&quot;
                             <Button
                                 variant="ghost"
                                 size="sm"
@@ -321,7 +328,7 @@ export default function AttractionFilterBar({
                     {heightFilters.includes("under48") && (
                         <Badge variant="secondary" className="flex items-center gap-1">
                             <Baby className="h-3 w-3" />
-                            Under 48"
+                            Under 48&quot;
                             <Button
                                 variant="ghost"
                                 size="sm"

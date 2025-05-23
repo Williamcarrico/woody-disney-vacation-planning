@@ -182,7 +182,6 @@ function getPaceMultiplier(pace: UserPreferences['walkingPace']): number {
 export function createRecommendationEngine(params: RecommendationParameters) {
     const {
         parkId,
-        date = new Date().toISOString().slice(0, 10),
         currentTime = new Date().toISOString(),
         currentLocation,
         maxResults = 10,
@@ -204,7 +203,7 @@ export function createRecommendationEngine(params: RecommendationParameters) {
             const live = liveData.attractions[attraction.id]
             return {
                 ...attraction,
-                waitTime: live?.waitTime?.standby ?? attraction.waitTime?.standby ?? -1,
+                waitTime: live?.waitTime ?? attraction.waitTime,
                 status: live?.status ?? attraction.status,
                 lastUpdate: live?.lastUpdate ?? attraction.lastUpdate
             }
@@ -262,7 +261,9 @@ export function createRecommendationEngine(params: RecommendationParameters) {
         }
 
         // Wait time -------------------------------------------------------------------------
-        const wait = attraction.waitTime ?? -1
+        const wait = typeof attraction.waitTime === 'object'
+            ? attraction.waitTime?.standby ?? -1
+            : attraction.waitTime ?? -1
         if (wait >= 0) {
             const penalty = wait * WAIT_TIME_PENALTY_PER_MIN
             score -= penalty

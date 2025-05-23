@@ -1,6 +1,6 @@
 "use client"; // This tells Next.js this is a client component
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { User, UserCredential, getIdToken, signInWithCustomToken } from 'firebase/auth'; // Import User type and getIdToken
 import { auth } from '@/lib/firebase/firebase.config';
 import {
@@ -49,7 +49,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     };
 
     // Creates a server-side session
-    const createSession = async (user: User, rememberMe: boolean = false) => {
+    const createSession = useCallback(async (user: User, rememberMe: boolean = false) => {
         try {
             console.log('Creating session for user:', user.uid);
             // Get the ID token with true to force refresh
@@ -91,10 +91,10 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
             setError(`Session error: ${errorMessage}`);
             return false;
         }
-    };
+    }, [setError]);
 
     // Rotates the session token for improved security
-    const rotateToken = async (uid: string) => {
+    const rotateToken = useCallback(async (uid: string) => {
         try {
             const rememberMe = getRememberMePreference();
 
@@ -122,7 +122,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
             console.error('Token rotation error:', error);
             return false;
         }
-    };
+    }, []);
 
     useEffect(() => {
         // onAuthStateChanged runs client-side and listens for changes
@@ -140,7 +140,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
         // Clean up the listener when the component unmounts
         return () => unsubscribe();
-    }, []); // Empty dependency array means this runs once on mount
+    }, [createSession]); // Include createSession in dependencies
 
     // Setup global fetch interceptor for token rotation
     useEffect(() => {
@@ -173,7 +173,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         return () => {
             window.fetch = originalFetch;
         };
-    }, [user]);
+    }, [user, rotateToken]);
 
     const signUp = async (email: string, password: string, displayName: string, rememberMe: boolean = false) => {
         try {
