@@ -1,3 +1,5 @@
+'use client'
+
 import React, { Component, ReactNode } from 'react';
 
 interface Props {
@@ -18,32 +20,42 @@ class ThreeErrorBoundary extends Component<Props, State> {
 
     static getDerivedStateFromError(error: Error): State {
         // Update state so the next render will show the fallback UI
+        console.error('Three.js Error Boundary caught:', error);
         return { hasError: true, error };
     }
 
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-        // Log Three.js specific errors
-        if (error.message.includes('Could not load') ||
-            error.message.includes('Texture') ||
-            error.message.includes('CORS') ||
-            error.message.includes('undefined')) {
-            console.warn('Three.js texture/asset loading error:', error.message);
-            console.info('This error has been caught and handled gracefully.');
-        } else {
-            console.error('Three.js Error Boundary caught an error:', error, errorInfo);
+        // You can log the error to an error reporting service
+        console.error('Three.js Error Details:', error, errorInfo);
+
+        // Check for specific error types
+        if (error.message?.includes('Worker module') || error.message?.includes('init did not return')) {
+            console.warn('Worker initialization error detected - this can be safely ignored in development');
+        }
+
+        if (error.message?.includes('Could not load')) {
+            console.warn('Asset loading error detected - using fallback resources');
         }
     }
 
     render() {
         if (this.state.hasError) {
             // You can render any custom fallback UI
-            return this.props.fallback || (
-                <div className="flex items-center justify-center w-full h-64 bg-gradient-to-br from-purple-900 to-blue-900 rounded-lg">
-                    <div className="text-center text-white">
-                        <div className="text-2xl mb-2">✨</div>
-                        <p className="text-sm opacity-80">3D scene temporarily unavailable</p>
+            return (
+                this.props.fallback || (
+                    <div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-purple-900/50 to-blue-900/50 rounded-lg p-8">
+                        <div className="text-center text-white">
+                            <div className="text-6xl mb-4 animate-pulse">🏰</div>
+                            <h3 className="text-xl font-fredoka mb-2">3D View Unavailable</h3>
+                            <p className="text-sm opacity-80 font-comic">
+                                The magical castle is taking a break!
+                            </p>
+                            <p className="text-xs opacity-60 mt-2">
+                                {this.state.error?.message || 'An unexpected error occurred'}
+                            </p>
+                        </div>
                     </div>
-                </div>
+                )
             );
         }
 

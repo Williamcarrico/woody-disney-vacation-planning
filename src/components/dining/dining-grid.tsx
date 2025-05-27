@@ -13,8 +13,9 @@ import { Badge } from "@/components/ui/badge"
 
 import DiningFiltersComponent from "./dining-filters"
 import RestaurantCard from "./restaurant-card"
-import { DisneyRestaurant, DiningFilters, PriceRange } from "@/types/dining"
+import { DisneyRestaurant, DiningFilters } from "@/types/dining"
 import { allRestaurants } from "@/lib/data/restaurants"
+import { filterRestaurants, sortRestaurants } from "@/lib/utils/restaurant"
 
 interface DiningGridProps {
     initialRestaurants?: DisneyRestaurant[]
@@ -34,13 +35,6 @@ const sortOptions = [
     { value: "newest", label: "Newest First" }
 ]
 
-const priceRangeOrder = {
-    [PriceRange.BUDGET]: 1,
-    [PriceRange.MODERATE]: 2,
-    [PriceRange.EXPENSIVE]: 3,
-    [PriceRange.LUXURY]: 4
-}
-
 export default function DiningGrid({
     initialRestaurants = allRestaurants,
     featuredRestaurants = [],
@@ -52,123 +46,14 @@ export default function DiningGrid({
     const [favorites, setFavorites] = useState<Set<string>>(new Set())
     const [isLoading, setIsLoading] = useState(false)
 
-    // Apply filters to restaurants
+    // Apply filters to restaurants using utility function
     const filteredRestaurants = useMemo(() => {
-        let filtered = initialRestaurants
-
-        // Search query
-        if (filters.searchQuery) {
-            const query = filters.searchQuery.toLowerCase()
-            filtered = filtered.filter(restaurant =>
-                restaurant.name.toLowerCase().includes(query) ||
-                restaurant.description.toLowerCase().includes(query) ||
-                restaurant.cuisineTypes.some(cuisine => cuisine.toLowerCase().includes(query)) ||
-                restaurant.tags.some(tag => tag.toLowerCase().includes(query)) ||
-                restaurant.searchKeywords.some(keyword => keyword.toLowerCase().includes(query))
-            )
-        }
-
-        // Location filters
-        if (filters.parkIds?.length) {
-            filtered = filtered.filter(restaurant =>
-                filters.parkIds!.includes(restaurant.location.parkId || "")
-            )
-        }
-
-        // Cuisine filters
-        if (filters.cuisineTypes?.length) {
-            filtered = filtered.filter(restaurant =>
-                restaurant.cuisineTypes.some(cuisine => filters.cuisineTypes!.includes(cuisine))
-            )
-        }
-
-        // Service type filters
-        if (filters.serviceTypes?.length) {
-            filtered = filtered.filter(restaurant =>
-                filters.serviceTypes!.includes(restaurant.serviceType)
-            )
-        }
-
-        // Dining experience filters
-        if (filters.diningExperiences?.length) {
-            filtered = filtered.filter(restaurant =>
-                filters.diningExperiences!.includes(restaurant.diningExperience)
-            )
-        }
-
-        // Price range filters
-        if (filters.priceRanges?.length) {
-            filtered = filtered.filter(restaurant =>
-                filters.priceRanges!.includes(restaurant.priceRange)
-            )
-        }
-
-        // Special features filters
-        if (filters.specialFeatures?.length) {
-            filtered = filtered.filter(restaurant =>
-                restaurant.specialFeatures.some(feature => filters.specialFeatures!.includes(feature))
-            )
-        }
-
-        // Character dining filter
-        if (filters.hasCharacterDining) {
-            filtered = filtered.filter(restaurant =>
-                restaurant.characterDining?.hasCharacterDining
-            )
-        }
-
-        // Dining plan filter
-        if (filters.acceptsDiningPlan) {
-            filtered = filtered.filter(restaurant =>
-                restaurant.diningPlanInfo.acceptsDiningPlan
-            )
-        }
-
-        // Reservations filter
-        if (filters.acceptsReservations) {
-            filtered = filtered.filter(restaurant =>
-                restaurant.reservationInfo.acceptsReservations
-            )
-        }
-
-        // Rating filter
-        if (filters.rating) {
-            filtered = filtered.filter(restaurant =>
-                restaurant.averageRating && restaurant.averageRating >= filters.rating!
-            )
-        }
-
-        return filtered
+        return filterRestaurants(initialRestaurants, filters)
     }, [initialRestaurants, filters])
 
-    // Sort restaurants
+    // Sort restaurants using utility function
     const sortedRestaurants = useMemo(() => {
-        const sorted = [...filteredRestaurants]
-
-        switch (sortBy) {
-            case "name":
-                return sorted.sort((a, b) => a.name.localeCompare(b.name))
-            case "rating":
-                return sorted.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0))
-            case "price-low":
-                return sorted.sort((a, b) => priceRangeOrder[a.priceRange] - priceRangeOrder[b.priceRange])
-            case "price-high":
-                return sorted.sort((a, b) => priceRangeOrder[b.priceRange] - priceRangeOrder[a.priceRange])
-            case "popular":
-                return sorted.sort((a, b) => {
-                    if (a.isPopular && !b.isPopular) return -1
-                    if (!a.isPopular && b.isPopular) return 1
-                    return (b.averageRating || 0) - (a.averageRating || 0)
-                })
-            case "newest":
-                return sorted.sort((a, b) => {
-                    if (a.isNew && !b.isNew) return -1
-                    if (!a.isNew && b.isNew) return 1
-                    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-                })
-            default:
-                return sorted
-        }
+        return sortRestaurants(filteredRestaurants, sortBy)
     }, [filteredRestaurants, sortBy])
 
     // Handle favorite toggle
@@ -201,6 +86,31 @@ export default function DiningGrid({
         return Object.entries(stats)
             .sort(([, a], [, b]) => b - a)
             .slice(0, 5)
+    }, [sortedRestaurants])
+
+    // Get filter insights
+    const filterInsights = useMemo(() => {
+        const openNow = sortedRestaurants.filter(r => {
+            try {
+                const now = new Date()
+                const dayName = now.toLocaleDateString('en-US', { weekday: 'long' })
+                const hours = r.operatingHours[dayName]
+                return hours && hours !== "Closed"
+            } catch {
+                return true
+            }
+        }).length
+
+        const characterDining = sortedRestaurants.filter(r => r.characterDining?.hasCharacterDining).length
+        const acceptsReservations = sortedRestaurants.filter(r => r.reservationInfo.acceptsReservations).length
+        const acceptsDiningPlan = sortedRestaurants.filter(r => r.diningPlanInfo.acceptsDiningPlan).length
+
+        return {
+            openNow,
+            characterDining,
+            acceptsReservations,
+            acceptsDiningPlan
+        }
     }, [sortedRestaurants])
 
     // Loading simulation
@@ -283,25 +193,56 @@ export default function DiningGrid({
             </div>
 
             {/* Insights Bar */}
-            {cuisineStats.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {cuisineStats.length > 0 && (
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-base">Popular Cuisines</CardTitle>
+                            <CardDescription>
+                                Most common cuisine types in your current selection
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex flex-wrap gap-2">
+                                {cuisineStats.map(([cuisine, count]) => (
+                                    <Badge key={cuisine} variant="secondary" className="text-xs">
+                                        {cuisine} ({count})
+                                    </Badge>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-base">Popular Cuisines</CardTitle>
+                        <CardTitle className="text-base">Quick Stats</CardTitle>
                         <CardDescription>
-                            Most common cuisine types in your current selection
+                            Key information about your current selection
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex flex-wrap gap-2">
-                            {cuisineStats.map(([cuisine, count]) => (
-                                <Badge key={cuisine} variant="secondary" className="text-xs">
-                                    {cuisine} ({count})
-                                </Badge>
-                            ))}
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="flex items-center justify-between">
+                                <span>Open now:</span>
+                                <Badge variant="secondary">{filterInsights.openNow}</Badge>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span>Character dining:</span>
+                                <Badge variant="secondary">{filterInsights.characterDining}</Badge>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span>Take reservations:</span>
+                                <Badge variant="secondary">{filterInsights.acceptsReservations}</Badge>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span>Dining plan:</span>
+                                <Badge variant="secondary">{filterInsights.acceptsDiningPlan}</Badge>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
-            )}
+            </div>
 
             {/* Results */}
             <AnimatePresence mode="wait">

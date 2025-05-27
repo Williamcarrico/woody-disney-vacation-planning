@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/firebase/auth-session'
+import { getCurrentUser } from '@/lib/firebase/auth-session-server'
 
 // Get current authenticated user from session cookie
 export async function GET() {

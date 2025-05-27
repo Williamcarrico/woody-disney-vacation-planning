@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useSpring } from "motion/react";
-import { FC, JSX, useEffect, useRef } from "react";
+import { FC, JSX, useEffect, useRef, useState } from "react";
 
 interface Position {
   x: number;
@@ -26,7 +26,7 @@ const DefaultCursorSVG: FC = () => {
       height={54}
       viewBox="0 0 50 54"
       fill="none"
-      className="smooth-cursor-svg"
+      style={{ scale: 0.5 }}
     >
       <g filter="url(#filter0_d_91_7928)">
         <path
@@ -89,6 +89,7 @@ export function SmoothCursor({
     restDelta: 0.001,
   },
 }: SmoothCursorProps) {
+  const [, setIsMoving] = useState(false);
   const lastMousePos = useRef<Position>({ x: 0, y: 0 });
   const velocity = useRef<Position>({ x: 0, y: 0 });
   const lastUpdateTime = useRef(Date.now());
@@ -148,9 +149,11 @@ export function SmoothCursor({
         previousAngle.current = currentAngle;
 
         scale.set(0.95);
+        setIsMoving(true);
 
         const timeout = setTimeout(() => {
           scale.set(1);
+          setIsMoving(false);
         }, 150);
 
         return () => clearTimeout(timeout);
@@ -179,12 +182,17 @@ export function SmoothCursor({
 
   return (
     <motion.div
-      className="smooth-cursor-container"
       style={{
+        position: "fixed",
         left: cursorX,
         top: cursorY,
+        translateX: "-50%",
+        translateY: "-50%",
         rotate: rotation,
         scale: scale,
+        zIndex: 100,
+        pointerEvents: "none",
+        willChange: "transform",
       }}
       initial={{ scale: 0 }}
       animate={{ scale: 1 }}

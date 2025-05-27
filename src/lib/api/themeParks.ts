@@ -94,8 +94,18 @@ export const getPark = cache(async (parkId: string): Promise<Park> => {
  */
 export const getParkAttractions = cache(async (parkId: string): Promise<Attraction[]> => {
     try {
-        const response = await apiClient.get<Attraction[]>(`/park/${parkId}/attractions`);
-        return response.data;
+        // Use local API route instead of direct external API call
+        const response = await fetch(`/api/parks/${parkId}?entity=attractions`, {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`API request failed: ${response.status}`);
+        }
+
+        return await response.json();
     } catch (error) {
         console.error(`Error fetching attractions for park ${parkId}:`, error);
         throw new Error(`Failed to fetch attractions for park ${parkId}`);
@@ -107,8 +117,18 @@ export const getParkAttractions = cache(async (parkId: string): Promise<Attracti
  */
 export const getParkLiveData = async (parkId: string): Promise<LiveData> => {
     try {
-        const response = await apiClient.get<LiveData>(`/park/${parkId}/live`);
-        return response.data;
+        // Use local API route instead of direct external API call
+        const response = await fetch(`/api/parks/${parkId}?entity=live`, {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`API request failed: ${response.status}`);
+        }
+
+        return await response.json();
     } catch (error) {
         console.error(`Error fetching live data for park ${parkId}:`, error);
         throw new Error(`Failed to fetch live data for park ${parkId}`);
@@ -120,15 +140,25 @@ export const getParkLiveData = async (parkId: string): Promise<LiveData> => {
  */
 export const getParkSchedule = cache(async (parkId: string, startDate?: string, endDate?: string): Promise<ScheduleData> => {
     try {
-        let url = `/park/${parkId}/schedule`;
+        // Use local API route instead of direct external API call
+        let url = `/api/parks/${parkId}?entity=schedule`;
 
         // Add date range if provided
         if (startDate && endDate) {
-            url += `?startDate=${startDate}&endDate=${endDate}`;
+            url += `&startDate=${startDate}&endDate=${endDate}`;
         }
 
-        const response = await apiClient.get<ScheduleData>(url);
-        return response.data;
+        const response = await fetch(url, {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`API request failed: ${response.status}`);
+        }
+
+        return await response.json();
     } catch (error) {
         console.error(`Error fetching schedule for park ${parkId}:`, error);
         throw new Error(`Failed to fetch schedule for park ${parkId}`);

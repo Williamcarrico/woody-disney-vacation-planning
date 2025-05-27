@@ -24,6 +24,36 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 
+// Type definition matching the form schema from the main optimizer page
+type OptimizerFormData = {
+    parkId: string
+    date: Date
+    startTime?: string
+    endTime?: string
+    partySize: number
+    hasChildren: boolean
+    childrenAges?: number[]
+    hasStroller: boolean
+    mobilityConsiderations: boolean
+    ridePreference: "thrill" | "family" | "all"
+    maxWaitTime: number
+    walkingPace: "slow" | "moderate" | "fast"
+    breakDuration: number
+    lunchTime?: string
+    dinnerTime?: string
+    useGeniePlus: boolean
+    useIndividualLightningLane: boolean
+    maxLightningLaneBudget?: number
+    accommodateHeight: boolean
+    rideRepeats: boolean
+    includeMeetAndGreets: boolean
+    includeShows: boolean
+    weatherAdaptation: boolean
+    crowdAvoidance: boolean
+    priorityAttractions: string[]
+    excludedAttractions: string[]
+}
+
 interface PartyConfigSectionProps {
     readonly form: UseFormReturn<OptimizerFormData>
 }
@@ -33,13 +63,19 @@ export default function PartyConfigSection({ form }: PartyConfigSectionProps) {
 
     // Update children ages when hasChildren changes
     useEffect(() => {
-        const hasChildren = form.watch("hasChildren")
-        setShowChildrenAges(hasChildren)
+        const subscription = form.watch((value, { name }) => {
+            if (name === "hasChildren") {
+                const hasChildren = value.hasChildren ?? false
+                setShowChildrenAges(hasChildren)
 
-        if (!hasChildren) {
-            form.setValue("childrenAges", [])
-        }
-    }, [form.watch("hasChildren")])
+                if (!hasChildren) {
+                    form.setValue("childrenAges", [])
+                }
+            }
+        })
+
+        return () => subscription.unsubscribe()
+    }, [form])
 
     const addChildAge = () => {
         const currentAges = form.getValues("childrenAges") || []
@@ -50,7 +86,7 @@ export default function PartyConfigSection({ form }: PartyConfigSectionProps) {
         const currentAges = form.getValues("childrenAges") || []
         form.setValue(
             "childrenAges",
-            currentAges.filter((_, i) => i !== index)
+            currentAges.filter((_: number, i: number) => i !== index)
         )
     }
 
@@ -69,7 +105,7 @@ export default function PartyConfigSection({ form }: PartyConfigSectionProps) {
             <CardHeader>
                 <CardTitle>Your Party</CardTitle>
                 <CardDescription>
-                    Tell us about who's traveling with you for your Disney day.
+                    Tell us about who&apos;s traveling with you for your Disney day.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -161,7 +197,7 @@ export default function PartyConfigSection({ form }: PartyConfigSectionProps) {
                     {showChildrenAges && (
                         <div className="p-4 border rounded-lg space-y-4">
                             <div className="flex justify-between items-center">
-                                <h3 className="text-sm font-medium">Children's Ages</h3>
+                                <h3 className="text-sm font-medium">Children&apos;s Ages</h3>
                                 <Button
                                     type="button"
                                     variant="outline"
@@ -175,7 +211,7 @@ export default function PartyConfigSection({ form }: PartyConfigSectionProps) {
 
                             {(form.watch("childrenAges")?.length || 0) === 0 ? (
                                 <div className="text-sm text-muted-foreground italic">
-                                    Add your children's ages to help customize your experience.
+                                    Add your children&apos;s ages to help customize your experience.
                                 </div>
                             ) : (
                                 <div className="space-y-3">

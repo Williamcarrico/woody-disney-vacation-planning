@@ -1,4 +1,4 @@
-import { getCurrentUser } from './firebase/auth-session'
+import { getCurrentUser } from './firebase/auth-session-server'
 
 /**
  * Server-side auth helper function

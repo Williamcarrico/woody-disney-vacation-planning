@@ -19,8 +19,38 @@ import {
 import { AlarmClockIcon, CoffeeIcon, TimerIcon, UtensilsIcon } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 
+// Type definition matching the form schema from the main optimizer page
+type OptimizerFormData = {
+    parkId: string
+    date: Date
+    startTime?: string
+    endTime?: string
+    partySize: number
+    hasChildren: boolean
+    childrenAges?: number[]
+    hasStroller: boolean
+    mobilityConsiderations: boolean
+    ridePreference: "thrill" | "family" | "all"
+    maxWaitTime: number
+    walkingPace: "slow" | "moderate" | "fast"
+    breakDuration: number
+    lunchTime?: string
+    dinnerTime?: string
+    useGeniePlus: boolean
+    useIndividualLightningLane: boolean
+    maxLightningLaneBudget?: number
+    accommodateHeight: boolean
+    rideRepeats: boolean
+    includeMeetAndGreets: boolean
+    includeShows: boolean
+    weatherAdaptation: boolean
+    crowdAvoidance: boolean
+    priorityAttractions: string[]
+    excludedAttractions: string[]
+}
+
 interface TimePreferencesSectionProps {
-    form: UseFormReturn<any>
+    form: UseFormReturn<OptimizerFormData>
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => ({

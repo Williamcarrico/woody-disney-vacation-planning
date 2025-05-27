@@ -25,8 +25,11 @@ export function rateLimiter(options: RateLimiterOptions = {}) {
     } = options
 
     return function (req: NextRequest) {
-        // Get IP address from request headers or connection
-        const ip = req.headers.get('x-forwarded-for') || req.ip || 'unknown'
+        // Get IP address from request headers
+        const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+            req.headers.get('x-real-ip') ||
+            req.headers.get('x-client-ip') ||
+            'unknown'
 
         // Initialize rate limit data for this IP if it doesn't exist
         if (!rateLimitMap.has(ip)) {

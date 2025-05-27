@@ -9,7 +9,7 @@ export const isEdgeRuntime = () => {
     try {
         // Check for Edge runtime by examining available env variables
         return typeof process !== 'undefined' && process.env.NEXT_RUNTIME === 'edge'
-    } catch (e) {
+    } catch {
         // If process is not defined, we're in Edge runtime
         return true
     }
@@ -40,13 +40,13 @@ export const safeNodeImport = <T>(
  */
 export const createEdgeLogger = (name: string) => {
     return {
-        info: (message: string, ...args: any[]) =>
+        info: (message: string, ...args: unknown[]) =>
             console.log(`[INFO] [${name}]`, message, ...args),
-        error: (message: string, ...args: any[]) =>
+        error: (message: string, ...args: unknown[]) =>
             console.error(`[ERROR] [${name}]`, message, ...args),
-        warn: (message: string, ...args: any[]) =>
+        warn: (message: string, ...args: unknown[]) =>
             console.warn(`[WARN] [${name}]`, message, ...args),
-        debug: (message: string, ...args: any[]) =>
+        debug: (message: string, ...args: unknown[]) =>
             console.debug(`[DEBUG] [${name}]`, message, ...args)
     }
 }

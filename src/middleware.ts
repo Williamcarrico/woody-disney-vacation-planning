@@ -96,7 +96,7 @@ const generateCsp = () => {
         `img-src 'self' data: https://maps.gstatic.com https://*.googleapis.com https://*.ggpht.com *.google.com *.googleusercontent.com`,
         `font-src 'self' https://fonts.gstatic.com`,
         `frame-src 'self' *.google.com`,
-        `connect-src 'self' https://maps.googleapis.com https://*.googleapis.com *.google.com https://*.gstatic.com data: blob: https://firebasestorage.googleapis.com`,
+        `connect-src 'self' https://maps.googleapis.com https://*.googleapis.com *.google.com https://*.google-analytics.com https://www.googletagmanager.com https://*.gstatic.com data: blob: https://firebasestorage.googleapis.com`,
         `worker-src 'self' blob:`,
         `form-action 'self'`,
         `frame-ancestors 'self'`,

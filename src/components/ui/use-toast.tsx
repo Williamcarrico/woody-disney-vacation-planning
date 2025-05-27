@@ -1,5 +1,5 @@
 // Inspired by react-hot-toast library
-import { useState, useEffect, useCallback, ReactNode } from "react"
+import { useState, useEffect, ReactNode } from "react"
 
 import type {
     ToastActionElement,

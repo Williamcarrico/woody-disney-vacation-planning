@@ -41,6 +41,19 @@ export function useOfflineStatus(options: OfflineStatusOptions = {}): OfflineSta
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
     const [hasInitialized, setHasInitialized] = useState(false)
 
+    // Check for pending changes
+    const checkPendingChanges = useCallback(async () => {
+        try {
+            // These would be actual functions in the offlineStorage utility
+            const pending = await offlineStorage.hasPendingChanges()
+            setHasPendingChanges(pending)
+            setPendingChangeCount(pending ? 1 : 0) // In a real implementation, we would get the actual count
+            setLastUpdated(new Date())
+        } catch (error) {
+            console.error('Error checking pending changes:', error)
+        }
+    }, [])
+
     // Initialize the offline storage
     useEffect(() => {
         const initOfflineStorage = async () => {
@@ -54,20 +67,27 @@ export function useOfflineStatus(options: OfflineStatusOptions = {}): OfflineSta
         }
 
         initOfflineStorage()
+    }, [checkPendingChanges])
+
+    // Toggle offline mode manually
+    const toggleOfflineMode = useCallback(() => {
+        setIsOfflineMode(prev => !prev)
     }, [])
 
-    // Check for pending changes
-    const checkPendingChanges = useCallback(async () => {
-        try {
-            // These would be actual functions in the offlineStorage utility
-            const pending = await offlineStorage.hasPendingChanges()
-            setHasPendingChanges(pending)
-            setPendingChangeCount(pending ? 1 : 0) // In a real implementation, we would get the actual count
-            setLastUpdated(new Date())
-        } catch (error) {
-            console.error('Error checking pending changes:', error)
+    // Sync changes with the server
+    const syncChanges = useCallback(async () => {
+        if (!isOnline) {
+            console.warn('Cannot sync changes while offline')
+            return
         }
-    }, [])
+
+        try {
+            await offlineStorage.syncPendingChanges()
+            await checkPendingChanges()
+        } catch (error) {
+            console.error('Error syncing changes:', error)
+        }
+    }, [isOnline, checkPendingChanges])
 
     // Network status change handler
     useEffect(() => {
@@ -93,33 +113,13 @@ export function useOfflineStatus(options: OfflineStatusOptions = {}): OfflineSta
             window.removeEventListener('online', handleOnline)
             window.removeEventListener('offline', handleOffline)
         }
-    }, [onOnline, onOffline, syncOnReconnect])
+    }, [onOnline, onOffline, syncOnReconnect, syncChanges])
 
     // Periodically check for pending changes (every 30 seconds)
     useEffect(() => {
         const intervalId = setInterval(checkPendingChanges, 30000)
         return () => clearInterval(intervalId)
     }, [checkPendingChanges])
-
-    // Toggle offline mode manually
-    const toggleOfflineMode = useCallback(() => {
-        setIsOfflineMode(prev => !prev)
-    }, [])
-
-    // Sync changes with the server
-    const syncChanges = useCallback(async () => {
-        if (!isOnline) {
-            console.warn('Cannot sync changes while offline')
-            return
-        }
-
-        try {
-            await offlineStorage.syncPendingChanges()
-            await checkPendingChanges()
-        } catch (error) {
-            console.error('Error syncing changes:', error)
-        }
-    }, [isOnline, checkPendingChanges])
 
     return {
         isOnline,

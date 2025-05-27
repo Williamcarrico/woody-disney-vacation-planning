@@ -1,7 +1,8 @@
 import { Suspense } from "react"
 import { Metadata } from "next"
 import VacationParty from "@/components/group/VacationParty"
-import PartyMessaging from "@/components/group/PartyMessaging"
+import PartyMessaging from "@/components/group/EnhancedPartyMessaging"
+import RealTimeMessaging from "@/components/group/RealTimeMessaging"
 import LocationSharing from "@/components/group/LocationSharing"
 import CollaborativeItinerary from "@/components/group/CollaborativeItinerary"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -137,7 +138,7 @@ export default function GroupPage({ params }: { readonly params: { readonly vaca
                             className="py-3 px-4 relative data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none border-0"
                         >
                             <MessageSquare className="h-4 w-4 mr-2" />
-                            <span>Messaging</span>
+                            <span>Real-Time Chat</span>
                             <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary data-[state=inactive]:opacity-0 transition-opacity" data-state="inactive" />
                         </TabsTrigger>
 
@@ -168,8 +169,14 @@ export default function GroupPage({ params }: { readonly params: { readonly vaca
                 </TabsContent>
 
                 <TabsContent value="messaging" className="space-y-6 mt-0">
-                    <Suspense fallback={<div>Loading party messaging...</div>}>
-                        <PartyMessaging vacationId={vacationId} />
+                    <Suspense fallback={<div>Loading real-time messaging...</div>}>
+                        <div className="space-y-6">
+                            <RealTimeMessaging vacationId={vacationId} />
+                            <div className="border-t pt-6">
+                                <h3 className="text-lg font-semibold mb-4">Enhanced Messaging (Firebase)</h3>
+                                <PartyMessaging vacationId={vacationId} />
+                            </div>
+                        </div>
                     </Suspense>
                 </TabsContent>
 

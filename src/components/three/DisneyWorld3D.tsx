@@ -13,7 +13,6 @@ import {
     Sparkles,
     Stars,
     Float,
-    Clouds,
     Sky,
     ContactShadows,
     PresentationControls,
@@ -268,6 +267,126 @@ function FloatingCharacter({
     )
 }
 
+// Environment component with HDR fallback
+function EnvironmentWithFallback({ qualityLevel = 'high' }: { qualityLevel?: 'high' | 'medium' | 'low' }) {
+    const [useHDR, setUseHDR] = useState(false) // Start with false to avoid initial load errors
+    const [hasChecked, setHasChecked] = useState(false)
+
+    useEffect(() => {
+        // Only try HDR on high quality and after initial render
+        if (qualityLevel === 'high' && !hasChecked) {
+            // Check if HDR file exists
+            fetch('/venice_sunset_1k.hdr', { method: 'HEAD' })
+                .then(() => {
+                    setUseHDR(true)
+                })
+                .catch(() => {
+                    console.log('HDR file not available, using preset environment')
+                })
+                .finally(() => {
+                    setHasChecked(true)
+                })
+        }
+    }, [qualityLevel, hasChecked])
+
+    // Always use preset for low/medium quality or if HDR fails
+    return (
+        <Suspense fallback={<Environment preset="sunset" background={false} environmentIntensity={0.4} />}>
+            {useHDR && qualityLevel === 'high' ? (
+                <Environment
+                    files="/venice_sunset_1k.hdr"
+                    background={false}
+                    environmentIntensity={0.5}
+                />
+            ) : (
+                <Environment
+                    preset="sunset"
+                    background={false}
+                    environmentIntensity={0.4}
+                />
+            )}
+        </Suspense>
+    )
+}
+
+// Custom Cloud component without external dependencies
+function CustomClouds({ qualityLevel = 'high' }: { qualityLevel?: 'high' | 'medium' | 'low' }) {
+    const cloudCount = qualityLevel === 'high' ? 8 : qualityLevel === 'medium' ? 5 : 3
+    const cloudsRef = useRef<Group>(null)
+
+    useFrame((state) => {
+        if (cloudsRef.current && qualityLevel !== 'low') {
+            cloudsRef.current.rotation.y = state.clock.elapsedTime * 0.01
+        }
+    })
+
+    return (
+        <group ref={cloudsRef}>
+            {Array.from({ length: cloudCount }).map((_, i) => {
+                const angle = (i / cloudCount) * Math.PI * 2
+                const radius = 15 + Math.random() * 10
+                const height = 10 + Math.random() * 5
+                const scale = 1 + Math.random() * 0.5
+
+                return (
+                    <group
+                        key={i}
+                        position={[
+                            Math.cos(angle) * radius,
+                            height,
+                            Math.sin(angle) * radius
+                        ]}
+                    >
+                        {/* Cloud made from multiple spheres */}
+                        <group scale={[scale, scale, scale]}>
+                            <mesh castShadow receiveShadow>
+                                <sphereGeometry args={[2, 8, 6]} />
+                                <meshStandardMaterial
+                                    color="#ffffff"
+                                    transparent
+                                    opacity={0.7}
+                                    roughness={1}
+                                    metalness={0}
+                                />
+                            </mesh>
+                            <mesh position={[1.5, 0, 0]} castShadow receiveShadow>
+                                <sphereGeometry args={[1.5, 8, 6]} />
+                                <meshStandardMaterial
+                                    color="#ffffff"
+                                    transparent
+                                    opacity={0.7}
+                                    roughness={1}
+                                    metalness={0}
+                                />
+                            </mesh>
+                            <mesh position={[-1.5, 0, 0]} castShadow receiveShadow>
+                                <sphereGeometry args={[1.5, 8, 6]} />
+                                <meshStandardMaterial
+                                    color="#ffffff"
+                                    transparent
+                                    opacity={0.7}
+                                    roughness={1}
+                                    metalness={0}
+                                />
+                            </mesh>
+                            <mesh position={[0, 0, 1]} castShadow receiveShadow>
+                                <sphereGeometry args={[1.2, 8, 6]} />
+                                <meshStandardMaterial
+                                    color="#ffffff"
+                                    transparent
+                                    opacity={0.7}
+                                    roughness={1}
+                                    metalness={0}
+                                />
+                            </mesh>
+                        </group>
+                    </group>
+                )
+            })}
+        </group>
+    )
+}
+
 // Magical Environment
 function MagicalEnvironment({ qualityLevel = 'high' }: { qualityLevel?: 'high' | 'medium' | 'low' }) {
     const starCount = qualityLevel === 'high' ? 1000 : qualityLevel === 'medium' ? 500 : 200
@@ -282,11 +401,9 @@ function MagicalEnvironment({ qualityLevel = 'high' }: { qualityLevel?: 'high' |
                 azimuth={0.25}
             />
 
-            {/* Floating clouds */}
+            {/* Custom clouds instead of drei Clouds */}
             {qualityLevel !== 'low' && (
-                <Clouds
-                    material={THREE.MeshLambertMaterial}
-                />
+                <CustomClouds qualityLevel={qualityLevel} />
             )}
 
             {/* Magical stars */}
@@ -300,8 +417,8 @@ function MagicalEnvironment({ qualityLevel = 'high' }: { qualityLevel?: 'high' |
                 speed={1}
             />
 
-            {/* Environment lighting */}
-            <Environment preset="sunset" background={false} />
+            {/* Environment lighting - Using custom HDR file with fallback */}
+            <EnvironmentWithFallback qualityLevel={qualityLevel} />
 
             {/* Ambient light */}
             <ambientLight intensity={0.4} />
@@ -392,7 +509,7 @@ function Scene3D() {
                 polar={[-Math.PI / 3, Math.PI / 3]}
                 azimuth={[-Math.PI / 1.4, Math.PI / 2]}
             >
-                <Stage environment="sunset">
+                <Stage environment={null}>
                     <DisneyMagicCastle onTowerClick={handleTowerClick} qualityLevel={qualityLevel} />
                 </Stage>
 
@@ -599,6 +716,17 @@ export default function DisneyWorld3D() {
         })
     }, [])
 
+    // Handle errors gracefully
+    const handleCreated = useCallback(() => {
+        setIsLoaded(true)
+        setHasError(false)
+    }, [])
+
+    const handleError = useCallback((error: Error | Event | unknown) => {
+        console.error('Three.js error:', error)
+        setHasError(true)
+    }, [])
+
     return (
         <div className="w-full h-full relative">
             <ThreeErrorBoundary
@@ -629,10 +757,11 @@ export default function DisneyWorld3D() {
                         alpha: false,
                         powerPreference: "high-performance",
                         stencil: false,
-                        depth: true
+                        depth: true,
+                        failIfMajorPerformanceCaveat: false
                     }}
-                    onCreated={() => setIsLoaded(true)}
-                    onError={() => setHasError(true)}
+                    onCreated={handleCreated}
+                    onError={handleError}
                 >
                     <Suspense fallback={<LoadingFallback />}>
                         <Scene3D />

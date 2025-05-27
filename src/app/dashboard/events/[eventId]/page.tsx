@@ -7,8 +7,7 @@ import { formatDate, formatDateRange } from '@/lib/utils/date-utils'
 import { isEpcotFestival, isHolidayEvent, isRunDisneyEvent } from '@/types/events'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ChevronLeft, Calendar, Ticket, MapPin, Music, Utensils, Sparkles, Info, ExternalLink } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { ChevronLeft, Calendar, Ticket, MapPin, Music, Info, ExternalLink } from 'lucide-react'
 
 interface EventPageProps {
     params: {
@@ -59,18 +58,18 @@ export default function EventPage({ params }: EventPageProps) {
         }
     }
 
-    const getBadgeVariant = () => {
+    const getBadgeVariant = (): "default" | "destructive" | "secondary" | "outline" => {
         switch (event.category) {
             case 'HOLIDAY': return 'destructive'
             case 'FESTIVAL': return 'default'
-            case 'AFTER_HOURS': return 'purple'
-            case 'MARATHON': return 'yellow'
-            case 'SPECIAL': return 'blue'
+            case 'AFTER_HOURS': return 'secondary'
+            case 'MARATHON': return 'outline'
+            case 'SPECIAL': return 'secondary'
             default: return 'secondary'
         }
     }
 
-    const getLocationLabel = () => {
+    const getLocationLabel = (): string => {
         switch (event.location) {
             case 'MAGIC_KINGDOM': return 'Magic Kingdom'
             case 'EPCOT': return 'EPCOT'
@@ -80,7 +79,7 @@ export default function EventPage({ params }: EventPageProps) {
             case 'BLIZZARD_BEACH': return "Blizzard Beach"
             case 'DISNEY_SPRINGS': return "Disney Springs"
             case 'MULTIPLE': return "Multiple Locations"
-            default: return event.location
+            default: return "Unknown Location"
         }
     }
 
@@ -102,7 +101,7 @@ export default function EventPage({ params }: EventPageProps) {
                             <Badge variant={getBadgeVariant()}>{getCategoryLabel()}</Badge>
                             {isActive && (
                                 isHappening
-                                    ? <Badge variant="success">Now Active</Badge>
+                                    ? <Badge variant="default">Now Active</Badge>
                                     : <Badge variant="secondary">Coming Soon</Badge>
                             )}
                             {!isActive && <Badge variant="secondary">Past Event</Badge>}
@@ -122,7 +121,7 @@ export default function EventPage({ params }: EventPageProps) {
                         <div className="relative w-full h-80 lg:h-[400px] rounded-lg overflow-hidden">
                             <Image
                                 src={event.images[0].url}
-                                alt={event.images[0].alt}
+                                alt={event.images[0].alt || `${event.name} event image`}
                                 fill
                                 className="object-cover"
                                 priority

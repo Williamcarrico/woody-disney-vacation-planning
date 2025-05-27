@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
 import { geofences, geofenceAlerts } from '@/db/schema/locations'
-import { eq, and } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 
 interface RouteParams {
-    params: {
+    params: Promise<{
         geofenceId: string
-    }
+    }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
     try {
-        const { geofenceId } = params
+        const { geofenceId } = await params
 
         const [geofence] = await db
             .select()
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
     try {
-        const { geofenceId } = params
+        const { geofenceId } = await params
         const body = await request.json()
 
         // Check if geofence exists
@@ -84,7 +84,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         }
 
         // Prepare update data
-        const updateData: any = {
+        const updateData: Partial<typeof geofences.$inferInsert> = {
             updatedAt: new Date()
         }
 
@@ -139,7 +139,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
     try {
-        const { geofenceId } = params
+        const { geofenceId } = await params
 
         // Check if geofence exists
         const [existingGeofence] = await db

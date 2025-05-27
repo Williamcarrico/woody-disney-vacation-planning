@@ -20,9 +20,9 @@ const cachedFetch = cache(async (url: string) => {
 });
 
 interface RouteParams {
-    params: {
+    params: Promise<{
         attractionId: string;
-    };
+    }>;
 }
 
 // GET handler for /api/attractions/[attractionId]
@@ -31,7 +31,7 @@ export async function GET(
     { params }: RouteParams
 ) {
     try {
-        const { attractionId } = params;
+        const { attractionId } = await params;
         const searchParams = request.nextUrl.searchParams;
         const entity = searchParams.get('entity');
 
@@ -52,7 +52,8 @@ export async function GET(
             return NextResponse.json(data);
         }
     } catch (error) {
-        console.error(`Error fetching data for attraction ${params.attractionId}:`, error);
+        const { attractionId } = await params;
+        console.error(`Error fetching data for attraction ${attractionId}:`, error);
         return NextResponse.json(
             { error: 'Failed to fetch attraction data' },
             { status: 500 }

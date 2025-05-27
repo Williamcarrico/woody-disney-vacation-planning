@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
 import { geofenceAlerts, NewGeofenceAlert } from '@/db/schema/locations'
-import { eq, and, desc, gte, lte } from 'drizzle-orm'
+import { eq, and, desc, gte, lte, count, inArray } from 'drizzle-orm'
 
 export async function GET(request: NextRequest) {
     try {
@@ -32,7 +32,11 @@ export async function GET(request: NextRequest) {
         }
 
         if (alertType) {
-            conditions.push(eq(geofenceAlerts.alertType, alertType as any))
+            // Type assertion is safe here since we validate against enum values below
+            const validAlertTypes = ['entry', 'exit', 'proximity', 'separation', 'safety'] as const
+            if (validAlertTypes.includes(alertType as typeof validAlertTypes[number])) {
+                conditions.push(eq(geofenceAlerts.alertType, alertType as typeof validAlertTypes[number]))
+            }
         }
 
         if (isRead !== null) {
@@ -47,37 +51,38 @@ export async function GET(request: NextRequest) {
             conditions.push(lte(geofenceAlerts.triggeredAt, new Date(endDate)))
         }
 
-        let query = db
+        // Build the query properly
+        const baseQuery = db
             .select()
             .from(geofenceAlerts)
             .orderBy(desc(geofenceAlerts.triggeredAt))
             .limit(limit)
             .offset(offset)
 
-        if (conditions.length > 0) {
-            query = query.where(and(...conditions))
-        }
+        const query = conditions.length > 0
+            ? baseQuery.where(and(...conditions))
+            : baseQuery
 
         const alerts = await query
 
-        // Get total count for pagination
-        let countQuery = db
-            .select({ count: 'count(*)' })
+        // Get total count for pagination using proper count function
+        const baseCountQuery = db
+            .select({ count: count() })
             .from(geofenceAlerts)
 
-        if (conditions.length > 0) {
-            countQuery = countQuery.where(and(...conditions))
-        }
+        const countQuery = conditions.length > 0
+            ? baseCountQuery.where(and(...conditions))
+            : baseCountQuery
 
-        const [{ count }] = await countQuery as any
+        const [{ count: totalCount }] = await countQuery
 
         return NextResponse.json({
             alerts,
             pagination: {
-                total: parseInt(count),
+                total: totalCount,
                 limit,
                 offset,
-                hasMore: offset + limit < parseInt(count)
+                hasMore: offset + limit < totalCount
             }
         })
     } catch (error) {
@@ -120,7 +125,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Validate alert type
-        const validAlertTypes = ['entry', 'exit', 'proximity', 'separation', 'safety']
+        const validAlertTypes = ['entry', 'exit', 'proximity', 'separation', 'safety'] as const
         if (!validAlertTypes.includes(body.alertType)) {
             return NextResponse.json(
                 { error: 'Invalid alert type' },
@@ -177,16 +182,17 @@ export async function PATCH(request: NextRequest) {
             )
         }
 
-        // Update multiple alerts
-        const updateData: any = {
+        // Prepare update data with proper typing
+        const updateData: Partial<Pick<typeof geofenceAlerts.$inferSelect, 'isRead' | 'readAt'>> = {
             isRead,
             ...(isRead && { readAt: new Date() })
         }
 
+        // Update multiple alerts using inArray for proper array handling
         const updatedAlerts = await db
             .update(geofenceAlerts)
             .set(updateData)
-            .where(eq(geofenceAlerts.id, alertIds))
+            .where(inArray(geofenceAlerts.id, alertIds))
             .returning()
 
         return NextResponse.json({

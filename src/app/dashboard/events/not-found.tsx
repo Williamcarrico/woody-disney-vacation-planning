@@ -8,7 +8,7 @@ export default function EventNotFound() {
             <Calendar className="h-24 w-24 text-muted-foreground mb-8" />
             <h1 className="text-4xl font-bold mb-4">Event Not Found</h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-md">
-                The event you're looking for doesn't exist or may have been removed.
+                The event you&apos;re looking for doesn&apos;t exist or may have been removed.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild>

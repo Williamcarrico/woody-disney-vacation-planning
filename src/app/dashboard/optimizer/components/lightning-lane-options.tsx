@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useCallback } from "react"
 import { UseFormReturn } from "react-hook-form"
 import {
     Card,
@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
 import { Slider } from "@/components/ui/slider"
-import { Input } from "@/components/ui/input"
 import {
     DollarSignIcon,
     LightbulbIcon,
@@ -27,20 +26,28 @@ import {
 } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 
+interface LightningLaneFormData {
+    useGeniePlus: boolean
+    useIndividualLightningLane: boolean
+    maxLightningLaneBudget?: number
+}
+
 interface LightningLaneOptionsSectionProps {
-    form: UseFormReturn<any>
+    form: UseFormReturn<LightningLaneFormData>
 }
 
 export default function LightningLaneOptionsSection({ form }: LightningLaneOptionsSectionProps) {
     // Reset maxLightningLaneBudget when useIndividualLightningLane changes
+    const watchUseILL = useCallback(() => form.watch("useIndividualLightningLane"), [form])
+
     useEffect(() => {
-        const useILL = form.watch("useIndividualLightningLane")
+        const useILL = watchUseILL()
         if (!useILL) {
             form.setValue("maxLightningLaneBudget", undefined)
         } else if (form.getValues("maxLightningLaneBudget") === undefined) {
             form.setValue("maxLightningLaneBudget", 50)
         }
-    }, [form.watch("useIndividualLightningLane")])
+    }, [watchUseILL, form])
 
     return (
         <Card>
@@ -134,7 +141,7 @@ export default function LightningLaneOptionsSection({ form }: LightningLaneOptio
                                         </div>
                                     </FormControl>
                                     <FormDescription>
-                                        Maximum amount you're willing to spend on Individual Lightning Lane passes.
+                                        Maximum amount you&apos;re willing to spend on Individual Lightning Lane passes.
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -152,7 +159,7 @@ export default function LightningLaneOptionsSection({ form }: LightningLaneOptio
                                 <li>Disney Genie+ costs $15-$29 per person per day (varies by date)</li>
                                 <li>Individual Lightning Lane prices range from $7-$25 per attraction</li>
                                 <li>You can make your first Genie+ selection at 7:00 AM on your visit day</li>
-                                <li>Individual Lightning Lane purchases can be made once you've entered the park</li>
+                                <li>Individual Lightning Lane purchases can be made once you&apos;ve entered the park</li>
                                 <li>Our optimizer will strategically incorporate these options if selected</li>
                             </ul>
                         </div>

@@ -38,7 +38,7 @@ const nextConfig: NextConfig = {
     }
   },
 
-  // Polyfill Node.js modules for Edge runtime
+  // Polyfill Node.js modules for Edge runtime and configure Socket.io
   webpack: (config, { isServer, nextRuntime }) => {
     // Apply polyfills for Edge runtime
     if (nextRuntime === 'edge') {
@@ -67,8 +67,8 @@ const nextConfig: NextConfig = {
       // Polyfill node: protocol imports
       if (Array.isArray(config.resolve.alias)) {
         // Convert array to object if it's an array
-        const aliasObj = {};
-        config.resolve.alias.forEach(({ name, alias }) => {
+        const aliasObj: Record<string, string> = {};
+        config.resolve.alias.forEach(({ name, alias }: { name: string; alias: string }) => {
           aliasObj[name] = alias;
         });
         config.resolve.alias = aliasObj;
@@ -85,6 +85,16 @@ const nextConfig: NextConfig = {
         'google-logging-utils', // Add packages that should be excluded from the edge runtime
         'firebase-admin'
       ];
+    }
+
+    // Configure Socket.io for client-side
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
     }
 
     return config;
@@ -125,10 +135,7 @@ const nextConfig: NextConfig = {
           key: 'Referrer-Policy',
           value: 'strict-origin-when-cross-origin',
         },
-        {
-          key: 'Content-Security-Policy',
-          value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://firebasestorage.googleapis.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' https://firebasestorage.googleapis.com https://lh3.googleusercontent.com data:; font-src 'self' data:; connect-src 'self' https://*.googleapis.com https://firebasestorage.googleapis.com https://api.themeparks.wiki;",
-        },
+        // CSP is handled in middleware.ts for more comprehensive control
       ],
     },
   ],

@@ -14,10 +14,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
@@ -25,35 +23,23 @@ import { toast } from "sonner"
 import {
     MapPin,
     Plus,
-    Settings,
     Bell,
     Navigation,
     Mountain,
     Clock,
     Users,
     Activity,
-    AlertTriangle,
     CheckCircle,
     XCircle,
-    Eye,
-    EyeOff,
     Edit,
     Trash,
-    Volume2,
-    VolumeX,
-    Vibrate,
-    Zap,
     Shield,
     Target,
     Compass,
     BarChart3,
-    Calendar,
-    Filter,
-    Download,
-    Upload,
-    Share2
+    Filter
 } from "lucide-react"
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'motion/react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { geofencingService, EnhancedGeofence, GeofenceEvent } from '@/lib/services/geofencing'
@@ -62,7 +48,6 @@ import { geofencingService, EnhancedGeofence, GeofenceEvent } from '@/lib/servic
 import { MagicCard } from '@/components/magicui/magic-card'
 import { ShimmerButton } from '@/components/magicui/shimmer-button'
 import { BorderBeam } from '@/components/magicui/border-beam'
-import { SparklesText } from '@/components/magicui/sparkles-text'
 import { BlurFade } from '@/components/magicui/blur-fade'
 
 interface EnhancedGeofencingProps {
@@ -83,20 +68,49 @@ export default function EnhancedGeofencing({
 
     // State management
     const [selectedGeofence, setSelectedGeofence] = useState<EnhancedGeofence | null>(null)
-    const [isCreating, setIsCreating] = useState(false)
     const [activeTab, setActiveTab] = useState('overview')
-    const [recentEvents, setRecentEvents] = useState<GeofenceEvent[]>([])
     const [filterType, setFilterType] = useState<string>('all')
     const [showActiveOnly, setShowActiveOnly] = useState(true)
 
     // Form state for creating/editing geofences
-    const [geofenceForm, setGeofenceForm] = useState({
+    const [geofenceForm, setGeofenceForm] = useState<{
+        name: string
+        description: string
+        latitude: number
+        longitude: number
+        radius: number
+        type: 'custom' | 'attraction' | 'meeting' | 'safety' | 'directional' | 'altitude'
+        isActive: boolean
+        isDirectional: boolean
+        direction: number
+        directionRange: number
+        isAltitudeBased: boolean
+        minAltitude: number
+        maxAltitude: number
+        isTimeBased: boolean
+        activeStartTime: string
+        activeEndTime: string
+        settings: {
+            notifyOnEntry: boolean
+            notifyOnExit: boolean
+            cooldownMinutes: number
+            maxAlerts: number
+            triggerDistance: number
+            requiresMovement: boolean
+            parkArea: string
+            attraction: string
+            customMessage: string
+            soundAlert: boolean
+            vibrationAlert: boolean
+            priority: 'low' | 'medium' | 'high' | 'urgent'
+        }
+    }>({
         name: '',
         description: '',
         latitude: 0,
         longitude: 0,
         radius: 100,
-        type: 'custom' as const,
+        type: 'custom',
         isActive: true,
 
         // Directional geofencing
@@ -127,17 +141,17 @@ export default function EnhancedGeofencing({
             customMessage: '',
             soundAlert: true,
             vibrationAlert: true,
-            priority: 'medium' as const
+            priority: 'medium'
         }
     })
 
     // Fetch geofences
-    const { data: geofences, isLoading, refetch } = useQuery({
+    const { data: geofences, isLoading } = useQuery({
         queryKey: ['geofences', vacationId],
-        queryFn: async () => {
+        queryFn: async (): Promise<EnhancedGeofence[]> => {
             const response = await fetch(`/api/geofences?vacationId=${vacationId}`)
             if (!response.ok) throw new Error('Failed to fetch geofences')
-            return response.json() as Promise<EnhancedGeofence[]>
+            return response.json()
         },
         enabled: !!vacationId
     })
@@ -152,6 +166,18 @@ export default function EnhancedGeofencing({
         },
         enabled: !!vacationId,
         refetchInterval: 30000 // Refresh every 30 seconds
+    })
+
+    // Fetch analytics data
+    const { data: analytics } = useQuery({
+        queryKey: ['geofence-analytics', vacationId],
+        queryFn: async () => {
+            const response = await fetch(`/api/geofences/analytics?vacationId=${vacationId}`)
+            if (!response.ok) throw new Error('Failed to fetch analytics')
+            return response.json()
+        },
+        enabled: !!vacationId,
+        refetchInterval: 60000 // Refresh every minute
     })
 
     // Create geofence mutation
@@ -176,7 +202,6 @@ export default function EnhancedGeofencing({
             toast.success("Geofence created successfully")
             queryClient.invalidateQueries({ queryKey: ['geofences'] })
             onGeofenceUpdate?.(newGeofence)
-            setIsCreating(false)
             resetForm()
         },
         onError: (error) => {
@@ -236,7 +261,8 @@ export default function EnhancedGeofencing({
     // Set up geofence event listening
     useEffect(() => {
         const handleGeofenceEvent = (event: GeofenceEvent) => {
-            setRecentEvents(prev => [event, ...prev.slice(0, 19)]) // Keep only last 20 events
+            // Handle geofence events (could trigger notifications, etc.)
+            console.log('Geofence event:', event)
         }
 
         geofencingService.addEventListener('entry', handleGeofenceEvent)
@@ -308,7 +334,7 @@ export default function EnhancedGeofencing({
                 longitude: geofence.longitude,
                 radius: geofence.radius,
                 type: geofence.type,
-                isActive: geofence.isActive,
+                isActive: geofence.isActive ?? true,
                 isDirectional: !!geofence.direction,
                 direction: geofence.direction || 0,
                 directionRange: geofence.directionRange || 45,
@@ -318,19 +344,19 @@ export default function EnhancedGeofencing({
                 isTimeBased: !!(geofence.activeStartTime || geofence.activeEndTime),
                 activeStartTime: geofence.activeStartTime ? format(new Date(geofence.activeStartTime), "yyyy-MM-dd'T'HH:mm") : '',
                 activeEndTime: geofence.activeEndTime ? format(new Date(geofence.activeEndTime), "yyyy-MM-dd'T'HH:mm") : '',
-                settings: geofence.settings || {
-                    notifyOnEntry: true,
-                    notifyOnExit: true,
-                    cooldownMinutes: 5,
-                    maxAlerts: 10,
-                    triggerDistance: 0,
-                    requiresMovement: false,
-                    parkArea: '',
-                    attraction: '',
-                    customMessage: '',
-                    soundAlert: true,
-                    vibrationAlert: true,
-                    priority: 'medium'
+                settings: {
+                    notifyOnEntry: geofence.settings?.notifyOnEntry ?? true,
+                    notifyOnExit: geofence.settings?.notifyOnExit ?? true,
+                    cooldownMinutes: geofence.settings?.cooldownMinutes ?? 5,
+                    maxAlerts: geofence.settings?.maxAlerts ?? 10,
+                    triggerDistance: geofence.settings?.triggerDistance ?? 0,
+                    requiresMovement: geofence.settings?.requiresMovement ?? false,
+                    parkArea: geofence.settings?.parkArea ?? '',
+                    attraction: geofence.settings?.attraction ?? '',
+                    customMessage: geofence.settings?.customMessage ?? '',
+                    soundAlert: geofence.settings?.soundAlert ?? true,
+                    vibrationAlert: geofence.settings?.vibrationAlert ?? true,
+                    priority: geofence.settings?.priority ?? 'medium'
                 }
             })
         }
@@ -361,8 +387,8 @@ export default function EnhancedGeofencing({
             maxAltitude: geofenceForm.isAltitudeBased ? geofenceForm.maxAltitude : null,
 
             // Time-based activation
-            activeStartTime: geofenceForm.isTimeBased ? geofenceForm.activeStartTime : null,
-            activeEndTime: geofenceForm.isTimeBased ? geofenceForm.activeEndTime : null,
+            activeStartTime: geofenceForm.isTimeBased && geofenceForm.activeStartTime ? new Date(geofenceForm.activeStartTime) : null,
+            activeEndTime: geofenceForm.isTimeBased && geofenceForm.activeEndTime ? new Date(geofenceForm.activeEndTime) : null,
 
             settings: geofenceForm.settings
         }
@@ -413,7 +439,6 @@ export default function EnhancedGeofencing({
                 <div className="flex items-center gap-2">
                     <ShimmerButton
                         onClick={() => {
-                            setIsCreating(true)
                             setSelectedGeofence(null)
                             resetForm()
                             setActiveTab('create')
@@ -484,100 +509,104 @@ export default function EnhancedGeofencing({
                             ) : filteredGeofences?.length > 0 ? (
                                 filteredGeofences.map((geofence, index) => (
                                     <BlurFade key={geofence.id} delay={index * 0.1}>
-                                        <MagicCard
-                                            className={cn(
-                                                "p-4 cursor-pointer transition-all duration-300",
-                                                selectedGeofence?.id === geofence.id && "ring ring-primary"
-                                            )}
+                                        <div
+                                            className="cursor-pointer"
                                             onClick={() => handleGeofenceSelect(geofence)}
                                         >
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex items-start gap-3">
-                                                    <div className={cn(
-                                                        "p-2 rounded-lg",
-                                                        geofence.isActive ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-600"
-                                                    )}>
-                                                        {getGeofenceTypeIcon(geofence.type)}
-                                                    </div>
+                                            <MagicCard
+                                                className={cn(
+                                                    "p-4 transition-all duration-300",
+                                                    selectedGeofence?.id === geofence.id && "ring ring-primary"
+                                                )}
+                                            >
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex items-start gap-3">
+                                                        <div className={cn(
+                                                            "p-2 rounded-lg",
+                                                            geofence.isActive ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-600"
+                                                        )}>
+                                                            {getGeofenceTypeIcon(geofence.type)}
+                                                        </div>
 
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <h3 className="font-semibold">{geofence.name}</h3>
-                                                            <Badge variant="outline" className="text-xs">
-                                                                {geofence.type}
-                                                            </Badge>
-                                                            {!geofence.isActive && (
-                                                                <Badge variant="secondary" className="text-xs">
-                                                                    Inactive
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <h3 className="font-semibold">{geofence.name}</h3>
+                                                                <Badge variant="outline" className="text-xs">
+                                                                    {geofence.type}
                                                                 </Badge>
-                                                            )}
-                                                        </div>
-
-                                                        {geofence.description && (
-                                                            <p className="text-sm text-muted-foreground mb-2">
-                                                                {geofence.description}
-                                                            </p>
-                                                        )}
-
-                                                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                                            <div className="flex items-center gap-1">
-                                                                <MapPin className="h-3 w-3" />
-                                                                {geofence.radius}m radius
+                                                                {!geofence.isActive && (
+                                                                    <Badge variant="secondary" className="text-xs">
+                                                                        Inactive
+                                                                    </Badge>
+                                                                )}
                                                             </div>
 
-                                                            {geofence.direction && (
-                                                                <div className="flex items-center gap-1">
-                                                                    <Compass className="h-3 w-3" />
-                                                                    Directional
-                                                                </div>
+                                                            {geofence.description && (
+                                                                <p className="text-sm text-muted-foreground mb-2">
+                                                                    {geofence.description}
+                                                                </p>
                                                             )}
 
-                                                            {(geofence.minAltitude || geofence.maxAltitude) && (
+                                                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
                                                                 <div className="flex items-center gap-1">
-                                                                    <Mountain className="h-3 w-3" />
-                                                                    Altitude
+                                                                    <MapPin className="h-3 w-3" />
+                                                                    {geofence.radius}m radius
                                                                 </div>
-                                                            )}
 
-                                                            <div className="flex items-center gap-1">
-                                                                <div className={cn(
-                                                                    "w-2 h-2 rounded-full",
-                                                                    getPriorityColor(geofence.settings?.priority || 'medium')
-                                                                )} />
-                                                                {geofence.settings?.priority || 'medium'} priority
+                                                                {geofence.direction && (
+                                                                    <div className="flex items-center gap-1">
+                                                                        <Compass className="h-3 w-3" />
+                                                                        Directional
+                                                                    </div>
+                                                                )}
+
+                                                                {(geofence.minAltitude || geofence.maxAltitude) && (
+                                                                    <div className="flex items-center gap-1">
+                                                                        <Mountain className="h-3 w-3" />
+                                                                        Altitude
+                                                                    </div>
+                                                                )}
+
+                                                                <div className="flex items-center gap-1">
+                                                                    <div className={cn(
+                                                                        "w-2 h-2 rounded-full",
+                                                                        getPriorityColor(geofence.settings?.priority || 'medium')
+                                                                    )} />
+                                                                    {geofence.settings?.priority || 'medium'} priority
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
+
+                                                    <div className="flex items-center gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                handleGeofenceSelect(geofence)
+                                                                setActiveTab('create')
+                                                            }}
+                                                        >
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>
+
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                deleteGeofenceMutation.mutate(geofence.id)
+                                                            }}
+                                                        >
+                                                            <Trash className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
                                                 </div>
 
-                                                <div className="flex items-center gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            handleGeofenceSelect(geofence)
-                                                            setActiveTab('create')
-                                                        }}
-                                                    >
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            deleteGeofenceMutation.mutate(geofence.id)
-                                                        }}
-                                                    >
-                                                        <Trash className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-
-                                            {geofence.settings?.priority === 'urgent' && <BorderBeam />}
-                                        </MagicCard>
+                                                {geofence.settings?.priority === 'urgent' && <BorderBeam />}
+                                            </MagicCard>
+                                        </div>
                                     </BlurFade>
                                 ))
                             ) : (
@@ -626,7 +655,7 @@ export default function EnhancedGeofencing({
                                     <Label htmlFor="type">Type</Label>
                                     <Select
                                         value={geofenceForm.type}
-                                        onValueChange={(value) => setGeofenceForm(prev => ({ ...prev, type: value as any }))}
+                                        onValueChange={(value: 'custom' | 'attraction' | 'meeting' | 'safety' | 'directional' | 'altitude') => setGeofenceForm(prev => ({ ...prev, type: value }))}
                                     >
                                         <SelectTrigger>
                                             <SelectValue />
@@ -882,9 +911,9 @@ export default function EnhancedGeofencing({
                                         <Label>Priority</Label>
                                         <Select
                                             value={geofenceForm.settings.priority}
-                                            onValueChange={(value) => setGeofenceForm(prev => ({
+                                            onValueChange={(value: 'low' | 'medium' | 'high' | 'urgent') => setGeofenceForm(prev => ({
                                                 ...prev,
-                                                settings: { ...prev.settings, priority: value as any }
+                                                settings: { ...prev.settings, priority: value }
                                             }))}
                                         >
                                             <SelectTrigger>
@@ -934,7 +963,6 @@ export default function EnhancedGeofencing({
                                     variant="outline"
                                     onClick={() => {
                                         setSelectedGeofence(null)
-                                        setIsCreating(false)
                                         resetForm()
                                         setActiveTab('overview')
                                     }}
@@ -978,7 +1006,14 @@ export default function EnhancedGeofencing({
                             <ScrollArea className="h-[500px]">
                                 {alerts?.alerts?.length > 0 ? (
                                     <div className="space-y-4">
-                                        {alerts.alerts.map((alert: any, index: number) => (
+                                        {alerts.alerts.map((alert: {
+                                            id: string
+                                            message: string
+                                            alertType: 'entry' | 'exit' | 'proximity'
+                                            triggeredAt: string
+                                            distance?: number
+                                            isRead: boolean
+                                        }, index: number) => (
                                             <BlurFade key={alert.id} delay={index * 0.05}>
                                                 <div className="flex items-start gap-3 p-4 border rounded-lg">
                                                     <div className={cn(
@@ -1034,27 +1069,409 @@ export default function EnhancedGeofencing({
                 </TabsContent>
 
                 {/* Analytics Tab */}
-                <TabsContent value="analytics" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <BarChart3 className="h-5 w-5" />
-                                Geofencing Analytics
-                            </CardTitle>
-                            <CardDescription>
-                                Insights and statistics about your geofencing activity
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-center py-8">
-                                <BarChart3 className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-                                <h3 className="text-lg font-semibold mb-2">Analytics Coming Soon</h3>
-                                <p className="text-muted-foreground">
-                                    Detailed analytics and insights will be available here.
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                <TabsContent value="analytics" className="space-y-6">
+                    {/* Overview Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <BlurFade delay={0.1}>
+                            <MagicCard className="p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground">Total Geofences</p>
+                                        <p className="text-2xl font-bold">
+                                            {analytics?.totalGeofences || geofences?.length || 0}
+                                        </p>
+                                    </div>
+                                    <div className="p-3 bg-blue-100 rounded-full">
+                                        <MapPin className="h-6 w-6 text-blue-600" />
+                                    </div>
+                                </div>
+                                <div className="mt-2 text-xs text-muted-foreground">
+                                    {analytics?.activeGeofences || filteredGeofences?.length || 0} active
+                                </div>
+                            </MagicCard>
+                        </BlurFade>
+
+                        <BlurFade delay={0.2}>
+                            <MagicCard className="p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground">Total Triggers</p>
+                                        <p className="text-2xl font-bold">
+                                            {analytics?.totalTriggers || alerts?.totalCount || 0}
+                                        </p>
+                                    </div>
+                                    <div className="p-3 bg-green-100 rounded-full">
+                                        <Activity className="h-6 w-6 text-green-600" />
+                                    </div>
+                                </div>
+                                <div className="mt-2 text-xs text-muted-foreground">
+                                    {analytics?.triggersToday || 0} today
+                                </div>
+                            </MagicCard>
+                        </BlurFade>
+
+                        <BlurFade delay={0.3}>
+                            <MagicCard className="p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground">Most Active</p>
+                                        <p className="text-lg font-bold truncate">
+                                            {analytics?.mostActiveGeofence?.name || 'N/A'}
+                                        </p>
+                                    </div>
+                                    <div className="p-3 bg-orange-100 rounded-full">
+                                        <Target className="h-6 w-6 text-orange-600" />
+                                    </div>
+                                </div>
+                                <div className="mt-2 text-xs text-muted-foreground">
+                                    {analytics?.mostActiveGeofence?.triggerCount || 0} triggers
+                                </div>
+                            </MagicCard>
+                        </BlurFade>
+
+                        <BlurFade delay={0.4}>
+                            <MagicCard className="p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground">Avg Response Time</p>
+                                        <p className="text-2xl font-bold">
+                                            {analytics?.avgResponseTime ? `${analytics.avgResponseTime}ms` : 'N/A'}
+                                        </p>
+                                    </div>
+                                    <div className="p-3 bg-purple-100 rounded-full">
+                                        <Clock className="h-6 w-6 text-purple-600" />
+                                    </div>
+                                </div>
+                                <div className="mt-2 text-xs text-muted-foreground">
+                                    System performance
+                                </div>
+                            </MagicCard>
+                        </BlurFade>
+                    </div>
+
+                    {/* Charts and Detailed Analytics */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Activity Timeline */}
+                        <BlurFade delay={0.5}>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <BarChart3 className="h-5 w-5" />
+                                        Activity Timeline
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Geofence triggers over the last 7 days
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {analytics?.dailyActivity?.length > 0 ? (
+                                        <div className="space-y-4">
+                                            {analytics.dailyActivity.map((day: {
+                                                date: string
+                                                triggers: number
+                                                entries: number
+                                                exits: number
+                                            }) => (
+                                                <div key={day.date} className="flex items-center justify-between">
+                                                    <div className="text-sm font-medium">
+                                                        {format(new Date(day.date), 'MMM dd')}
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-3 h-3 bg-green-500 rounded-full" />
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {day.entries} entries
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-3 h-3 bg-orange-500 rounded-full" />
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {day.exits} exits
+                                                            </span>
+                                                        </div>
+                                                        <div className="text-sm font-bold">
+                                                            {day.triggers}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-8">
+                                            <BarChart3 className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
+                                            <p className="text-sm text-muted-foreground">No activity data available</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </BlurFade>
+
+                        {/* Geofence Performance */}
+                        <BlurFade delay={0.6}>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Target className="h-5 w-5" />
+                                        Geofence Performance
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Top performing geofences by trigger count
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ScrollArea className="h-[300px]">
+                                        {analytics?.geofencePerformance?.length > 0 ? (
+                                            <div className="space-y-4">
+                                                {analytics.geofencePerformance.map((geofence: {
+                                                    id: string
+                                                    name: string
+                                                    type: string
+                                                    triggerCount: number
+                                                    lastTriggered: string
+                                                    avgAccuracy: number
+                                                }) => (
+                                                    <div key={geofence.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="p-2 bg-muted rounded-lg">
+                                                                {getGeofenceTypeIcon(geofence.type)}
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-medium">{geofence.name}</p>
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    {geofence.type} • {geofence.avgAccuracy}% accuracy
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="font-bold">{geofence.triggerCount}</p>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                {geofence.lastTriggered ?
+                                                                    formatDistanceToNow(new Date(geofence.lastTriggered), { addSuffix: true }) :
+                                                                    'Never'
+                                                                }
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-8">
+                                                <Target className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
+                                                <p className="text-sm text-muted-foreground">No performance data available</p>
+                                            </div>
+                                        )}
+                                    </ScrollArea>
+                                </CardContent>
+                            </Card>
+                        </BlurFade>
+                    </div>
+
+                    {/* Additional Analytics */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Alert Distribution */}
+                        <BlurFade delay={0.7}>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Bell className="h-5 w-5" />
+                                        Alert Distribution
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {analytics?.alertDistribution ? (
+                                        <div className="space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                                    <span className="text-sm">Entries</span>
+                                                </div>
+                                                <span className="font-bold">{analytics.alertDistribution.entries || 0}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <XCircle className="h-4 w-4 text-orange-600" />
+                                                    <span className="text-sm">Exits</span>
+                                                </div>
+                                                <span className="font-bold">{analytics.alertDistribution.exits || 0}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <Activity className="h-4 w-4 text-blue-600" />
+                                                    <span className="text-sm">Proximity</span>
+                                                </div>
+                                                <span className="font-bold">{analytics.alertDistribution.proximity || 0}</span>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-4">
+                                            <Bell className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                                            <p className="text-xs text-muted-foreground">No alert data</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </BlurFade>
+
+                        {/* System Health */}
+                        <BlurFade delay={0.8}>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Shield className="h-5 w-5" />
+                                        System Health
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm">GPS Accuracy</span>
+                                            <div className="flex items-center gap-2">
+                                                <div className={cn(
+                                                    "w-2 h-2 rounded-full",
+                                                    (analytics?.systemHealth?.gpsAccuracy || 0) > 80 ? "bg-green-500" :
+                                                        (analytics?.systemHealth?.gpsAccuracy || 0) > 60 ? "bg-yellow-500" : "bg-red-500"
+                                                )} />
+                                                <span className="font-bold">{analytics?.systemHealth?.gpsAccuracy || 0}%</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm">Battery Impact</span>
+                                            <div className="flex items-center gap-2">
+                                                <div className={cn(
+                                                    "w-2 h-2 rounded-full",
+                                                    (analytics?.systemHealth?.batteryImpact || 0) < 20 ? "bg-green-500" :
+                                                        (analytics?.systemHealth?.batteryImpact || 0) < 40 ? "bg-yellow-500" : "bg-red-500"
+                                                )} />
+                                                <span className="font-bold">{analytics?.systemHealth?.batteryImpact || 0}%</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm">Network Status</span>
+                                            <div className="flex items-center gap-2">
+                                                <div className={cn(
+                                                    "w-2 h-2 rounded-full",
+                                                    analytics?.systemHealth?.networkStatus === 'good' ? "bg-green-500" :
+                                                        analytics?.systemHealth?.networkStatus === 'fair' ? "bg-yellow-500" : "bg-red-500"
+                                                )} />
+                                                <span className="font-bold capitalize">
+                                                    {analytics?.systemHealth?.networkStatus || 'Unknown'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </BlurFade>
+
+                        {/* Quick Actions */}
+                        <BlurFade delay={0.9}>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Compass className="h-5 w-5" />
+                                        Quick Actions
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full justify-start"
+                                        onClick={() => {
+                                            // Export analytics data
+                                            const dataStr = JSON.stringify(analytics, null, 2)
+                                            const dataBlob = new Blob([dataStr], { type: 'application/json' })
+                                            const url = URL.createObjectURL(dataBlob)
+                                            const link = document.createElement('a')
+                                            link.href = url
+                                            link.download = `geofence-analytics-${format(new Date(), 'yyyy-MM-dd')}.json`
+                                            link.click()
+                                            URL.revokeObjectURL(url)
+                                            toast.success("Analytics data exported")
+                                        }}
+                                    >
+                                        <BarChart3 className="h-4 w-4 mr-2" />
+                                        Export Data
+                                    </Button>
+
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full justify-start"
+                                        onClick={() => {
+                                            queryClient.invalidateQueries({ queryKey: ['geofence-analytics'] })
+                                            toast.success("Analytics refreshed")
+                                        }}
+                                    >
+                                        <Activity className="h-4 w-4 mr-2" />
+                                        Refresh Data
+                                    </Button>
+
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full justify-start"
+                                        onClick={() => setActiveTab('overview')}
+                                    >
+                                        <MapPin className="h-4 w-4 mr-2" />
+                                        View Geofences
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </BlurFade>
+                    </div>
+
+                    {/* Insights and Recommendations */}
+                    {analytics?.insights?.length > 0 && (
+                        <BlurFade delay={1.0}>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Target className="h-5 w-5" />
+                                        Insights & Recommendations
+                                    </CardTitle>
+                                    <CardDescription>
+                                        AI-powered suggestions to optimize your geofencing setup
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        {analytics.insights.map((insight: {
+                                            id: string
+                                            type: 'optimization' | 'warning' | 'info'
+                                            title: string
+                                            description: string
+                                            action?: string
+                                        }) => (
+                                            <div key={insight.id} className="flex items-start gap-3 p-4 border rounded-lg">
+                                                <div className={cn(
+                                                    "p-2 rounded-full",
+                                                    insight.type === 'optimization' ? "bg-blue-100 text-blue-600" :
+                                                        insight.type === 'warning' ? "bg-yellow-100 text-yellow-600" :
+                                                            "bg-green-100 text-green-600"
+                                                )}>
+                                                    {insight.type === 'optimization' ? <Target className="h-4 w-4" /> :
+                                                        insight.type === 'warning' ? <Shield className="h-4 w-4" /> :
+                                                            <CheckCircle className="h-4 w-4" />}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h4 className="font-medium mb-1">{insight.title}</h4>
+                                                    <p className="text-sm text-muted-foreground mb-2">
+                                                        {insight.description}
+                                                    </p>
+                                                    {insight.action && (
+                                                        <Button variant="outline" size="sm">
+                                                            {insight.action}
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </BlurFade>
+                    )}
                 </TabsContent>
             </Tabs>
         </div>

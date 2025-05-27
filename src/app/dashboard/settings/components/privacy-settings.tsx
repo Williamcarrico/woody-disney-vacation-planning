@@ -32,7 +32,7 @@ export function PrivacySettings() {
     const [dataSharingAnalytics, setDataSharingAnalytics] = useState(true)
     const [dataSharingPartners, setDataSharingPartners] = useState(false)
     const [dataSharingPersonalization, setDataSharingPersonalization] = useState(true)
-    const [cookiesEssential, setCookiesEssential] = useState(true)
+    const [cookiesEssential] = useState(true)
     const [cookiesAnalytics, setCookiesAnalytics] = useState(true)
     const [cookiesMarketing, setCookiesMarketing] = useState(false)
     const [downloadingData, setDownloadingData] = useState(false)

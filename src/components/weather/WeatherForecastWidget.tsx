@@ -38,10 +38,15 @@ function WeatherForecastWidget({
     const [error, setError] = useState<string | null>(null)
     const [selectedForecastTab, setSelectedForecastTab] = useState<'hourly' | 'daily'>('daily')
     const [selectedForecastItem, setSelectedForecastItem] = useState<string | null>(null)
+    const [retryCount, setRetryCount] = useState(0)
 
     // Fetch weather data
     useEffect(() => {
+        let isMounted = true;
+
         async function fetchWeatherData() {
+            if (!isMounted) return;
+
             setIsLoading(true)
             setError(null)
 
@@ -52,8 +57,11 @@ function WeatherForecastWidget({
                     fetchWeatherForecast(location, units)
                 ])
 
+                if (!isMounted) return;
+
                 setCurrentWeather(currentRes)
                 setForecast(forecastRes)
+                setRetryCount(0) // Reset retry count on success
 
                 // Select first item in daily forecast by default
                 if (forecastRes?.timelines?.daily && forecastRes.timelines.daily.length > 0) {
@@ -69,19 +77,38 @@ function WeatherForecastWidget({
                     })
                 }
             } catch (err) {
+                if (!isMounted) return;
+
                 console.error('Error fetching weather data:', err)
                 setError('Unable to fetch weather data. Please try again.')
+
+                // Retry logic - retry up to 3 times with exponential backoff
+                if (retryCount < 3) {
+                    const retryDelay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+                    setTimeout(() => {
+                        if (isMounted) {
+                            setRetryCount(prev => prev + 1);
+                        }
+                    }, retryDelay);
+                }
             } finally {
-                setIsLoading(false)
+                if (isMounted) {
+                    setIsLoading(false)
+                }
             }
         }
 
         fetchWeatherData()
-    }, [location, units, onLocationChange])
+
+        return () => {
+            isMounted = false;
+        }
+    }, [location, units, onLocationChange, retryCount])
 
     // Handle location change
     const handleLocationChange = (newLocation: string | WeatherLocation) => {
         setLocation(newLocation)
+        setRetryCount(0) // Reset retry count when location changes
     }
 
     // Functions to limit and extract forecast data
@@ -103,7 +130,7 @@ function WeatherForecastWidget({
     }
 
     // Render loading state
-    if (isLoading) {
+    if (isLoading && !currentWeather) {
         return (
             <Card className={cn('overflow-hidden', className)}>
                 <CardHeader className="pb-2">
@@ -132,9 +159,17 @@ function WeatherForecastWidget({
                         <p className="text-sm text-muted-foreground mt-1">
                             {error || 'Unable to load weather data'}
                         </p>
+                        {retryCount < 3 && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                                Retrying... ({retryCount + 1}/3)
+                            </p>
+                        )}
                         {location && (
                             <button
-                                onClick={() => setLocation(initialLocation)}
+                                onClick={() => {
+                                    setRetryCount(0);
+                                    setLocation(initialLocation);
+                                }}
                                 className="mt-4 text-sm text-primary hover:underline"
                             >
                                 Reset location
@@ -238,15 +273,8 @@ function WeatherForecastWidget({
                 )}
 
                 {/* Attribution */}
-                <div className="text-xs text-muted-foreground mt-4 text-center">
-                    Powered by <a
-                        href="https://www.tomorrow.io/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline hover:text-primary transition-colors"
-                    >
-                        Tomorrow.io
-                    </a>
+                <div className="mt-4 pt-4 border-t text-xs text-muted-foreground text-center">
+                    Powered by Tomorrow.io
                 </div>
             </CardContent>
         </Card>

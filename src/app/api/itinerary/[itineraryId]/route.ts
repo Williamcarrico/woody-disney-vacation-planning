@@ -43,7 +43,7 @@ const itineraryUpdateSchema = z.object({
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { itineraryId: string } }
+    { params }: { params: Promise<{ itineraryId: string }> }
 ) {
     try {
         const session = await auth()
@@ -53,7 +53,7 @@ export async function GET(
         }
 
         const userId = session.user.id
-        const { itineraryId } = params
+        const { itineraryId } = await params
 
         // Fetch itinerary from database
         const itinerary = await db.query.itineraries.findFirst({
@@ -76,7 +76,7 @@ export async function GET(
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { itineraryId: string } }
+    { params }: { params: Promise<{ itineraryId: string }> }
 ) {
     try {
         const session = await auth()
@@ -86,7 +86,7 @@ export async function PATCH(
         }
 
         const userId = session.user.id
-        const { itineraryId } = params
+        const { itineraryId } = await params
         const data = await request.json()
 
         // Validate the request body
@@ -133,7 +133,7 @@ export async function PATCH(
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { itineraryId: string } }
+    { params }: { params: Promise<{ itineraryId: string }> }
 ) {
     try {
         const session = await auth()
@@ -143,7 +143,7 @@ export async function DELETE(
         }
 
         const userId = session.user.id
-        const { itineraryId } = params
+        const { itineraryId } = await params
 
         // Check if itinerary exists and belongs to user
         const existingItinerary = await db.query.itineraries.findFirst({

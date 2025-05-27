@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cache } from 'react';
 
 // Mock historical data processing endpoint
 // In a real application, this would fetch from a database or external API
@@ -62,7 +61,7 @@ function generateMockHistoricalData(attractionId: string, startDate?: string | n
         }
 
         // Weekends have longer waits
-        let dayFactor = (day === 0 || day === 6) ? 1.3 : 1.0;
+        const dayFactor = (day === 0 || day === 6) ? 1.3 : 1.0;
 
         // Add some randomness
         const randomFactor = 0.7 + (Math.random() * 0.6); // 0.7-1.3

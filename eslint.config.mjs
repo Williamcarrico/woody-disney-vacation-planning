@@ -12,6 +12,42 @@ const compat = new FlatCompat({
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
+    ignores: [
+      // Dependency directories
+      "node_modules/",
+
+      // NextJS Files
+      "build/",
+      "public/*",
+      ".next/",
+      "next-env.d.ts",
+
+      // Generated types
+      ".next/types/**/*",
+
+      // Additional common ignores
+      "dist/",
+      "*.d.ts",
+      ".env*",
+      ".cache/",
+      ".turbo/",
+    ],
+  },
+  {
+    rules: {
+      "@typescript-eslint/no-explicit-any": ["error"],
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+        },
+      ],
+    },
+  },
+  {
     files: [
       "src/app/dashboard/settings/components/vacation-preferences-settings.tsx",
     ],

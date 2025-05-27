@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { InteractiveMap, LocationData } from '../interactive-map';
+import { InteractiveMap, LocationData, GroupMember, GeofenceData } from '../interactive-map';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -17,12 +17,33 @@ interface MapPageProps {
         readonly description?: string;
     }>;
     readonly showSearch?: boolean;
+    readonly groupMembers?: readonly GroupMember[];
+    readonly geofences?: readonly GeofenceData[];
+    readonly onLocationUpdate?: (location: { lat: number; lng: number }) => void;
+    readonly onGeofenceEntry?: (geofence: GeofenceData) => void;
+    readonly onGeofenceExit?: (geofence: GeofenceData) => void;
+    readonly onSeparationAlert?: (memberId: string, distance: number) => void;
+    readonly maxGroupSeparationDistance?: number;
+    readonly showWaitTimes?: boolean;
 }
 
 /**
  * A standalone full-page map component with search, location tracking, and other features
  */
-export default function MapPage({ className, initialLocation, locations = [], showSearch = true }: MapPageProps) {
+export default function MapPage({
+    className,
+    initialLocation,
+    locations = [],
+    showSearch = true,
+    groupMembers = [],
+    geofences = [],
+    onLocationUpdate,
+    onGeofenceEntry,
+    onGeofenceExit,
+    onSeparationAlert,
+    maxGroupSeparationDistance = 200,
+    showWaitTimes = false
+}: MapPageProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [showControls, setShowControls] = useState(true);
     const [mapLocations, setMapLocations] = useState<LocationData[]>([]);
@@ -127,6 +148,14 @@ export default function MapPage({ className, initialLocation, locations = [], sh
                     markers={mapLocations}
                     showUserLocation={true}
                     mapId={mapId}
+                    groupMembers={groupMembers}
+                    geofences={geofences}
+                    onLocationUpdate={onLocationUpdate}
+                    onGeofenceEnter={onGeofenceEntry}
+                    onGeofenceExit={onGeofenceExit}
+                    onGroupMemberDistanceAlert={onSeparationAlert}
+                    maxGroupSeparationDistance={maxGroupSeparationDistance}
+                    showWaitTimes={showWaitTimes}
                 />
 
                 {/* Floating controls */}

@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextFetchEvent } from 'next/server';
 import { z } from 'zod';
 import { cache } from 'react';
 import { withEdge } from '../config';
 import { validateQuery } from '@/lib/api/validation';
 import { errorResponse, successResponse } from '@/lib/api/response';
+import { Destination } from '@/types/api';
 
 // Define schema for query validation
 const ParksQuerySchema = z.object({
@@ -31,12 +32,13 @@ const cachedFetch = cache(async (url: string) => {
 });
 
 // GET handler for /api/parks
-async function handleGet(request: NextRequest) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function handleGet(request: NextRequest, _event: NextFetchEvent) {
     try {
         // Validate query parameters
         const validation = await validateQuery(request, ParksQuerySchema);
         if (!validation.success) {
-            return validation.error;
+            return validation.error!;
         }
 
         const { destination } = validation.data;
@@ -49,8 +51,8 @@ async function handleGet(request: NextRequest) {
 
         // Otherwise, return all Disney parks
         const allDestinations = await cachedFetch(`${BASE_URL}/destinations`);
-        const disneyDestinations = allDestinations.filter(
-            (dest: any) => dest.slug.includes('disney')
+        const disneyDestinations = (allDestinations as Destination[]).filter(
+            (dest: Destination) => dest.slug.includes('disney')
         );
 
         return successResponse(disneyDestinations);

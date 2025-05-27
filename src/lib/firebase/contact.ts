@@ -1,13 +1,13 @@
 'use client';
 
 import { firestore } from './firebase.config';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 export interface ContactFormData {
     name: string;
     email: string;
     message: string;
-    createdAt?: any;
+    createdAt?: Timestamp;
 }
 
 /**

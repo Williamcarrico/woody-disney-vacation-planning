@@ -3,6 +3,7 @@ import postgres from 'postgres'
 import { users } from './schema/users'
 import { vacations } from './schema/vacations'
 import { itineraries } from './schema/itineraries'
+import { calendarEvents, eventSharing, eventHistory } from './schema/calendar-events'
 
 // Get database connection string from environment variable
 const connectionString = process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/disney_vacation'
@@ -19,8 +20,11 @@ export const db = drizzle(client, {
     schema: {
         users,
         vacations,
-        itineraries
+        itineraries,
+        calendarEvents,
+        eventSharing,
+        eventHistory
     }
 })
 
-export { users, vacations, itineraries }
+export { users, vacations, itineraries, calendarEvents, eventSharing, eventHistory }

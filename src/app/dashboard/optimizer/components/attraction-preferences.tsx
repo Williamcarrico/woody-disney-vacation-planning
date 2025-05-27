@@ -11,25 +11,37 @@ import {
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
     ArrowDownIcon,
     ArrowUpIcon,
-    ListFilterIcon,
     SearchIcon,
     StarIcon,
     XCircleIcon
 } from "lucide-react"
 
+interface Attraction {
+    id: string
+    name: string
+    waitTime: number
+    type: 'RIDE' | 'SHOW' | 'MEET_AND_GREET'
+    tags: string[]
+}
+
+interface OptimizerFormData {
+    priorityAttractions: string[]
+    excludedAttractions: string[]
+    [key: string]: unknown
+}
+
 interface AttractionPreferencesSectionProps {
-    form: UseFormReturn<any>
+    form: UseFormReturn<OptimizerFormData>
     parkId: string
 }
 
 // Sample attractions data - in a real app, you would fetch this from an API based on parkId
-const SAMPLE_ATTRACTIONS = {
+const SAMPLE_ATTRACTIONS: Record<string, Attraction[]> = {
     'magic-kingdom': [
         { id: 'mk-1', name: 'Space Mountain', waitTime: 45, type: 'RIDE', tags: ['thrill', 'indoor', 'iconic'] },
         { id: 'mk-2', name: 'Seven Dwarfs Mine Train', waitTime: 75, type: 'RIDE', tags: ['family', 'outdoor', 'popular'] },
@@ -78,7 +90,7 @@ const SAMPLE_ATTRACTIONS = {
 export default function AttractionPreferencesSection({ form, parkId }: AttractionPreferencesSectionProps) {
     const [searchTerm, setSearchTerm] = useState("")
     const [attractionFilter, setAttractionFilter] = useState("all")
-    const [parkAttractions, setParkAttractions] = useState<any[]>([])
+    const [parkAttractions, setParkAttractions] = useState<Attraction[]>([])
 
     // Set park attractions when parkId changes
     useEffect(() => {
@@ -250,7 +262,7 @@ export default function AttractionPreferencesSection({ form, parkId }: Attractio
                                                                 attraction.type === 'MEET_AND_GREET' ? 'Character' :
                                                                     'Attraction'}
                                                     </Badge>
-                                                    {attraction.tags.slice(0, 2).map(tag => (
+                                                    {attraction.tags.slice(0, 2).map((tag: string) => (
                                                         <Badge key={tag} variant="secondary" className="text-xs">
                                                             {tag}
                                                         </Badge>
@@ -298,7 +310,7 @@ export default function AttractionPreferencesSection({ form, parkId }: Attractio
                             </div>
                         ) : (
                             <div className="border rounded-lg divide-y">
-                                {priorityAttractions.map((id, index) => {
+                                {priorityAttractions.map((id: string, index: number) => {
                                     const attraction = parkAttractions.find(a => a.id === id)
                                     if (!attraction) return null
 
@@ -370,7 +382,7 @@ export default function AttractionPreferencesSection({ form, parkId }: Attractio
                             </div>
                         ) : (
                             <div className="border rounded-lg divide-y">
-                                {excludedAttractions.map((id) => {
+                                {excludedAttractions.map((id: string) => {
                                     const attraction = parkAttractions.find(a => a.id === id)
                                     if (!attraction) return null
 

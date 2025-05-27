@@ -4,7 +4,7 @@
  */
 
 import { NextRequest } from 'next/server'
-import { ZodSchema, z } from 'zod'
+import { ZodSchema } from 'zod'
 import { errorResponse } from './response'
 import { sanitizeInput } from '@/lib/utils/sanitize'
 
@@ -31,7 +31,8 @@ export async function validateQuery<T extends ZodSchema>(
                     params[arrayKey] = []
                 }
                 if (Array.isArray(params[arrayKey])) {
-                    (params[arrayKey] as string[]).push(sanitizedValue)
+                    const arrayParam = params[arrayKey] as string[]
+                    arrayParam.push(sanitizedValue)
                 }
             } else {
                 params[key] = sanitizedValue
@@ -119,18 +120,30 @@ export async function validateBody<T extends ZodSchema>(
 }
 
 /**
+ * Type for sanitized objects - can be primitives, arrays, or nested objects
+ */
+type SanitizedValue = string | number | boolean | null | SanitizedObject | SanitizedValue[]
+
+/**
+ * Type for sanitized objects with string keys
+ */
+interface SanitizedObject {
+    [key: string]: SanitizedValue
+}
+
+/**
  * Recursively sanitizes an object's string values
  */
-function sanitizeObject(obj: any): any {
+function sanitizeObject(obj: unknown): SanitizedValue {
     if (typeof obj !== 'object' || obj === null) {
-        return typeof obj === 'string' ? sanitizeInput(obj) : obj
+        return typeof obj === 'string' ? sanitizeInput(obj) : obj as SanitizedValue
     }
 
     if (Array.isArray(obj)) {
         return obj.map(item => sanitizeObject(item))
     }
 
-    const sanitized: Record<string, any> = {}
+    const sanitized: SanitizedObject = {}
     for (const [key, value] of Object.entries(obj)) {
         sanitized[key] = sanitizeObject(value)
     }

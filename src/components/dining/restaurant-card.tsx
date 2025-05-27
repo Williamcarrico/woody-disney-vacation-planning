@@ -1,26 +1,28 @@
 "use client"
 
-import { useState } from "react"
+
 import Image from "next/image"
 import Link from "next/link"
-import { Star, MapPin, Clock, Phone, Users, Utensils, ExternalLink, Heart, Share2, DollarSign, Calendar, Info } from "lucide-react"
+import { Star, MapPin, Clock, Users, Utensils, Heart, Share2, Calendar, AlertCircle, CheckCircle, Timer } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
-import { DisneyRestaurant, PriceRange } from "@/types/dining"
-import { Shimmer } from "@/components/magicui/shimmer-button"
+import { DisneyRestaurant } from "@/types/dining"
 import { MagicCard } from "@/components/magicui/magic-card"
+import {
+    getRestaurantStatus,
+    getEstimatedWaitTime,
+    formatPriceRange,
+    getReservationDifficulty
+} from "@/lib/utils/restaurant"
 
 interface RestaurantCardProps {
     restaurant: DisneyRestaurant
     variant?: "grid" | "list" | "featured"
-    showDetails?: boolean
     onFavorite?: (restaurant: DisneyRestaurant) => void
     isFavorite?: boolean
     className?: string
@@ -29,28 +31,16 @@ interface RestaurantCardProps {
 export default function RestaurantCard({
     restaurant,
     variant = "grid",
-    showDetails = true,
     onFavorite,
     isFavorite = false,
     className = ""
 }: RestaurantCardProps) {
-    const [imageLoaded, setImageLoaded] = useState(false)
-    const [showFullDescription, setShowFullDescription] = useState(false)
 
-    const getPriceRangeColor = (priceRange: PriceRange) => {
-        switch (priceRange) {
-            case PriceRange.BUDGET:
-                return "text-green-600 dark:text-green-400"
-            case PriceRange.MODERATE:
-                return "text-blue-600 dark:text-blue-400"
-            case PriceRange.EXPENSIVE:
-                return "text-orange-600 dark:text-orange-400"
-            case PriceRange.LUXURY:
-                return "text-purple-600 dark:text-purple-400"
-            default:
-                return "text-muted-foreground"
-        }
-    }
+
+    const priceInfo = formatPriceRange(restaurant.priceRange)
+    const restaurantStatus = getRestaurantStatus(restaurant)
+    const waitTime = getEstimatedWaitTime(restaurant)
+    const reservationDifficulty = getReservationDifficulty(restaurant)
 
     const getDiningPlanText = () => {
         if (!restaurant.diningPlanInfo.acceptsDiningPlan) return null
@@ -62,11 +52,52 @@ export default function RestaurantCard({
         return "Accepts dining plan"
     }
 
-    const isOpen = () => {
-        const now = new Date()
-        const day = now.toLocaleLowerCase(undefined, { weekday: 'long' })
-        const hours = restaurant.operatingHours[day]
-        return hours && hours !== "Closed"
+    const getStatusBadge = () => {
+        const { status } = restaurantStatus
+
+        switch (status) {
+            case 'open':
+                return <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Open
+                </Badge>
+            case 'closed':
+                return <Badge variant="destructive" className="text-xs">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    Closed
+                </Badge>
+            case 'closing-soon':
+                return <Badge className="text-xs bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100">
+                    <Timer className="h-3 w-3 mr-1" />
+                    Closing Soon
+                </Badge>
+            case 'opening-soon':
+                return <Badge className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
+                    <Clock className="h-3 w-3 mr-1" />
+                    Opening Soon
+                </Badge>
+            default:
+                return null
+        }
+    }
+
+    const getReservationBadge = () => {
+        if (!restaurant.reservationInfo.acceptsReservations) {
+            return <Badge variant="outline" className="text-xs">Walk-up Only</Badge>
+        }
+
+        switch (reservationDifficulty) {
+            case 'extremely-hard':
+                return <Badge className="text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">Very Hard to Book</Badge>
+            case 'hard':
+                return <Badge className="text-xs bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100">Hard to Book</Badge>
+            case 'moderate':
+                return <Badge className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100">Moderate</Badge>
+            case 'easy':
+                return <Badge variant="secondary" className="text-xs">Easy to Book</Badge>
+            default:
+                return null
+        }
     }
 
     const renderStars = (rating: number) => {
@@ -94,7 +125,7 @@ export default function RestaurantCard({
                             alt={restaurant.name}
                             fill
                             className="object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
-                            onLoad={() => setImageLoaded(true)}
+
                         />
                         {restaurant.isNew && (
                             <Badge className="absolute top-2 left-2 bg-green-500 hover:bg-green-600">
@@ -123,6 +154,10 @@ export default function RestaurantCard({
                                         <Utensils className="h-3 w-3" />
                                         {restaurant.serviceType}
                                     </span>
+                                </div>
+                                <div className="flex items-center gap-2 mb-2">
+                                    {getStatusBadge()}
+                                    {getReservationBadge()}
                                 </div>
                             </div>
                             <div className="flex items-center gap-1">
@@ -155,9 +190,24 @@ export default function RestaurantCard({
                                         </span>
                                     </div>
                                 )}
-                                <span className={`font-medium ${getPriceRangeColor(restaurant.priceRange)}`}>
-                                    {restaurant.priceRange}
-                                </span>
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger>
+                                            <span className={`font-medium ${priceInfo.color}`}>
+                                                {priceInfo.symbol}
+                                            </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>{priceInfo.description}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                                {waitTime && (
+                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                        <Timer className="h-3 w-3" />
+                                        <span>~{waitTime} min wait</span>
+                                    </div>
+                                )}
                             </div>
                             <Button asChild variant="outline" size="sm">
                                 <Link href={`/dashboard/dining/${restaurant.id}`}>
@@ -180,12 +230,11 @@ export default function RestaurantCard({
                         alt={restaurant.name}
                         fill
                         className="object-cover"
-                        onLoad={() => setImageLoaded(true)}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
                     {/* Badges */}
-                    <div className="absolute top-4 left-4 flex gap-2">
+                    <div className="absolute top-4 left-4 flex gap-2 flex-wrap">
                         {restaurant.isNew && (
                             <Badge className="bg-green-500 hover:bg-green-600">New</Badge>
                         )}
@@ -195,6 +244,7 @@ export default function RestaurantCard({
                         {restaurant.characterDining?.hasCharacterDining && (
                             <Badge className="bg-purple-500 hover:bg-purple-600">Character Dining</Badge>
                         )}
+                        {getStatusBadge()}
                     </div>
 
                     {/* Favorite Button */}
@@ -231,8 +281,14 @@ export default function RestaurantCard({
                                     </div>
                                 )}
                                 <span className="font-medium text-yellow-400">
-                                    {restaurant.priceRange}
+                                    {priceInfo.symbol}
                                 </span>
+                                {waitTime && (
+                                    <div className="flex items-center gap-1 text-xs">
+                                        <Timer className="h-3 w-3" />
+                                        <span>~{waitTime} min</span>
+                                    </div>
+                                )}
                             </div>
                             <Button asChild variant="secondary" size="sm">
                                 <Link href={`/dashboard/dining/${restaurant.id}`}>
@@ -256,7 +312,6 @@ export default function RestaurantCard({
                         alt={restaurant.name}
                         fill
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        onLoad={() => setImageLoaded(true)}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
@@ -268,9 +323,7 @@ export default function RestaurantCard({
                         {restaurant.isPopular && (
                             <Badge className="text-xs bg-orange-500 hover:bg-orange-600">Popular</Badge>
                         )}
-                        {!isOpen() && (
-                            <Badge variant="destructive" className="text-xs">Closed</Badge>
-                        )}
+                        {getStatusBadge()}
                     </div>
 
                     {/* Favorite Button */}
@@ -389,7 +442,20 @@ export default function RestaurantCard({
                                 <span>Reservations</span>
                             </div>
                         )}
+                        {waitTime && (
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                                <Timer className="h-3 w-3" />
+                                <span>~{waitTime} min</span>
+                            </div>
+                        )}
                     </div>
+
+                    {/* Status Message */}
+                    {restaurantStatus.message && (
+                        <div className="text-xs text-muted-foreground">
+                            {restaurantStatus.message}
+                        </div>
+                    )}
                 </div>
             </CardContent>
 
@@ -406,9 +472,18 @@ export default function RestaurantCard({
                                 </span>
                             </div>
                         )}
-                        <span className={`text-sm font-medium ${getPriceRangeColor(restaurant.priceRange)}`}>
-                            {restaurant.priceRange}
-                        </span>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <span className={`text-sm font-medium ${priceInfo.color}`}>
+                                        {priceInfo.symbol}
+                                    </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{priceInfo.description}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                     </div>
 
                     {/* Action Button */}

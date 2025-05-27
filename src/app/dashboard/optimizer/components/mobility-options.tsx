@@ -23,8 +23,38 @@ import {
     FootprintsIcon
 } from "lucide-react"
 
+// Type definition for the optimizer form data
+type OptimizerFormData = {
+    parkId: string
+    date: Date
+    startTime?: string
+    endTime?: string
+    partySize: number
+    hasChildren: boolean
+    childrenAges?: number[]
+    hasStroller: boolean
+    mobilityConsiderations: boolean
+    ridePreference: "thrill" | "family" | "all"
+    maxWaitTime: number
+    walkingPace: "slow" | "moderate" | "fast"
+    breakDuration: number
+    lunchTime?: string
+    dinnerTime?: string
+    useGeniePlus: boolean
+    useIndividualLightningLane: boolean
+    maxLightningLaneBudget?: number
+    accommodateHeight: boolean
+    rideRepeats: boolean
+    includeMeetAndGreets: boolean
+    includeShows: boolean
+    weatherAdaptation: boolean
+    crowdAvoidance: boolean
+    priorityAttractions: string[]
+    excludedAttractions: string[]
+}
+
 interface MobilityOptionsSectionProps {
-    form: UseFormReturn<any>
+    form: UseFormReturn<OptimizerFormData>
 }
 
 export default function MobilityOptionsSection({ form }: MobilityOptionsSectionProps) {

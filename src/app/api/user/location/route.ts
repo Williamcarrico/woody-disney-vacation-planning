@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from '@/db'
-import { userLocations, NewUserLocation, locationAnalytics } from '@/db/schema/locations'
-import { eq, and, desc, gte, lte, avg, sum, count, max } from 'drizzle-orm'
-import { geofencingService } from '@/lib/services/geofencing'
+import { userLocations, NewUserLocation } from '@/db/schema/locations'
+import { eq, and, desc, gte, lte, avg, count, max } from 'drizzle-orm'
+import { geofencingService, GeofenceEvent } from '@/lib/services/geofencing'
 
 interface LocationUpdateBody {
     latitude: number;
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
             ));
 
         // Process geofencing if vacation ID is provided
-        let geofenceEvents = [];
+        let geofenceEvents: GeofenceEvent[] = [];
         if (body.vacationId) {
             try {
                 // Load geofences for this vacation
@@ -161,7 +161,7 @@ export async function GET(request: NextRequest) {
         }
 
         if (type !== 'all') {
-            conditions.push(eq(userLocations.type, type as any));
+            conditions.push(eq(userLocations.type, type as 'current' | 'historical' | 'planned'));
         }
 
         if (startDate) {
@@ -173,18 +173,18 @@ export async function GET(request: NextRequest) {
         }
 
         // Execute main query
-        let query = db
+        const baseQuery = db
             .select()
-            .from(userLocations)
+            .from(userLocations);
+
+        const queryWithConditions = conditions.length > 0
+            ? baseQuery.where(and(...conditions))
+            : baseQuery;
+
+        const locations = await queryWithConditions
             .orderBy(desc(userLocations.timestamp))
             .limit(limit)
             .offset(offset);
-
-        if (conditions.length > 0) {
-            query = query.where(and(...conditions));
-        }
-
-        const locations = await query;
 
         // Get analytics if requested
         let analytics = null;
@@ -282,9 +282,17 @@ async function getLocationAnalytics(
             .from(userLocations)
             .where(and(...conditions))
             .then(rows => {
-                const areas = new Set();
+                const areas = new Set<string>();
                 rows.forEach(row => {
-                    const metadata = row.parkArea as any;
+                    const metadata = row.parkArea as {
+                        deviceInfo?: string;
+                        networkType?: string;
+                        batteryLevel?: number;
+                        isBackground?: boolean;
+                        parkArea?: string;
+                        attraction?: string;
+                        activity?: string;
+                    } | null;
                     if (metadata?.parkArea) {
                         areas.add(metadata.parkArea);
                     }
@@ -295,9 +303,9 @@ async function getLocationAnalytics(
         return {
             totalLocationPoints: analytics.totalPoints || 0,
             uniqueUsers: uniqueUsers.length,
-            averageAccuracy: analytics.avgAccuracy ? parseFloat(analytics.avgAccuracy) : null,
-            maxSpeed: analytics.maxSpeed ? parseFloat(analytics.maxSpeed) : null,
-            averageSpeed: analytics.avgSpeed ? parseFloat(analytics.avgSpeed) : null,
+            averageAccuracy: analytics.avgAccuracy ? Number(analytics.avgAccuracy) : null,
+            maxSpeed: analytics.maxSpeed ? Number(analytics.maxSpeed) : null,
+            averageSpeed: analytics.avgSpeed ? Number(analytics.avgSpeed) : null,
             parkAreasVisited: parkAreas,
             dateRange: {
                 start: startDate,

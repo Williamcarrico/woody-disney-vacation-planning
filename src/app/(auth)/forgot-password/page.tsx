@@ -122,7 +122,7 @@ export default function ForgotPassword() {
                     >
                         {isSubmitting ? (
                             <>
-                                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                                <div className="mr-2 h-4 w-4 animate-spin rounded-full spinner"></div>
                                 Sending...
                             </>
                         ) : (

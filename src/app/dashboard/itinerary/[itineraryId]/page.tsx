@@ -1,19 +1,17 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { db } from '@/db/schema'
-import { itineraries } from '@/db/schema/itineraries'
+import { db } from '@/db'
+import { itineraries, type Itinerary } from '@/db/schema/itineraries'
 import { eq } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 import { format } from 'date-fns'
 import {
     Calendar,
     ArrowLeft,
-    Clock,
     MapPin,
     Users,
-    Star,
-    Share2
+    Star
 } from 'lucide-react'
 import {
     Tabs,
@@ -65,13 +63,13 @@ export default async function ItineraryPage({ params }: ItineraryPageProps) {
     }
 
     // Get the start and end date from the itinerary
-    const dates = itinerary.parkDays.map(day => new Date(day.date))
-    const startDate = dates.length ? dates.reduce((a, b) => a < b ? a : b) : new Date()
-    const endDate = dates.length ? dates.reduce((a, b) => a > b ? a : b) : new Date()
+    const dates = itinerary.parkDays.map((day: Itinerary['parkDays'][0]) => new Date(day.date))
+    const startDate = dates.length ? dates.reduce((a: Date, b: Date) => a < b ? a : b) : new Date()
+    const endDate = dates.length ? dates.reduce((a: Date, b: Date) => a > b ? a : b) : new Date()
 
     // Get total activities
     const totalActivities = itinerary.parkDays.reduce(
-        (sum, day) => sum + day.activities.length,
+        (sum: number, day: Itinerary['parkDays'][0]) => sum + day.activities.length,
         0
     )
 
@@ -236,7 +234,7 @@ export default async function ItineraryPage({ params }: ItineraryPageProps) {
                                                 </h3>
 
                                                 <div className="space-y-2">
-                                                    {day.activities.map((activity, i) => (
+                                                    {day.activities.map((activity: Itinerary['parkDays'][0]['activities'][0], i: number) => (
                                                         <div key={`${activity.id || i}`} className="flex items-center text-sm">
                                                             <div className="w-20 flex-shrink-0 text-muted-foreground">
                                                                 {format(new Date(`${day.date}T${activity.startTime}`), 'h:mm a')}

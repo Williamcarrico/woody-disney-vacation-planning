@@ -5,7 +5,6 @@ import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle
 } from "@/components/ui/card"
@@ -23,10 +22,8 @@ import {
 } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import {
     ClockIcon,
-    CloudRainIcon,
     DownloadIcon,
     Zap,
     MapPinIcon,
@@ -116,7 +113,7 @@ export default function OptimizerResults({ result }: OptimizerResultsProps) {
     const formatTime = (isoTime: string) => {
         try {
             return format(parseISO(isoTime), "h:mm a")
-        } catch (e) {
+        } catch {
             return isoTime
         }
     }
@@ -482,7 +479,7 @@ export default function OptimizerResults({ result }: OptimizerResultsProps) {
                         <AccordionItem value="item-1">
                             <AccordionTrigger>Arrive 30-45 minutes before park opening</AccordionTrigger>
                             <AccordionContent>
-                                Getting to the park before it officially opens allows you to be among the first to enter. This "rope drop"
+                                Getting to the park before it officially opens allows you to be among the first to enter. This &quot;rope drop&quot;
                                 strategy can help you experience popular attractions with minimal wait times.
                             </AccordionContent>
                         </AccordionItem>
@@ -496,7 +493,7 @@ export default function OptimizerResults({ result }: OptimizerResultsProps) {
                         <AccordionItem value="item-3">
                             <AccordionTrigger>Use mobile ordering for meals</AccordionTrigger>
                             <AccordionContent>
-                                Disney's mobile ordering service allows you to order food in advance from select quick-service restaurants.
+                                Disney&apos;s mobile ordering service allows you to order food in advance from select quick-service restaurants.
                                 This saves time waiting in line and ensures you can eat when you want.
                             </AccordionContent>
                         </AccordionItem>

@@ -133,6 +133,7 @@ export default function DiningFiltersComponent({
         if (filters.hasCharacterDining) count++
         if (filters.acceptsDiningPlan) count++
         if (filters.acceptsReservations) count++
+        if (filters.openNow) count++
         if (filters.rating) count++
         return count
     }, [filters])
@@ -230,6 +231,16 @@ export default function DiningFiltersComponent({
                 >
                     <Clock className="h-3 w-3 mr-1" />
                     Reservations
+                </Button>
+
+                <Button
+                    variant={filters.openNow ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => onFiltersChange({ ...filters, openNow: !filters.openNow })}
+                    className="h-8"
+                >
+                    <Star className="h-3 w-3 mr-1" />
+                    Open Now
                 </Button>
 
                 {/* Advanced Filters Sheet */}

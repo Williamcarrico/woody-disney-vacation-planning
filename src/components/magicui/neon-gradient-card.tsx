@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  CSSProperties,
   ReactElement,
   ReactNode,
   useEffect,
@@ -64,7 +63,7 @@ interface NeonGradientCardProps {
    * */
   neonColors?: NeonColorsProps;
 
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export const NeonGradientCard: React.FC<NeonGradientCardProps> = ({
@@ -120,7 +119,7 @@ export const NeonGradientCard: React.FC<NeonGradientCardProps> = ({
           "--pseudo-element-width": `${dimensions.width + borderSize * 2}px`,
           "--pseudo-element-height": `${dimensions.height + borderSize * 2}px`,
           "--after-blur": `${dimensions.width / 3}px`,
-        } as CSSProperties
+        } as React.CSSProperties
       }
       className={cn(
         "relative z-10 size-full rounded-[var(--border-radius)]",

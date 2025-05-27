@@ -1,347 +1,375 @@
-import { Suspense } from "react"
-import { Metadata } from "next"
-import VacationParty from "@/components/group/VacationParty"
-import PartyMessaging from "@/components/group/PartyMessaging"
-import LocationSharing from "@/components/group/LocationSharing"
-import CollaborativeItinerary from "@/components/group/CollaborativeItinerary"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
+'use client'
+
+import { use } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import GroupChat from '@/components/group/GroupChat'
+import LocationSharing from '@/components/group/LocationSharing'
+import { useVacationRealtime } from '@/hooks/useRealtimeDatabase'
 import {
     Users,
     MessageSquare,
     MapPin,
-    Calendar,
+    Clock,
+    Settings,
     Share2,
-    Plus,
-    ArrowRight,
-    CalendarDays,
-    Map
-} from "lucide-react"
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-    CardFooter,
-} from "@/components/ui/card"
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator
-} from "@/components/ui/breadcrumb"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
+    Bell,
+    Calendar
+} from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
+import { toast } from 'sonner'
 
-export const metadata: Metadata = {
-    title: "Vacation Party | Disney Vacation Planning",
-    description: "Plan your Disney vacation with friends and family",
+// Type definitions based on the realtime database interfaces
+interface MemberLocation {
+    userId: string
+    userName: string
+    userPhotoURL?: string
+    isSharing: boolean
+    lastUpdated: number
+    location?: {
+        latitude: number
+        longitude: number
+        accuracy?: number
+        parkId?: string
+        areaId?: string
+        attractionId?: string
+        name: string
+    }
 }
 
-export default function VacationGroupPage({ params }: { readonly params: { vacationId: string } }) {
-    const { vacationId } = params
+interface GroupMessage {
+    userId: string
+    userName: string
+    userPhotoURL?: string
+    content: string
+    timestamp: number
+    type: 'text' | 'location' | 'photo' | 'poll'
+    reactions?: Record<string, string>
+    replyTo?: string
+    edited: boolean
+    editedAt?: number
+}
+
+interface Notification {
+    id: string
+    type: string
+    title: string
+    message: string
+    timestamp: number
+    read: boolean
+    data?: Record<string, unknown>
+    vacationId?: string
+}
+
+interface GroupDashboardProps {
+    params: Promise<{
+        vacationId: string
+    }>
+}
+
+export default function GroupDashboard({ params }: GroupDashboardProps) {
+    const { vacationId } = use(params)
+    const { user } = useAuth()
+
+    const {
+        messages,
+        locationSharing,
+        notifications,
+        isLoading,
+        hasError
+    } = useVacationRealtime(vacationId)
+
+    if (!user) {
+        return (
+            <div className="container mx-auto p-6">
+                <Card>
+                    <CardContent className="flex items-center justify-center h-64">
+                        <p>Please sign in to access group features</p>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+
+    if (isLoading) {
+        return (
+            <div className="container mx-auto p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3].map((i) => (
+                        <Card key={i}>
+                            <CardContent className="flex items-center justify-center h-64">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            </div>
+        )
+    }
+
+    if (hasError) {
+        return (
+            <div className="container mx-auto p-6">
+                <Card>
+                    <CardContent className="flex items-center justify-center h-64">
+                        <div className="text-center">
+                            <p className="text-destructive mb-4">Error loading group data</p>
+                            <Button onClick={() => window.location.reload()}>
+                                Try Again
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+
+    const totalMessages = Object.keys(messages.messages || {}).length
+    const activeSharers = Object.values(locationSharing.memberLocations || {})
+        .filter((member: MemberLocation) => member.isSharing).length
+    const unreadNotifications = notifications.unreadCount
+
+    const handleInviteMembers = () => {
+        // Generate shareable link
+        const shareUrl = `${window.location.origin}/shared-itinerary/${vacationId}`
+
+        if (navigator.share) {
+            navigator.share({
+                title: 'Join my Disney vacation planning',
+                text: 'Join my vacation group to chat and share locations!',
+                url: shareUrl
+            }).catch(() => {
+                // Fallback to clipboard
+                navigator.clipboard.writeText(shareUrl)
+                toast.success('Invite link copied to clipboard!')
+            })
+        } else {
+            navigator.clipboard.writeText(shareUrl)
+            toast.success('Invite link copied to clipboard!')
+        }
+    }
 
     return (
-        <div className="container py-6">
-            <Breadcrumb className="mb-6">
-                <BreadcrumbList>
-                    <BreadcrumbItem>
-                        <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem>
-                        <BreadcrumbLink href="/group">Vacation Parties</BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem>
-                        <BreadcrumbPage>Magic Kingdom Adventure 2023</BreadcrumbPage>
-                    </BreadcrumbItem>
-                </BreadcrumbList>
-            </Breadcrumb>
+        <div className="container mx-auto p-6 space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold">Group Dashboard</h1>
+                    <p className="text-muted-foreground">
+                        Collaborate with your vacation party
+                    </p>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="md:col-span-2">
-                    <div className="flex flex-col gap-2">
-                        <h1 className="text-3xl font-bold tracking-tight">Magic Kingdom Adventure 2023</h1>
-                        <p className="text-muted-foreground">
-                            Collaborate with your friends and family on your Disney vacation
+                <div className="flex items-center gap-4">
+                    {/* Notifications */}
+                    {unreadNotifications > 0 && (
+                        <div className="relative">
+                            <Bell className="h-6 w-6" />
+                            <Badge
+                                variant="destructive"
+                                className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                            >
+                                {unreadNotifications}
+                            </Badge>
+                        </div>
+                    )}
+
+                    <Button onClick={handleInviteMembers} variant="outline">
+                        <Share2 className="h-4 w-4 mr-2" />
+                        Invite Members
+                    </Button>
+
+                    <Button variant="outline">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Settings
+                    </Button>
+                </div>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Group Messages</CardTitle>
+                        <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{totalMessages}</div>
+                        <p className="text-xs text-muted-foreground">
+                            {messages.loading ? 'Loading...' : 'Total messages sent'}
                         </p>
+                    </CardContent>
+                </Card>
 
-                        <div className="flex gap-2 mt-2">
-                            <div className="flex -space-x-2">
-                                <Avatar className="h-8 w-8 border-2 border-background">
-                                    <AvatarImage src="/app/user1.jpg" />
-                                    <AvatarFallback>JD</AvatarFallback>
-                                </Avatar>
-                                <Avatar className="h-8 w-8 border-2 border-background">
-                                    <AvatarImage src="/app/user2.jpg" />
-                                    <AvatarFallback>JS</AvatarFallback>
-                                </Avatar>
-                                <Avatar className="h-8 w-8 border-2 border-background">
-                                    <AvatarImage src="/app/user3.jpg" />
-                                    <AvatarFallback>AJ</AvatarFallback>
-                                </Avatar>
-                                <Avatar className="h-8 w-8 border-2 border-background">
-                                    <AvatarFallback>+2</AvatarFallback>
-                                </Avatar>
-                            </div>
-                            <div className="text-muted-foreground text-sm flex items-center">
-                                6 members in this vacation party
-                            </div>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Active Sharers</CardTitle>
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{activeSharers}</div>
+                        <p className="text-xs text-muted-foreground">
+                            {locationSharing.loading ? 'Loading...' : 'Sharing locations'}
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Last Activity</CardTitle>
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">
+                            {totalMessages > 0 ? (
+                                formatDistanceToNow(
+                                    new Date(
+                                        Math.max(
+                                            ...Object.values(messages.messages || {})
+                                                .map((msg: GroupMessage) => msg.timestamp)
+                                        )
+                                    ),
+                                    { addSuffix: true }
+                                )
+                            ) : (
+                                'No activity'
+                            )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Last message sent
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Main Content */}
+            <Tabs defaultValue="chat" className="space-y-6">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="chat" className="flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4" />
+                        Group Chat
+                        {totalMessages > 0 && (
+                            <Badge variant="secondary" className="ml-2">
+                                {totalMessages}
+                            </Badge>
+                        )}
+                    </TabsTrigger>
+                    <TabsTrigger value="location" className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        Location Sharing
+                        {activeSharers > 0 && (
+                            <Badge variant="secondary" className="ml-2">
+                                {activeSharers}
+                            </Badge>
+                        )}
+                    </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="chat" className="space-y-6">
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div className="xl:col-span-2">
+                            <GroupChat vacationId={vacationId} />
+                        </div>
+
+                        <div className="space-y-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-lg">Quick Actions</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    <Button
+                                        variant="outline"
+                                        className="w-full justify-start"
+                                        onClick={handleInviteMembers}
+                                    >
+                                        <Users className="h-4 w-4 mr-2" />
+                                        Invite Members
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full justify-start"
+                                        onClick={() => {
+                                            // Navigate to itinerary
+                                            window.location.href = `/dashboard/itinerary/${vacationId}`
+                                        }}
+                                    >
+                                        <Calendar className="h-4 w-4 mr-2" />
+                                        View Itinerary
+                                    </Button>
+                                </CardContent>
+                            </Card>
+
+                            {/* Recent Notifications */}
+                            {Object.keys(notifications.notifications || {}).length > 0 && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-lg flex items-center gap-2">
+                                            <Bell className="h-5 w-5" />
+                                            Recent Notifications
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="space-y-2">
+                                            {Object.entries(notifications.notifications || {})
+                                                .slice(0, 3)
+                                                .map(([notificationId, notification]: [string, Notification]) => (
+                                                    <div
+                                                        key={notificationId}
+                                                        className={`p-3 rounded-lg border text-sm ${notification.read
+                                                            ? 'bg-muted/50'
+                                                            : 'bg-primary/5 border-primary/20'
+                                                            }`}
+                                                    >
+                                                        <p className="font-medium">{notification.title}</p>
+                                                        <p className="text-muted-foreground text-xs">
+                                                            {notification.message}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground mt-1">
+                                                            {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
+                                                        </p>
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
                         </div>
                     </div>
-                </div>
-
-                <div className="flex justify-end items-start gap-2">
-                    <Button variant="outline" size="sm">
-                        <Share2 className="h-4 w-4 mr-2" />
-                        Share
-                    </Button>
-                    <Button size="sm">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Invite
-                    </Button>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-8">
-                <Card className="md:col-span-4">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium flex items-center gap-1">
-                            <CalendarDays className="h-4 w-4" />
-                            Trip Details
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="py-1">
-                        <div className="space-y-3">
-                            <div>
-                                <div className="text-xs text-muted-foreground">Dates</div>
-                                <div className="font-medium">Dec 15 - Dec 22, 2023</div>
-                            </div>
-                            <div>
-                                <div className="text-xs text-muted-foreground">Destination</div>
-                                <div className="font-medium">Walt Disney World Resort</div>
-                            </div>
-                            <div>
-                                <div className="text-xs text-muted-foreground">Resort</div>
-                                <div className="font-medium">Disney&apos;s Contemporary Resort</div>
-                            </div>
-                        </div>
-                    </CardContent>
-                    <CardFooter className="pt-3 pb-2 border-t">
-                        <Link href={`/resorts/${vacationId}`} className="text-xs text-primary flex items-center">
-                            View Resort Details
-                            <ArrowRight className="h-3 w-3 ml-1" />
-                        </Link>
-                    </CardFooter>
-                </Card>
-
-                <Card className="md:col-span-4">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            Trip Countdown
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="py-1 flex items-center justify-center">
-                        <div className="text-center">
-                            <div className="text-4xl font-bold">14</div>
-                            <p className="text-muted-foreground">Days until your trip</p>
-                        </div>
-                    </CardContent>
-                    <CardFooter className="pt-3 pb-2 border-t">
-                        <Link href={`/planning/${vacationId}`} className="text-xs text-primary flex items-center">
-                            View Trip Planner
-                            <ArrowRight className="h-3 w-3 ml-1" />
-                        </Link>
-                    </CardFooter>
-                </Card>
-
-                <Card className="md:col-span-4">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium flex items-center gap-1">
-                            <Map className="h-4 w-4" />
-                            Active Now
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="py-1">
-                        <div className="space-y-3">
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                    <Avatar className="h-6 w-6">
-                                        <AvatarImage src="/app/user1.jpg" />
-                                        <AvatarFallback>JD</AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-sm">John Doe</span>
-                                </div>
-                                <Badge variant="outline" className="text-xs h-5 px-1.5 bg-green-500/10 text-green-500 hover:bg-green-500/20">Online</Badge>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                    <Avatar className="h-6 w-6">
-                                        <AvatarImage src="/app/user2.jpg" />
-                                        <AvatarFallback>JS</AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-sm">Jane Smith</span>
-                                </div>
-                                <Badge variant="outline" className="text-xs h-5 px-1.5 bg-green-500/10 text-green-500 hover:bg-green-500/20">Online</Badge>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                    <Avatar className="h-6 w-6">
-                                        <AvatarImage src="/app/user3.jpg" />
-                                        <AvatarFallback>AJ</AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-sm">Alex Johnson</span>
-                                </div>
-                                <Badge variant="outline" className="text-xs h-5 px-1.5 bg-muted text-muted-foreground">Offline</Badge>
-                            </div>
-                        </div>
-                    </CardContent>
-                    <CardFooter className="pt-3 pb-2 border-t">
-                        <Link href="#messaging" className="text-xs text-primary flex items-center">
-                            Send Message
-                            <ArrowRight className="h-3 w-3 ml-1" />
-                        </Link>
-                    </CardFooter>
-                </Card>
-            </div>
-
-            <Tabs defaultValue="party" className="space-y-6">
-                <div className="border-b">
-                    <TabsList className="w-full justify-start rounded-none border-b-0 px-0">
-                        <TabsTrigger
-                            value="party"
-                            className="py-3 px-4 relative data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none border-0"
-                            data-state="active"
-                        >
-                            <Users className="h-4 w-4 mr-2" />
-                            <span>Party</span>
-                            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary data-[state=inactive]:opacity-0 transition-opacity" data-state="active" />
-                        </TabsTrigger>
-
-                        <TabsTrigger
-                            value="messaging"
-                            className="py-3 px-4 relative data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none border-0"
-                            id="messaging"
-                        >
-                            <MessageSquare className="h-4 w-4 mr-2" />
-                            <span>Messaging</span>
-                            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary data-[state=inactive]:opacity-0 transition-opacity" data-state="inactive" />
-                        </TabsTrigger>
-
-                        <TabsTrigger
-                            value="location"
-                            className="py-3 px-4 relative data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none border-0"
-                        >
-                            <MapPin className="h-4 w-4 mr-2" />
-                            <span>Location</span>
-                            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary data-[state=inactive]:opacity-0 transition-opacity" data-state="inactive" />
-                        </TabsTrigger>
-
-                        <TabsTrigger
-                            value="planning"
-                            className="py-3 px-4 relative data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none border-0"
-                        >
-                            <Calendar className="h-4 w-4 mr-2" />
-                            <span>Planning</span>
-                            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary data-[state=inactive]:opacity-0 transition-opacity" data-state="inactive" />
-                        </TabsTrigger>
-                    </TabsList>
-                </div>
-
-                <TabsContent value="party" className="space-y-6 mt-0">
-                    <Suspense fallback={<VacationPartyFallback />}>
-                        <VacationParty vacationId={vacationId} />
-                    </Suspense>
                 </TabsContent>
 
-                <TabsContent value="messaging" className="space-y-6 mt-0">
-                    <Suspense fallback={<MessagingFallback />}>
-                        <PartyMessaging vacationId={vacationId} />
-                    </Suspense>
-                </TabsContent>
+                <TabsContent value="location" className="space-y-6">
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div className="xl:col-span-2">
+                            <LocationSharing vacationId={vacationId} />
+                        </div>
 
-                <TabsContent value="location" className="space-y-6 mt-0">
-                    <Suspense fallback={<LocationSharingFallback />}>
-                        <LocationSharing vacationId={vacationId} />
-                    </Suspense>
-                </TabsContent>
-
-                <TabsContent value="planning" className="space-y-6 mt-0">
-                    <Suspense fallback={<CollaborativePlanningFallback />}>
-                        <CollaborativeItinerary vacationId={vacationId} />
-                    </Suspense>
+                        <div className="space-y-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-lg">Location Tips</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3 text-sm">
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0" />
+                                        <p>Enable location sharing to let your group know where you are</p>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
+                                        <p>Use the emergency button if you need immediate assistance</p>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
+                                        <p>Your location is only shared with your vacation group</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
                 </TabsContent>
             </Tabs>
         </div>
-    )
-}
-
-// Fallback components
-function VacationPartyFallback() {
-    return (
-        <Card className="w-full">
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <div>
-                        <div className="h-6 w-40 bg-muted rounded animate-pulse mb-2"></div>
-                        <div className="h-4 w-64 bg-muted rounded animate-pulse"></div>
-                    </div>
-                    <div className="flex gap-2">
-                        <div className="h-8 w-24 bg-muted rounded animate-pulse"></div>
-                        <div className="h-8 w-24 bg-muted rounded animate-pulse"></div>
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <div className="h-[300px] bg-muted rounded animate-pulse"></div>
-            </CardContent>
-        </Card>
-    )
-}
-
-function MessagingFallback() {
-    return (
-        <Card className="w-full">
-            <CardHeader>
-                <div className="h-6 w-40 bg-muted rounded animate-pulse mb-2"></div>
-                <div className="h-4 w-64 bg-muted rounded animate-pulse"></div>
-            </CardHeader>
-            <CardContent>
-                <div className="h-[400px] bg-muted rounded animate-pulse"></div>
-            </CardContent>
-        </Card>
-    )
-}
-
-function LocationSharingFallback() {
-    return (
-        <Card className="w-full">
-            <CardHeader>
-                <div className="h-6 w-40 bg-muted rounded animate-pulse mb-2"></div>
-                <div className="h-4 w-64 bg-muted rounded animate-pulse"></div>
-            </CardHeader>
-            <CardContent>
-                <div className="h-[300px] bg-muted rounded animate-pulse"></div>
-            </CardContent>
-        </Card>
-    )
-}
-
-function CollaborativePlanningFallback() {
-    return (
-        <Card className="w-full">
-            <CardHeader>
-                <div className="h-6 w-40 bg-muted rounded animate-pulse mb-2"></div>
-                <div className="h-4 w-64 bg-muted rounded animate-pulse"></div>
-            </CardHeader>
-            <CardContent>
-                <div className="h-[300px] bg-muted rounded animate-pulse"></div>
-            </CardContent>
-        </Card>
     )
 }

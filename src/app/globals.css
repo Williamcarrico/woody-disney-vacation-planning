@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -263,6 +262,22 @@
     100% {
       transform: rotate(var(--angle)) translateX(-500px);
       opacity: 0;
+    }
+  }
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(calc(-100% - var(--gap)));
+    }
+  }
+  @keyframes marquee-vertical {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(calc(-100% - var(--gap)));
     }
   }
 }
@@ -777,6 +792,104 @@
   100% {
     background-position: 0% 0%;
   }
+}
+
+/* Loading spinner utility */
+.spinner {
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+}
+
+/* 3D Transform utilities */
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Theme-based gradient backgrounds */
+.bg-gradient-orb-night-1 {
+  background: radial-gradient(circle, rgba(147, 51, 234, 0.3), transparent);
+}
+
+.bg-gradient-orb-day-1 {
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.2), transparent);
+}
+
+.bg-gradient-orb-night-2 {
+  background: radial-gradient(circle, rgba(236, 72, 153, 0.3), transparent);
+}
+
+.bg-gradient-orb-day-2 {
+  background: radial-gradient(circle, rgba(251, 146, 60, 0.2), transparent);
+}
+
+/* Shine Border Component Styles */
+.shine-border {
+  background-size: 300% 300%;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.shine-border[data-border-width="1"] {
+  padding: 1px;
+}
+.shine-border[data-border-width="2"] {
+  padding: 2px;
+}
+.shine-border[data-border-width="3"] {
+  padding: 3px;
+}
+.shine-border[data-border-width="4"] {
+  padding: 4px;
+}
+.shine-border[data-border-width="5"] {
+  padding: 5px;
+}
+
+.shine-border[data-shine-color="#000000"] {
+  background-image: radial-gradient(
+    transparent,
+    transparent,
+    #000000,
+    transparent,
+    transparent
+  );
+}
+
+/* Warp Background Component Styles */
+.warp-beam {
+  left: var(--beam-x);
+  width: var(--beam-width);
+  aspect-ratio: calc(1 / var(--beam-aspect-ratio));
+  background: linear-gradient(hsl(var(--beam-hue) 80% 60%), transparent);
+}
+
+.warp-container {
+  perspective: var(--warp-perspective);
+}
+
+.warp-grid {
+  background-size: var(--warp-beam-size) var(--warp-beam-size);
+  background: linear-gradient(
+        var(--warp-grid-color) 0 1px,
+        transparent 1px var(--warp-beam-size)
+      )
+      50% -0.5px / var(--warp-beam-size) var(--warp-beam-size),
+    linear-gradient(
+        90deg,
+        var(--warp-grid-color) 0 1px,
+        transparent 1px var(--warp-beam-size)
+      )
+      50% 50% / var(--warp-beam-size) var(--warp-beam-size);
 }
 
 /* Continue with existing styles... */

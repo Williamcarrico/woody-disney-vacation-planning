@@ -125,7 +125,7 @@ export function ParkExperienceSettings() {
                                 </SelectContent>
                             </Select>
                             <p className="text-xs text-muted-foreground">
-                                We'll suggest breaks in your itinerary based on this preference
+                                We&apos;ll suggest breaks in your itinerary based on this preference
                             </p>
                         </div>
                     </div>

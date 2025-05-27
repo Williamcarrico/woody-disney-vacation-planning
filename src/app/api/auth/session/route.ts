@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSessionCookie, revokeSessionCookie, rotateSessionToken } from '@/lib/firebase/auth-session'
+import { createSessionCookie, revokeSessionCookie, rotateSessionToken } from '@/lib/firebase/auth-session-server'
 
 // Create a session (after successful login)
 export async function POST(request: NextRequest) {

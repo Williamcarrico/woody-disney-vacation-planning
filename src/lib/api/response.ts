@@ -12,7 +12,7 @@ import { NextResponse } from 'next/server'
  *
  * @template T - The type of data returned in the response
  */
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
     /** Indicates whether the request was successful */
     success: boolean
     /** The data returned by the API (only present in successful responses) */

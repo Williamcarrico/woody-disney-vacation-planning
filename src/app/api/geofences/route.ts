@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
-import { geofences, NewGeofence, Geofence } from '@/db/schema/locations'
+import { geofences, NewGeofence } from '@/db/schema/locations'
 import { eq, and } from 'drizzle-orm'
 
 export async function GET(request: NextRequest) {
@@ -26,7 +26,12 @@ export async function GET(request: NextRequest) {
         }
 
         if (type) {
-            conditions.push(eq(geofences.type, type as any))
+            // Validate type is a valid geofence type
+            const validTypes = ['attraction', 'meeting', 'safety', 'custom', 'directional', 'altitude'] as const
+            type GeofenceType = typeof validTypes[number]
+            if (validTypes.includes(type as GeofenceType)) {
+                conditions.push(eq(geofences.type, type as GeofenceType))
+            }
         }
 
         if (isActive !== null) {

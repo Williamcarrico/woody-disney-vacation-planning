@@ -19,6 +19,30 @@ interface PerformanceSettings {
     lowEndDevice: boolean
 }
 
+// Type for WebGL rendering info (compatible with Three.js)
+interface WebGLInfo {
+    render: {
+        triangles: number
+        calls: number
+    }
+    memory?: {
+        geometries: number
+        textures: number
+        materials?: number // Optional to match Three.js actual structure
+    }
+}
+
+// Type for Three.js WebGL renderer
+interface ThreeWebGLRenderer {
+    info: WebGLInfo
+    getParameter?: (param: number) => string
+}
+
+// Extended Navigator interface for device memory
+interface ExtendedNavigator extends Navigator {
+    deviceMemory?: number
+}
+
 export function use3DPerformance(settings: Partial<PerformanceSettings> = {}) {
     const {
         enableAutoOptimization = true,
@@ -36,8 +60,9 @@ export function use3DPerformance(settings: Partial<PerformanceSettings> = {}) {
         qualityLevel: 'high'
     })
 
-    const [frameCount, setFrameCount] = useState(0)
     const [lastTime, setLastTime] = useState(performance.now())
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [frameCount, setFrameCount] = useState(0)
 
     // Detect low-end devices
     const detectLowEndDevice = useCallback(() => {
@@ -46,8 +71,10 @@ export function use3DPerformance(settings: Partial<PerformanceSettings> = {}) {
 
         if (!gl) return true
 
-        const renderer = gl.getParameter(gl.RENDERER) || ''
-        const vendor = gl.getParameter(gl.VENDOR) || ''
+        // Type assertion for WebGL context
+        const webglContext = gl as WebGLRenderingContext
+        const renderer = webglContext.getParameter(webglContext.RENDERER) || ''
+        const vendor = webglContext.getParameter(webglContext.VENDOR) || ''
 
         // Check for known low-end GPU patterns
         const lowEndPatterns = [
@@ -66,14 +93,15 @@ export function use3DPerformance(settings: Partial<PerformanceSettings> = {}) {
         // Check hardware concurrency (CPU cores)
         const lowCoreCount = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4
 
-        // Check memory
-        const lowMemory = (navigator as any).deviceMemory && (navigator as any).deviceMemory <= 4
+        // Check memory with proper typing
+        const extendedNavigator = navigator as ExtendedNavigator
+        const lowMemory = extendedNavigator.deviceMemory && extendedNavigator.deviceMemory <= 4
 
         return isLowEndGPU || lowCoreCount || lowMemory || lowEndDevice
     }, [lowEndDevice])
 
     // Performance monitoring
-    const updateMetrics = useCallback((gl: any, info: any) => {
+    const updateMetrics = useCallback((gl: ThreeWebGLRenderer, info: WebGLInfo) => {
         const currentTime = performance.now()
         const deltaTime = currentTime - lastTime
 
@@ -88,10 +116,10 @@ export function use3DPerformance(settings: Partial<PerformanceSettings> = {}) {
 
                 // Estimate memory usage (approximate)
                 const memoryUsage = (
-                    info.memory?.geometries * 100 +
-                    info.memory?.textures * 500 +
-                    info.memory?.materials * 50
-                ) || 0
+                    (info.memory?.geometries || 0) * 100 +
+                    (info.memory?.textures || 0) * 500 +
+                    (info.memory?.materials || 0) * 50
+                )
 
                 const isLowPerformance = fps < targetFPS || triangles > maxTriangles
 
@@ -214,13 +242,13 @@ export function use3DPerformance(settings: Partial<PerformanceSettings> = {}) {
 
 // Hook for Three.js integration
 export function useThree3DPerformance(settings?: Partial<PerformanceSettings>) {
-    const { gl, scene, camera } = useThree()
+    const { gl } = useThree()
     const performance = use3DPerformance(settings)
 
     useEffect(() => {
         const handleFrame = () => {
             if (gl && gl.info) {
-                performance.updateMetrics(gl, gl.info)
+                performance.updateMetrics(gl as unknown as ThreeWebGLRenderer, gl.info as WebGLInfo)
             }
         }
 

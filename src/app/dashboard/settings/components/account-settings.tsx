@@ -93,7 +93,10 @@ export function AccountSettings() {
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         <div className="flex flex-col md:flex-row gap-8">
                             <div className="flex flex-col items-center space-y-4">
-                                <Avatar className="h-24 w-24 border-4 border-primary/20 animate-pulse-slow">
+                                <Avatar
+                                    className="h-24 w-24 animate-pulse-slow"
+                                    style={{ border: '4px solid hsl(var(--primary) / 0.2)' }}
+                                >
                                     <AvatarImage src="/images/user-avatar.jpg" alt="User avatar" />
                                     <AvatarFallback className="bg-primary/20 text-primary font-bold text-2xl">
                                         {defaultValues.name?.split(' ').map(n => n[0]).join('')}

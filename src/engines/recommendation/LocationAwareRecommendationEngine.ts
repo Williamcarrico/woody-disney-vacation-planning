@@ -1,5 +1,4 @@
-import { UserLocation, GeofenceAlert } from '@/db/schema/locations'
-import { geofencingService } from '@/lib/services/geofencing'
+import { UserLocation } from '@/db/schema/locations'
 
 interface PartyMember {
     id: string
@@ -47,6 +46,36 @@ interface WeatherCondition {
     uvIndex: number
 }
 
+interface ShowData {
+    id: string
+    name: string
+    time: Date
+    location: { lat: number; lng: number }
+    duration: number
+    type: string
+}
+
+interface RestArea {
+    name: string
+    coordinates: { lat: number; lng: number }
+    type: string
+}
+
+interface MeetingPoint {
+    point: {
+        name: string
+        coordinates: { lat: number; lng: number }
+        type: string
+    }
+    partySpread: number
+    maxWalkTime: number
+}
+
+interface PhotoData {
+    attraction: Attraction
+    photoLocations: string[]
+}
+
 interface Recommendation {
     id: string
     type: 'attraction' | 'dining' | 'photo' | 'rest' | 'show' | 'shopping' | 'meeting'
@@ -58,7 +87,7 @@ interface Recommendation {
     walkingTime: number
     distanceFromUser: number
     reasons: string[]
-    data: any
+    data: Attraction | DiningOption | ShowData | RestArea | MeetingPoint | PhotoData
     expiresAt?: Date
     weatherDependent?: boolean
 }
@@ -467,11 +496,13 @@ export class LocationAwareRecommendationEngine {
 
     // Helper methods
     private getPartyCenter(partyMembers: PartyMember[]): { lat: number; lng: number } | null {
-        const locatedMembers = partyMembers.filter(member => member.currentLocation)
+        const locatedMembers = partyMembers.filter((member): member is PartyMember & { currentLocation: UserLocation } =>
+            member.currentLocation !== undefined
+        )
         if (locatedMembers.length === 0) return null
 
-        const avgLat = locatedMembers.reduce((sum, member) => sum + member.currentLocation!.latitude, 0) / locatedMembers.length
-        const avgLng = locatedMembers.reduce((sum, member) => sum + member.currentLocation!.longitude, 0) / locatedMembers.length
+        const avgLat = locatedMembers.reduce((sum, member) => sum + member.currentLocation.latitude, 0) / locatedMembers.length
+        const avgLng = locatedMembers.reduce((sum, member) => sum + member.currentLocation.longitude, 0) / locatedMembers.length
 
         return { lat: avgLat, lng: avgLng }
     }
@@ -505,6 +536,14 @@ export class LocationAwareRecommendationEngine {
 
         if (attraction.type === 'family' || attraction.type === 'all-ages') {
             score += 0.2
+        }
+
+        // Adjust score based on party composition
+        if (hasChildren && (attraction.type === 'thrill' || attraction.type === 'intense')) {
+            score -= 0.3
+        }
+        if (hasAdults && !hasChildren && attraction.type === 'kiddie') {
+            score -= 0.2
         }
 
         // Height requirements
@@ -716,7 +755,7 @@ export class LocationAwareRecommendationEngine {
         return new Date(currentTime.getTime() + expirationMinutes * 60 * 1000)
     }
 
-    private calculateShowSuitability(show: any, partyMembers: PartyMember[], timeUntilShow: number): number {
+    private calculateShowSuitability(show: ShowData, partyMembers: PartyMember[], timeUntilShow: number): number {
         let score = 0.7 // Base score for shows
 
         // Timing appropriateness
