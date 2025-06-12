@@ -13,6 +13,7 @@
     "migrate:resorts": "node -r ts-node/register scripts/migrate-resorts.ts",
     "cache:clear": "node -r ts-node/register scripts/clear-cache.ts",
     "seed:parks": "node -r ts-node/register src/scripts/seed-parks-data.ts",
+    "seed:animal-kingdom": "node scripts/seed-animal-kingdom.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --coverage",
