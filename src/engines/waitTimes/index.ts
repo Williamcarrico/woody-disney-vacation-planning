@@ -1,7 +1,18 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
-import pLimit from 'p-limit'
+import {
+    collection,
+    getDocs,
+    query,
+    where,
+    orderBy,
+    limit,
+    Timestamp
+} from 'firebase/firestore';
+import { firestore } from '@/lib/firebase/firebase.config';
 import EventEmitter from 'events'
-import "server-only"
+import {
+    firestoreToWaitTimeRecord,
+    isValidWaitTimeRecord
+} from '@/lib/schemas/wait-times-types'
 
 // =========================================================================================
 // TYPES / INTERFACES
@@ -23,6 +34,7 @@ interface AttractionWaitTime {
     name: string
     waitMinutes: number
     lastUpdated: string
+    status?: string
 }
 
 interface PredictedWaitTime {
@@ -51,36 +63,36 @@ interface AnomalyDetection {
     confidence: number
 }
 
-interface AttractionMeta {
-    id: string
-    name: string
-    latitude: number
-    longitude: number
-    thrillLevel?: number
-}
 
-interface RawWaitTimeResponse {
+
+interface ThemeParksLiveDataItem {
     id: string
     name: string
-    lastUpdated: string
+    entityType: string
+    status?: string
+    lastUpdated?: string
     queue?: {
         STANDBY?: {
-            waitTime: number
+            waitTime: number | null
         }
     }
 }
 
-// Database record types
-interface HistoricalWaitTimeRecord {
-    timestamp: string
-    waitMinutes: number
+interface ThemeParksApiSuccessResponse {
+    success: boolean
+    data: {
+        liveData: ThemeParksLiveDataItem[]
+    }
 }
 
-interface LiveWaitTimeRecord {
-    timestamp: string
-    waitMinutes: number
-    attractionId: string
-}
+// Firebase collection names
+const COLLECTIONS = {
+    HISTORICAL_WAIT_TIMES: 'historicalWaitTimes',
+    WAIT_TIMES: 'waitTimes',
+    ATTRACTIONS: 'attractions'
+} as const;
+
+
 
 // =========================================================================================
 // PUBLIC API (Exported Functions)
@@ -121,6 +133,19 @@ export async function predictWaitTime({
     const historical = await getHistoricalWaitTimes({ attractionId })
     const liveSample = await getLiveSample({ attractionId })
 
+    if (liveSample.length === 0) {
+        // If no live data, use historical average
+        const emaHistorical = exponentialMovingAverage(historical
+            .filter(d => isSameDayOfWeek(d.timestamp, target))
+            .map(d => d.waitMinutes))
+
+        return {
+            attractionId,
+            predictedMinutes: Math.round(emaHistorical),
+            confidence: 0.5
+        }
+    }
+
     const emaLive = exponentialMovingAverage(liveSample.map(d => d.waitMinutes))
     const emaHistorical = exponentialMovingAverage(historical
         .filter(d => isSameDayOfWeek(d.timestamp, target))
@@ -133,7 +158,11 @@ export async function predictWaitTime({
 
     const lastLiveSample = liveSample.at(-1)
     if (!lastLiveSample) {
-        throw new Error(`No live sample data available for attraction ${attractionId}`)
+        return {
+            attractionId,
+            predictedMinutes: Math.round(basePrediction),
+            confidence: 0.6
+        }
     }
 
     const anomaly = detectAnomaly(basePrediction, lastLiveSample.waitMinutes)
@@ -147,7 +176,7 @@ export async function predictWaitTime({
 
 /**
  * Subscribe to real-time wait-time updates for a particular park. Utilises an
- * internal event bus and optionally a Supabase real-time channel when available.
+ * internal event bus and optionally Firebase real-time listeners when available.
  * Returns an unsubscribe function.
  */
 export function onWaitTimesUpdate(
@@ -175,102 +204,67 @@ async function fetchWaitTimesFromApi({
     parkId,
     signal
 }: { parkId: string; signal?: AbortSignal }): Promise<AttractionWaitTime[]> {
-    const attractions = await getAttractionsForPark(parkId)
-    const limit = pLimit(CONCURRENT_REQUEST_LIMIT)
-
-    const results = await Promise.allSettled(
-        attractions.map(attraction =>
-            limit(() => safeFetchWaitTime({ attractionId: attraction.id, signal }))
-        )
-    )
-
-    return results
-        .flatMap(r => (r.status === 'fulfilled' ? [r.value] : []))
-        .sort((a, b) => a.name.localeCompare(b.name))
-}
-
-async function safeFetchWaitTime({
-    attractionId,
-    signal
-}: {
-    attractionId: string
-    signal?: AbortSignal
-}): Promise<AttractionWaitTime> {
     try {
-        const url = `${WAIT_TIME_API_BASE}/attractions/${attractionId}/wait`
+        // Use the internal API route that properly integrates with themeparks.wiki
+        const url = `/api/parks/${parkId}?entity=live`;
+
         const res = await fetch(url, {
             headers: {
                 Accept: 'application/json',
-                'x-api-key': WAIT_TIME_API_KEY
             },
             next: { revalidate: CACHE_TTL_MS / 1000 },
             signal
         })
 
-        if (!res.ok) throw new Error(`Failed wait-time fetch: ${res.status}`)
-
-        const json = await res.json()
-        // Validate the response structure before transforming
-        if (!isValidRawWaitTimeResponse(json)) {
-            throw new Error('Invalid wait time response format')
+        if (!res.ok) {
+            throw new Error(`Failed wait-time fetch: ${res.status}`)
         }
-        return transformRawWaitTime(json)
+
+        const json: unknown = await res.json()
+
+        // Type guard to validate the response structure
+        if (!isThemeParksApiResponse(json)) {
+            throw new Error('Invalid API response format')
+        }
+
+        // Transform the response to our expected format
+        return json.data.liveData
+            .filter((item: ThemeParksLiveDataItem) => item.entityType === 'ATTRACTION')
+            .map((item: ThemeParksLiveDataItem) => transformThemeParksResponse(item))
+            .filter((item: AttractionWaitTime) => item.waitMinutes >= 0)
+            .sort((a: AttractionWaitTime, b: AttractionWaitTime) => a.name.localeCompare(b.name))
+
     } catch (error) {
-        console.error('waitTimes.safeFetchWaitTime', { attractionId, error })
-        return {
-            attractionId,
-            name: 'Unknown Attraction',
-            waitMinutes: -1,
-            lastUpdated: new Date().toISOString()
-        }
+        console.error('waitTimes.fetchWaitTimesFromApi', { parkId, error })
+        // Return empty array instead of throwing to allow graceful degradation
+        return []
     }
 }
 
-function isValidRawWaitTimeResponse(data: unknown): data is RawWaitTimeResponse {
+function isThemeParksApiResponse(data: unknown): data is ThemeParksApiSuccessResponse {
+    if (typeof data !== 'object' || data === null) {
+        return false;
+    }
+
+    const obj = data as Record<string, unknown>;
     return (
-        typeof data === 'object' &&
-        data !== null &&
-        'id' in data &&
-        'name' in data &&
-        'lastUpdated' in data &&
-        typeof (data as Record<string, unknown>).id === 'string' &&
-        typeof (data as Record<string, unknown>).name === 'string' &&
-        typeof (data as Record<string, unknown>).lastUpdated === 'string'
-    )
+        typeof obj.success === 'boolean' &&
+        obj.success === true &&
+        typeof obj.data === 'object' &&
+        obj.data !== null &&
+        Array.isArray((obj.data as Record<string, unknown>).liveData)
+    );
 }
 
-function transformRawWaitTime(raw: RawWaitTimeResponse): AttractionWaitTime {
+function transformThemeParksResponse(item: ThemeParksLiveDataItem): AttractionWaitTime {
+    const waitTime = item.queue?.STANDBY?.waitTime ?? -1;
     return {
-        attractionId: raw.id,
-        name: raw.name,
-        waitMinutes: raw.queue?.STANDBY?.waitTime ?? -1,
-        lastUpdated: raw.lastUpdated
+        attractionId: item.id,
+        name: item.name,
+        waitMinutes: waitTime,
+        lastUpdated: item.lastUpdated || new Date().toISOString(),
+        status: item.status || 'CLOSED'
     }
-}
-
-async function getAttractionsForPark(parkId: string): Promise<AttractionMeta[]> {
-    const key = `attractions:${parkId}`
-    const cached = systemCache.get<AttractionMeta[]>(key)
-    if (cached) return cached
-
-    const res = await fetch(`${WAIT_TIME_API_BASE}/parks/${parkId}/attractions`, {
-        headers: {
-            Accept: 'application/json',
-            'x-api-key': WAIT_TIME_API_KEY
-        },
-        next: { revalidate: 60 * 60 } // one hour
-    })
-    if (!res.ok) throw new Error('Unable to fetch attractions list')
-
-    const data = await res.json()
-    // Validate that the response is an array
-    if (!Array.isArray(data)) {
-        throw new Error('Expected array of attractions from API')
-    }
-
-    const typedData = data as AttractionMeta[]
-    systemCache.set(key, typedData, 60 * 60)
-    return typedData
 }
 
 async function getHistoricalWaitTimes({
@@ -282,24 +276,29 @@ async function getHistoricalWaitTimes({
     const cached = systemCache.get<HistoricalWaitSample[]>(key)
     if (cached) return cached
 
-    const { data, error } = await supabase
-        .from('historical_wait_times')
-        .select('timestamp, waitMinutes')
-        .eq('attractionId', attractionId)
-        .order('timestamp', { ascending: true })
-        .limit(HISTORICAL_SAMPLE_LIMIT)
-        .returns<HistoricalWaitTimeRecord[]>()
+    try {
+        const historicalQuery = query(
+            collection(firestore, COLLECTIONS.HISTORICAL_WAIT_TIMES),
+            where('attractionId', '==', attractionId),
+            orderBy('timestamp', 'asc'),
+            limit(HISTORICAL_SAMPLE_LIMIT)
+        );
 
-    if (error) throw error
-    if (!data) return []
+        const historicalSnapshot = await getDocs(historicalQuery);
+        const data = historicalSnapshot.docs.map(doc => doc.data());
 
-    const parsed = data.map(({ timestamp, waitMinutes }: HistoricalWaitTimeRecord) => ({
-        timestamp: new Date(timestamp),
-        waitMinutes
-    }))
+        if (!data || data.length === 0) return []
 
-    systemCache.set(key, parsed, 60 * 30) // cache 30 mins
-    return parsed
+        const parsed = data
+            .filter(isValidWaitTimeRecord)
+            .map(firestoreToWaitTimeRecord)
+
+        systemCache.set(key, parsed, 60 * 30) // cache 30 mins
+        return parsed
+    } catch (error) {
+        console.error('Error fetching historical wait times:', error);
+        return []
+    }
 }
 
 async function getLiveSample({
@@ -309,63 +308,41 @@ async function getLiveSample({
 }): Promise<HistoricalWaitSample[]> {
     const now = new Date()
     const past = new Date(now.getTime() - 1000 * 60 * 60) // last hour
-    const { data, error } = await supabase
-        .from('live_wait_times')
-        .select('timestamp, waitMinutes')
-        .eq('attractionId', attractionId)
-        .gte('timestamp', past.toISOString())
-        .order('timestamp', { ascending: true })
-        .returns<Pick<LiveWaitTimeRecord, 'timestamp' | 'waitMinutes'>[]>()
 
-    if (error) throw error
-    if (!data) return []
+    try {
+        const liveQuery = query(
+            collection(firestore, COLLECTIONS.WAIT_TIMES),
+            where('attractionId', '==', attractionId),
+            where('timestamp', '>=', Timestamp.fromDate(past)),
+            orderBy('timestamp', 'asc')
+        );
 
-    return data.map((d: Pick<LiveWaitTimeRecord, 'timestamp' | 'waitMinutes'>) => ({
-        timestamp: new Date(d.timestamp),
-        waitMinutes: d.waitMinutes
-    }))
+        const liveSnapshot = await getDocs(liveQuery);
+        const data = liveSnapshot.docs.map(doc => doc.data());
+
+        if (!data || data.length === 0) return []
+
+        return data
+            .filter(isValidWaitTimeRecord)
+            .map(firestoreToWaitTimeRecord)
+    } catch (error) {
+        console.error('Error fetching live wait times:', error);
+        return []
+    }
 }
 
 function ensureRealtimeChannel(parkId: string) {
     if (realtimeChannels.has(parkId)) return
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return // realtime optional
 
-    const channel = supabase.channel(`waitTimes:${parkId}`)
-    channel.on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'live_wait_times' },
-        (payload: unknown) => {
-            // Type guard to ensure payload structure
-            if (
-                payload &&
-                typeof payload === 'object' &&
-                'new' in payload &&
-                payload.new &&
-                typeof payload.new === 'object'
-            ) {
-                const row = payload.new as LiveWaitTimeRecord
-                eventBus.emit('waitTimes:update', {
-                    parkId,
-                    data: [
-                        {
-                            attractionId: row.attractionId,
-                            name: '—',
-                            waitMinutes: row.waitMinutes,
-                            lastUpdated: row.timestamp
-                        }
-                    ]
-                })
-            }
-        }
-    )
-    channel.subscribe()
-    realtimeChannels.set(parkId, channel)
+    // Firebase realtime listeners can be implemented here using onSnapshot
+    // For now, using event bus only
+    realtimeChannels.set(parkId, true)
 }
 
 function teardownRealtimeChannel(parkId: string) {
     const channel = realtimeChannels.get(parkId)
     if (!channel) return
-    channel.unsubscribe()
+    // Firebase cleanup would go here
     realtimeChannels.delete(parkId)
 }
 
@@ -380,6 +357,7 @@ function exponentialMovingAverage(values: number[], alpha = 0.4): number {
 
 function weightedAverage(entries: { value: number; weight: number }[]): number {
     const totalWeight = entries.reduce((acc, e) => acc + e.weight, 0)
+    if (totalWeight === 0) return 0
     return entries.reduce((acc, e) => acc + (e.value * e.weight) / totalWeight, 0)
 }
 
@@ -398,10 +376,6 @@ function detectAnomaly(predicted: number, live: number): AnomalyDetection {
 // STATIC CONTENT / CONFIGURATION
 // =========================================================================================
 
-const WAIT_TIME_API_BASE = process.env.WAIT_TIME_API_BASE ?? 'https://api.themeparks.wiki'
-const WAIT_TIME_API_KEY = process.env.WAIT_TIME_API_KEY ?? ''
-
-const CONCURRENT_REQUEST_LIMIT = 4
 const CACHE_TTL_MS = 1000 * 30 // 30 seconds for live data
 const HISTORICAL_SAMPLE_LIMIT = 30 * 24 * 60 // 30 days @ 1-min
 const THRESHOLD_ANOMALY_MINUTES = 15
@@ -414,10 +388,6 @@ const waitTimeCache = new Map<string, CachedWaitTimes>()
 
 const eventBus = new EventEmitter()
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-const supabase: SupabaseClient = createClient(SUPABASE_URL ?? '', SUPABASE_ANON_KEY ?? '')
-
 // simple TTL cache implementation leveraging Map
 const systemCache = {
     get<T>(key: string): T | undefined {
@@ -427,13 +397,24 @@ const systemCache = {
             internalSystemCache.delete(key)
             return undefined
         }
+        // Type assertion is safe here because we control what goes into the cache
+        // and the generic T parameter ensures type consistency at call sites
         return entry.value as T
     },
-    set(key: string, value: unknown, ttlSeconds: number) {
+    set<T>(key: string, value: T, ttlSeconds: number) {
         internalSystemCache.set(key, { value, expiry: Date.now() + ttlSeconds * 1000 })
     }
 }
 
 const internalSystemCache = new Map<string, { value: unknown; expiry: number }>()
 
-const realtimeChannels = new Map<string, ReturnType<SupabaseClient['channel']>>()
+const realtimeChannels = new Map<string, boolean>()
+
+// Export types for external use
+export type {
+    AttractionWaitTime,
+    PredictedWaitTime,
+    WaitTimesUpdatePayload,
+    GetWaitTimesProps,
+    PredictWaitTimeProps
+}

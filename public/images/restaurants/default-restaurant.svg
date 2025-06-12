@@ -1,0 +1,52 @@
+<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8fafc;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="plateGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f1f5f9;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="300" fill="url(#bgGradient)"/>
+
+  <!-- Decorative border -->
+  <rect x="20" y="20" width="360" height="260" rx="12" fill="none" stroke="#d1d5db" stroke-width="2" opacity="0.5"/>
+
+  <!-- Main plate/dining icon -->
+  <circle cx="200" cy="150" r="60" fill="url(#plateGradient)" filter="url(#shadow)" stroke="#e5e7eb" stroke-width="2"/>
+
+  <!-- Fork and knife -->
+  <g transform="translate(170, 120)">
+    <!-- Fork -->
+    <rect x="0" y="0" width="3" height="40" fill="#6b7280" rx="1.5"/>
+    <rect x="-2" y="0" width="1" height="8" fill="#6b7280"/>
+    <rect x="0" y="0" width="1" height="8" fill="#6b7280"/>
+    <rect x="2" y="0" width="1" height="8" fill="#6b7280"/>
+    <rect x="4" y="0" width="1" height="8" fill="#6b7280"/>
+  </g>
+
+  <g transform="translate(227, 120)">
+    <!-- Knife -->
+    <rect x="0" y="0" width="3" height="40" fill="#6b7280" rx="1.5"/>
+    <polygon points="0,0 8,0 3,12" fill="#9ca3af"/>
+  </g>
+
+  <!-- Decorative stars -->
+  <g fill="#fbbf24" opacity="0.6">
+    <polygon points="100,80 102,86 108,86 103,90 105,96 100,92 95,96 97,90 92,86 98,86" />
+    <polygon points="320,100 322,106 328,106 323,110 325,116 320,112 315,116 317,110 312,106 318,106" />
+    <polygon points="80,220 82,226 88,226 83,230 85,236 80,232 75,236 77,230 72,226 78,226" />
+    <polygon points="340,200 342,206 348,206 343,210 345,216 340,212 335,216 337,210 332,206 338,206" />
+  </g>
+
+  <!-- Disney-style text -->
+  <text x="200" y="240" text-anchor="middle" font-family="serif" font-size="18" font-weight="bold" fill="#374151">Disney Dining</text>
+  <text x="200" y="260" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#6b7280">Experience the Magic</text>
+</svg>

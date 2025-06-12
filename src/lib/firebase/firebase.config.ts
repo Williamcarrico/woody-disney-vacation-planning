@@ -4,6 +4,7 @@ import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 import { getAnalytics, isSupported } from 'firebase/analytics'
 import { getDatabase } from 'firebase/database'
+import { getMessaging, isSupported as isMessagingSupported } from 'firebase/messaging'
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -23,6 +24,7 @@ const auth = getAuth(app)
 const storage = getStorage(app)
 const database = getDatabase(app)
 let analytics
+let messagingInstance
 
 // Check if analytics is supported in the current environment
 if (typeof window !== 'undefined') {
@@ -31,6 +33,15 @@ if (typeof window !== 'undefined') {
             analytics = getAnalytics(app)
         }
     })
+
+    // Check if messaging is supported in the current environment
+    isMessagingSupported().then((supported) => {
+        if (supported) {
+            messagingInstance = getMessaging(app)
+        }
+    }).catch((error) => {
+        console.warn('Firebase Messaging not supported:', error)
+    })
 }
 
-export { app, firestore, auth, storage, database, analytics }
+export { app, firestore, auth, storage, database, analytics, messagingInstance }

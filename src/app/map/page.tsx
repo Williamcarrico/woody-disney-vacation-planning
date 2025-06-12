@@ -259,9 +259,6 @@ export default function MapPageWrapper() {
 
             // Enhanced location data with additional context
             const enhancedLocationData = {
-                userId: MOCK_USER.id,
-                userName: MOCK_USER.name,
-                avatarUrl: MOCK_USER.avatar,
                 timestamp: new Date(),
                 accuracy: undefined as number | undefined,
                 altitude: undefined as number | undefined,
@@ -292,11 +289,29 @@ export default function MapPageWrapper() {
                 }
             }
 
+            // Prepare options for updateUserLocation service
+            const locationUpdateOptions = {
+                userId: MOCK_USER.id,
+                userName: MOCK_USER.name,
+                avatarUrl: MOCK_USER.avatar,
+                // TODO: Add actual vacationId when available from context/auth
+                // vacationId: currentVacationId
+            };
+
             // Update user location in the service with enhanced error handling
-            const updateSuccess = await updateUserLocation(location.lat, location.lng, enhancedLocationData);
+            const updateSuccess = await updateUserLocation(location.lat, location.lng, locationUpdateOptions);
 
             if (!updateSuccess) {
-                throw new Error('Location update service returned false');
+                const failureContext = {
+                    location,
+                    options: locationUpdateOptions,
+                    timestamp: new Date().toISOString(),
+                    userAgent: navigator.userAgent,
+                    online: navigator.onLine
+                };
+
+                console.error('Location update service returned false:', failureContext);
+                throw new Error('Location update service failed - check authentication and permissions');
             }
 
             // Create optimized user object for state management
@@ -407,7 +422,8 @@ export default function MapPageWrapper() {
                 geofencesCount: geofences.length,
                 batteryLevel,
                 isLowPowerMode,
-                updateCount: locationUpdateCount + 1
+                updateCount: locationUpdateCount + 1,
+                updateSuccess: true
             });
 
         } catch (error) {

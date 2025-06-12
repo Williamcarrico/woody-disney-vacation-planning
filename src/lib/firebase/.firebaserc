@@ -1,0 +1,16 @@
+{
+  "projects": {
+    "default": "woody-vacation-planning-tool",
+    "q": "woody-vacation-planning-tool"
+  },
+  "targets": {
+    "woody-vacation-planning-tool": {
+      "hosting": {
+        "default": [
+          "woody-vacation-planning-tool"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { InteractiveMap } from '@/components/maps/interactive-map';
+import { GoogleMapsProvider } from '@/components/maps/google-maps-provider';
 import { submitContactForm, ContactFormData } from '@/lib/firebase/contact';
 import {
     MessageCircle,
@@ -412,14 +413,16 @@ export default function ContactPage() {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
                     >
-                        {/* Replace GoogleMap with our new InteractiveMap component */}
-                        <InteractiveMap
-                            initialCenter={disneyWorldLocation}
-                            initialZoom={15}
-                            height="100%"
-                            width="100%"
-                            showSearch={true}
-                        />
+                        {/* Replace GoogleMap with our new InteractiveMap component wrapped in provider */}
+                        <GoogleMapsProvider>
+                            <InteractiveMap
+                                initialCenter={disneyWorldLocation}
+                                initialZoom={15}
+                                height="100%"
+                                width="100%"
+                                showSearch={true}
+                            />
+                        </GoogleMapsProvider>
 
                         {/* Decorative elements */}
                         <div className="absolute top-4 left-4 z-10 bg-card/80 backdrop-blur-md px-4 py-2 rounded-lg shadow-lg">

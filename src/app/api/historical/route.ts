@@ -1,4 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { database } from '@/lib/firebase/realtime-database';
+import { ref, query, orderByChild, startAt, endAt, get, set, push } from 'firebase/database';
+
+interface HistoricalWaitTimeRequest {
+    attractionId: string;
+    waitTime: number;
+    timestamp: string;
+    parkId?: string;
+}
+
+interface HistoryEntry {
+    waitTime: number;
+    timestamp: number;
+    date: string;
+    hour: number;
+    dayOfWeek: number;
+    parkId: string | null;
+}
+
+interface WaitTimeData {
+    timestamp: string;
+    waitTime: number;
+}
+
+interface Averages {
+    overall: number;
+    hourly: Record<string, number>;
+    daily: Record<string, number>;
+}
+
+interface HistoricalDataResponse {
+    attractionId: string;
+    startDate: string;
+    endDate: string;
+    waitTimes: WaitTimeData[];
+    averages: Averages;
+}
 
 // Mock historical data processing endpoint
 // In a real application, this would fetch from a database or external API
@@ -16,11 +53,20 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Mock data - in a real app, this would come from a database
-        // Generate random wait times for each hour between start and end dates
-        const mockData = generateMockHistoricalData(attractionId, startDate, endDate);
+        // Get historical data from Firebase
+        const historicalData = await getHistoricalWaitTimes(attractionId, startDate, endDate);
 
-        return NextResponse.json(mockData);
+        if (!historicalData || historicalData.waitTimes.length === 0) {
+            return NextResponse.json(
+                {
+                    error: 'No historical data available for this attraction in the specified date range',
+                    code: 'NO_DATA_AVAILABLE'
+                },
+                { status: 404 }
+            );
+        }
+
+        return NextResponse.json(historicalData);
     } catch (error) {
         console.error('Error processing historical data:', error);
         return NextResponse.json(
@@ -30,82 +76,212 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// Helper function to generate mock historical data
-function generateMockHistoricalData(attractionId: string, startDate?: string | null, endDate?: string | null) {
+export async function POST(request: NextRequest) {
+    try {
+        const body = await request.json() as unknown;
+        
+        // Type guard to validate the request body
+        if (!isHistoricalWaitTimeRequest(body)) {
+            return NextResponse.json(
+                { error: 'attractionId, waitTime, and timestamp are required' },
+                { status: 400 }
+            );
+        }
+
+        const { attractionId, waitTime, timestamp, parkId } = body;
+
+        // Store historical wait time data
+        await storeHistoricalWaitTime(attractionId, waitTime, new Date(timestamp), parkId);
+
+        return NextResponse.json(
+            { message: 'Historical wait time data stored successfully' },
+            { status: 201 }
+        );
+    } catch (error) {
+        console.error('Error storing historical data:', error);
+        return NextResponse.json(
+            { error: 'Failed to store historical data' },
+            { status: 500 }
+        );
+    }
+}
+
+// Type guard for request validation
+function isHistoricalWaitTimeRequest(body: unknown): body is HistoricalWaitTimeRequest {
+    return (
+        typeof body === 'object' &&
+        body !== null &&
+        'attractionId' in body &&
+        'waitTime' in body &&
+        'timestamp' in body &&
+        typeof (body as HistoricalWaitTimeRequest).attractionId === 'string' &&
+        typeof (body as HistoricalWaitTimeRequest).waitTime === 'number' &&
+        typeof (body as HistoricalWaitTimeRequest).timestamp === 'string'
+    );
+}
+
+// Store historical wait time data
+async function storeHistoricalWaitTime(
+    attractionId: string,
+    waitTime: number,
+    timestamp: Date,
+    parkId?: string
+): Promise<void> {
+    const historicalRef = ref(database, `historicalWaitTimes/${attractionId}`);
+    const entryRef = push(historicalRef);
+
+    const historyEntry = {
+        waitTime,
+        timestamp: timestamp.getTime(),
+        date: timestamp.toISOString().split('T')[0], // YYYY-MM-DD
+        hour: timestamp.getHours(),
+        dayOfWeek: timestamp.getDay(), // 0 = Sunday, 6 = Saturday
+        parkId: parkId || null
+    };
+
+    await set(entryRef, historyEntry);
+}
+
+// Get historical wait times from Firebase
+async function getHistoricalWaitTimes(
+    attractionId: string,
+    startDate?: string | null,
+    endDate?: string | null
+): Promise<HistoricalDataResponse> {
     // Default to last 30 days if dates not provided
     const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
 
-    const waitTimes = [];
-    const current = new Date(start);
+    const historicalRef = ref(database, `historicalWaitTimes/${attractionId}`);
 
-    // Base wait time depends on attraction popularity (using ID as a proxy)
-    const attractionPopularity = parseInt(attractionId.substring(attractionId.length - 3), 16) % 100;
-    const baseWaitTime = 15 + (attractionPopularity % 45); // 15-60 minute base wait
+    // Query data within the date range
+    const dataQuery = query(
+        historicalRef,
+        orderByChild('timestamp'),
+        startAt(start.getTime()),
+        endAt(end.getTime())
+    );
 
-    while (current <= end) {
-        const hour = current.getHours();
-        const day = current.getDay(); // 0 = Sunday, 6 = Saturday
+    const snapshot = await get(dataQuery);
 
-        // Wait times vary by hour and day
-        let hourlyFactor = 1.0;
-
-        // Peak hours (11am-2pm, 6pm-8pm)
-        if ((hour >= 11 && hour <= 14) || (hour >= 18 && hour <= 20)) {
-            hourlyFactor = 1.5;
-        }
-
-        // Early morning and late evening have shorter waits
-        if (hour < 10 || hour > 21) {
-            hourlyFactor = 0.5;
-        }
-
-        // Weekends have longer waits
-        const dayFactor = (day === 0 || day === 6) ? 1.3 : 1.0;
-
-        // Add some randomness
-        const randomFactor = 0.7 + (Math.random() * 0.6); // 0.7-1.3
-
-        const waitTime = Math.round(baseWaitTime * hourlyFactor * dayFactor * randomFactor);
-
-        waitTimes.push({
-            timestamp: new Date(current).toISOString(),
-            waitTime,
-        });
-
-        // Move to next hour
-        current.setHours(current.getHours() + 1);
+    if (!snapshot.exists()) {
+        return {
+            attractionId,
+            startDate: start.toISOString(),
+            endDate: end.toISOString(),
+            waitTimes: [],
+            averages: {
+                overall: 0,
+                hourly: {},
+                daily: {},
+            },
+        };
     }
 
-    // Generate hourly averages
-    const hourlyAverages: Record<string, number> = {};
-    for (let h = 9; h <= 21; h++) {
-        const hourData = waitTimes.filter(wt => new Date(wt.timestamp).getHours() === h);
-        if (hourData.length > 0) {
-            const sum = hourData.reduce((acc, curr) => acc + curr.waitTime, 0);
-            hourlyAverages[h.toString()] = Math.round(sum / hourData.length);
-        }
-    }
+    const data = snapshot.val() as Record<string, HistoryEntry>;
+    const waitTimes = Object.values(data).map((entry: HistoryEntry): WaitTimeData => ({
+        timestamp: new Date(entry.timestamp).toISOString(),
+        waitTime: entry.waitTime,
+    }));
 
-    // Generate daily averages
-    const dailyAverages: Record<string, number> = {};
-    for (let d = 0; d <= 6; d++) {
-        const dayData = waitTimes.filter(wt => new Date(wt.timestamp).getDay() === d);
-        if (dayData.length > 0) {
-            const sum = dayData.reduce((acc, curr) => acc + curr.waitTime, 0);
-            dailyAverages[d.toString()] = Math.round(sum / dayData.length);
-        }
-    }
+    // Calculate averages
+    const averages = calculateAverages(Object.values(data));
 
     return {
         attractionId,
         startDate: start.toISOString(),
         endDate: end.toISOString(),
         waitTimes,
-        averages: {
-            overall: Math.round(waitTimes.reduce((acc, curr) => acc + curr.waitTime, 0) / waitTimes.length),
-            hourly: hourlyAverages,
-            daily: dailyAverages,
-        },
+        averages,
     };
+}
+
+// Calculate hourly and daily averages from historical data
+function calculateAverages(data: HistoryEntry[]): Averages {
+    if (data.length === 0) {
+        return {
+            overall: 0,
+            hourly: {},
+            daily: {},
+        };
+    }
+
+    // Overall average
+    const overall = Math.round(
+        data.reduce((sum, entry) => sum + entry.waitTime, 0) / data.length
+    );
+
+    // Hourly averages (0-23)
+    const hourlyData: Record<number, number[]> = {};
+    const dailyData: Record<number, number[]> = {}; // 0 = Sunday, 6 = Saturday
+
+    data.forEach(entry => {
+        const hour = entry.hour;
+        const dayOfWeek = entry.dayOfWeek;
+
+        if (!hourlyData[hour]) hourlyData[hour] = [];
+        if (!dailyData[dayOfWeek]) dailyData[dayOfWeek] = [];
+
+        hourlyData[hour].push(entry.waitTime);
+        dailyData[dayOfWeek].push(entry.waitTime);
+    });
+
+    // Calculate hourly averages
+    const hourly: Record<string, number> = {};
+    Object.entries(hourlyData).forEach(([hour, times]) => {
+        hourly[hour] = Math.round(times.reduce((sum, time) => sum + time, 0) / times.length);
+    });
+
+    // Calculate daily averages
+    const daily: Record<string, number> = {};
+    Object.entries(dailyData).forEach(([day, times]) => {
+        daily[day] = Math.round(times.reduce((sum, time) => sum + time, 0) / times.length);
+    });
+
+    return {
+        overall,
+        hourly,
+        daily,
+    };
+}
+
+// Utility function to migrate from live wait times to historical data
+async function _archiveLiveWaitTimes() {
+    try {
+        const liveWaitTimesRef = ref(database, 'liveWaitTimes');
+        const snapshot = await get(liveWaitTimesRef);
+
+        if (!snapshot.exists()) {
+            return;
+        }
+
+        const liveData = snapshot.val() as Record<string, {
+            attractions?: Record<string, {
+                status: string;
+                standbyWait: number;
+            }>;
+        }>;
+        const now = new Date();
+
+        // Archive current wait times as historical data
+        const archivePromises = Object.entries(liveData).flatMap(([parkId, parkData]) => {
+            if (!parkData.attractions) return [];
+
+            return Object.entries(parkData.attractions).map(async ([attractionId, attractionData]) => {
+                if (attractionData.status === 'OPERATING' && attractionData.standbyWait > 0) {
+                    await storeHistoricalWaitTime(
+                        attractionId,
+                        attractionData.standbyWait,
+                        now,
+                        parkId
+                    );
+                }
+            });
+        });
+
+        await Promise.all(archivePromises);
+        console.log('Live wait times archived successfully');
+    } catch (error) {
+        console.error('Error archiving live wait times:', error);
+    }
 }

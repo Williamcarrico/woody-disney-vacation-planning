@@ -1,0 +1,61 @@
+{
+  "rules": {
+    "users": {
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId",
+        ".write": "auth != null && auth.uid == $userId"
+      }
+    },
+    "vacations": {
+      "$vacationId": {
+        ".read": "auth != null && root.child('vacations').child($vacationId).child('members').child(auth.uid).exists()",
+        ".write": "auth != null && root.child('vacations').child($vacationId).child('members').child(auth.uid).exists()",
+        "basic": {
+          ".validate": "newData.hasChildren(['name', 'description', 'destination', 'startDate', 'endDate', 'createdBy', 'createdAt', 'updatedAt'])"
+        },
+        "members": {
+          "$memberId": {
+            ".write": "auth != null && (auth.uid == $memberId || root.child('vacations').child($vacationId).child('members').child(auth.uid).child('permissions').child('inviteOthers').exists()) && newData.val() == true"
+          }
+        }
+      }
+    },
+    "groupMessages": {
+      "$vacationId": {
+        ".read": "auth != null && root.child('vacations').child($vacationId).child('members').child(auth.uid).exists()",
+        "$messageId": {
+          ".write": "auth != null && root.child('vacations').child($vacationId).child('members').child(auth.uid).exists() && auth.uid == newData.child('userId').val()",
+          ".validate": "newData.hasChildren(['userId', 'userName', 'content', 'timestamp', 'type'])"
+        }
+      }
+    },
+    "groupLocations": {
+      "$vacationId": {
+        ".read": "auth != null && root.child('vacations').child($vacationId).child('members').child(auth.uid).exists()",
+        "members": {
+          "$userId": {
+            ".write": "auth != null && auth.uid == $userId && root.child('vacations').child($vacationId).child('members').child(auth.uid).exists()"
+          }
+        },
+        "updates": {
+          "$updateId": {
+            ".write": "auth != null && root.child('vacations').child($vacationId).child('members').child(auth.uid).exists() && auth.uid == newData.child('userId').val()",
+            ".validate": "newData.hasChildren(['userId', 'userName', 'location', 'timestamp'])"
+          }
+        }
+      }
+    },
+    "liveWaitTimes": {
+      ".read": "auth != null",
+      ".write": "false"
+    },
+    "notifications": {
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId",
+        "$notificationId": {
+          ".write": "auth != null"
+        }
+      }
+    }
+  }
+}

@@ -111,16 +111,18 @@ export const Confetti = ConfettiComponent;
 
 interface ConfettiButtonProps extends ButtonProps {
   options?: ConfettiOptions &
-    ConfettiGlobalOptions & { canvas?: HTMLCanvasElement };
+  ConfettiGlobalOptions & { canvas?: HTMLCanvasElement };
   children?: React.ReactNode;
+  asChild?: boolean;
 }
 
 const ConfettiButtonComponent = ({
   options,
   children,
+  asChild = false,
   ...props
 }: ConfettiButtonProps) => {
-  const handleClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClick = async (event: React.MouseEvent<HTMLElement>) => {
     try {
       const rect = event.currentTarget.getBoundingClientRect();
       const x = rect.left + rect.width / 2;
@@ -136,6 +138,20 @@ const ConfettiButtonComponent = ({
       console.error("Confetti button error:", error);
     }
   };
+
+  // If asChild is true, we need to clone the child and add the click handler
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children, {
+      onClick: (event: React.MouseEvent<HTMLElement>) => {
+        // Call the original onClick if it exists
+        if (children.props.onClick) {
+          children.props.onClick(event);
+        }
+        // Then trigger confetti
+        handleClick(event);
+      },
+    });
+  }
 
   return (
     <Button onClick={handleClick} {...props}>

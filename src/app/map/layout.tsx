@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { GoogleMapsProvider } from '@/components/maps/google-maps-provider';
-import ReactQueryProvider from "@/providers/react-query-provider";
+import { ReactQueryProvider } from "@/providers";
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {

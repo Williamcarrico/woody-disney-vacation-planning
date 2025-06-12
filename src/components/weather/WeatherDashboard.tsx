@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -68,19 +68,31 @@ export default function WeatherDashboard({ className }: WeatherDashboardProps) {
     const [selectedLocation, setSelectedLocation] = useState<string | WeatherLocation>('Orlando, FL')
     const [units, setUnits] = useState<TemperatureUnit>('imperial')
     const [activeTab, setActiveTab] = useState('overview')
-    const [currentTime, setCurrentTime] = useState(new Date())
+    const [currentTime, setCurrentTime] = useState<string>('')
+    const [currentDate, setCurrentDate] = useState<string>('')
+    const [isClient, setIsClient] = useState(false)
 
     useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentTime(new Date())
-        }, 1000)
+        // Set client flag and initial time
+        setIsClient(true)
+
+        const updateTime = () => {
+            const now = new Date()
+            setCurrentTime(now.toLocaleTimeString())
+            setCurrentDate(now.toLocaleDateString())
+        }
+
+        // Set initial time
+        updateTime()
+
+        const timer = setInterval(updateTime, 1000)
 
         return () => clearInterval(timer)
     }, [])
 
-    const handleLocationChange = (location: string | WeatherLocation) => {
+    const handleLocationChange = useCallback((location: string | WeatherLocation) => {
         setSelectedLocation(location)
-    }
+    }, [])
 
     return (
         <div className={cn("relative min-h-screen overflow-hidden", className)}>
@@ -121,11 +133,11 @@ export default function WeatherDashboard({ className }: WeatherDashboardProps) {
                     <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4" />
-                            <span>{currentTime.toLocaleTimeString()}</span>
+                            <span>{isClient && currentTime ? currentTime : '--:--:--'}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4" />
-                            <span>{currentTime.toLocaleDateString()}</span>
+                            <span>{isClient && currentDate ? currentDate : '--/--/----'}</span>
                         </div>
                     </div>
                 </motion.div>

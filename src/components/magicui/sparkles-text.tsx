@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { CSSProperties, ReactElement, useEffect, useState } from "react";
+import { CSSProperties, ReactElement, useEffect, useState, useMemo, useRef } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -92,12 +92,23 @@ export const SparklesText: React.FC<SparklesTextProps> = ({
   ...props
 }) => {
   const [sparkles, setSparkles] = useState<Sparkle[]>([]);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Memoize colors to prevent unnecessary re-renders
+  const memoizedColors = useMemo(() => ({
+    first: colors.first,
+    second: colors.second
+  }), [colors.first, colors.second]);
+
+  // Stable reference to colors for use in interval
+  const colorsRef = useRef(memoizedColors);
+  colorsRef.current = memoizedColors;
 
   useEffect(() => {
     const generateStar = (): Sparkle => {
       const starX = `${Math.random() * 100}%`;
       const starY = `${Math.random() * 100}%`;
-      const color = Math.random() > 0.5 ? colors.first : colors.second;
+      const color = Math.random() > 0.5 ? colorsRef.current.first : colorsRef.current.second;
       const delay = Math.random() * 2;
       const scale = Math.random() * 1 + 0.3;
       const lifespan = Math.random() * 10 + 5;
@@ -122,11 +133,20 @@ export const SparklesText: React.FC<SparklesTextProps> = ({
       );
     };
 
-    initializeStars();
-    const interval = setInterval(updateStars, 100);
+    // Clear any existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
 
-    return () => clearInterval(interval);
-  }, [colors.first, colors.second, sparklesCount]);
+    initializeStars();
+    intervalRef.current = setInterval(updateStars, 100);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [sparklesCount]); // Remove colors from dependency array
 
   return (
     <div
@@ -134,8 +154,8 @@ export const SparklesText: React.FC<SparklesTextProps> = ({
       {...props}
       style={
         {
-          "--sparkles-first-color": `${colors.first}`,
-          "--sparkles-second-color": `${colors.second}`,
+          "--sparkles-first-color": `${memoizedColors.first}`,
+          "--sparkles-second-color": `${memoizedColors.second}`,
         } as CSSProperties
       }
     >

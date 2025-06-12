@@ -1,4 +1,16 @@
-import { createClient } from '@supabase/supabase-js';
+import {
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    where,
+    orderBy,
+    limit,
+    addDoc,
+    Timestamp
+} from 'firebase/firestore';
+import { firestore } from '@/lib/firebase/firebase.config';
 
 /**
  * Advanced Wait Time Analytics Engine
@@ -117,15 +129,15 @@ interface OptimizationRecommendation {
     };
 }
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing required Supabase environment variables');
-}
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Firebase collection names
+const COLLECTIONS = {
+    WAIT_TIMES: 'waitTimes',
+    HISTORICAL_WAIT_TIMES: 'historicalWaitTimes',
+    ATTRACTIONS: 'attractions',
+    PARKS: 'parks',
+    WEATHER_DATA: 'weatherData',
+    SPECIAL_EVENTS: 'specialEvents'
+} as const;
 
 // Machine Learning Models (simplified implementations)
 class WaitTimePredictionModel {
@@ -202,25 +214,27 @@ class WaitTimePredictionModel {
     async predictWaitTimes(attractionId: string, hoursAhead = 24): Promise<WaitTimePrediction | null> {
         try {
             // Fetch historical data
-            const { data: historicalData, error } = await supabase
-                .from('historical_wait_times')
-                .select('timestamp, waitMinutes, crowdLevel, weatherImpact')
-                .eq('attractionId', attractionId)
-                .gte('timestamp', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) // Last 30 days
-                .order('timestamp', { ascending: true });
+            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+            const historicalQuery = query(
+                collection(firestore, COLLECTIONS.HISTORICAL_WAIT_TIMES),
+                where('attractionId', '==', attractionId),
+                where('timestamp', '>=', Timestamp.fromDate(thirtyDaysAgo)),
+                orderBy('timestamp', 'asc')
+            );
+            const historicalSnapshot = await getDocs(historicalQuery);
+            const historicalData = historicalSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
 
-            if (error || !historicalData || historicalData.length < 10) {
+            if (!historicalData || historicalData.length < 10) {
                 return null; // Need sufficient data for prediction
             }
 
             // Get attraction info
-            const { data: attractionInfo } = await supabase
-                .from('attractions')
-                .select('name, parkId')
-                .eq('id', attractionId)
-                .single();
-
-            if (!attractionInfo) return null;
+            const attractionDoc = await getDoc(doc(firestore, COLLECTIONS.ATTRACTIONS, attractionId));
+            if (!attractionDoc.exists()) return null;
+            const attractionInfo = attractionDoc.data();
 
             // Prepare data for analysis
             const waitTimes = historicalData.map(d => d.waitMinutes);
@@ -384,13 +398,19 @@ class CrowdAnalysisEngine {
     async analyzeParkCrowds(parkId: string): Promise<CrowdAnalysis> {
         try {
             // Get current wait times for all attractions in the park
-            const { data: currentWaitTimes, error } = await supabase
-                .from('live_wait_times')
-                .select('attractionId, waitMinutes, timestamp')
-                .eq('parkId', parkId)
-                .gte('timestamp', new Date(Date.now() - 60 * 60 * 1000).toISOString()); // Last hour
+            const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+            const currentWaitTimesQuery = query(
+                collection(firestore, COLLECTIONS.WAIT_TIMES),
+                where('parkId', '==', parkId),
+                where('timestamp', '>=', Timestamp.fromDate(oneHourAgo))
+            );
+            const currentWaitTimesSnapshot = await getDocs(currentWaitTimesQuery);
+            const currentWaitTimes = currentWaitTimesSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
 
-            if (error || !currentWaitTimes) {
+            if (!currentWaitTimes || currentWaitTimes.length === 0) {
                 throw new Error('Unable to fetch current wait times');
             }
 
@@ -406,12 +426,18 @@ class CrowdAnalysisEngine {
             const overallCrowdLevel = this.crowdScoreToCrowdLevel(crowdScore);
 
             // Analyze historical patterns for peak/quiet times
-            const { data: historicalData } = await supabase
-                .from('historical_wait_times')
-                .select('timestamp, waitMinutes')
-                .eq('parkId', parkId)
-                .gte('timestamp', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Last week
-                .order('timestamp', { ascending: true });
+            const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+            const historicalQuery = query(
+                collection(firestore, COLLECTIONS.HISTORICAL_WAIT_TIMES),
+                where('parkId', '==', parkId),
+                where('timestamp', '>=', Timestamp.fromDate(oneWeekAgo)),
+                orderBy('timestamp', 'asc')
+            );
+            const historicalSnapshot = await getDocs(historicalQuery);
+            const historicalData = historicalSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
 
             const { peakTimes, quietTimes } = this.identifyPeakQuietTimes(historicalData || []);
 
@@ -585,24 +611,36 @@ class AnomalyDetectionEngine {
     async detectAnomalies(attractionId: string): Promise<AnomalyDetection[]> {
         try {
             // Get recent wait time data
-            const { data: recentData, error } = await supabase
-                .from('live_wait_times')
-                .select('timestamp, waitMinutes')
-                .eq('attractionId', attractionId)
-                .gte('timestamp', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
-                .order('timestamp', { ascending: true });
+            const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            const recentDataQuery = query(
+                collection(firestore, COLLECTIONS.WAIT_TIMES),
+                where('attractionId', '==', attractionId),
+                where('timestamp', '>=', Timestamp.fromDate(oneDayAgo)),
+                orderBy('timestamp', 'asc')
+            );
+            const recentDataSnapshot = await getDocs(recentDataQuery);
+            const recentData = recentDataSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
 
-            if (error || !recentData || recentData.length < 10) {
+            if (!recentData || recentData.length < 10) {
                 return [];
             }
 
             // Get historical baseline
-            const { data: historicalData } = await supabase
-                .from('historical_wait_times')
-                .select('timestamp, waitMinutes')
-                .eq('attractionId', attractionId)
-                .gte('timestamp', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) // Last 30 days
-                .order('timestamp', { ascending: true });
+            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+            const historicalDataQuery = query(
+                collection(firestore, COLLECTIONS.HISTORICAL_WAIT_TIMES),
+                where('attractionId', '==', attractionId),
+                where('timestamp', '>=', Timestamp.fromDate(thirtyDaysAgo)),
+                orderBy('timestamp', 'asc')
+            );
+            const historicalDataSnapshot = await getDocs(historicalDataQuery);
+            const historicalData = historicalDataSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
 
             if (!historicalData || historicalData.length < 50) {
                 return [];
@@ -708,14 +746,20 @@ export class WaitTimeAnalyticsService {
         try {
             const daysBack = period === 'hourly' ? 7 : period === 'daily' ? 30 : period === 'weekly' ? 90 : 365;
 
-            const { data: historicalData, error } = await supabase
-                .from('historical_wait_times')
-                .select('timestamp, waitMinutes')
-                .eq('attractionId', attractionId)
-                .gte('timestamp', new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString())
-                .order('timestamp', { ascending: true });
+            const startDate = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000);
+            const historicalDataQuery = query(
+                collection(firestore, COLLECTIONS.HISTORICAL_WAIT_TIMES),
+                where('attractionId', '==', attractionId),
+                where('timestamp', '>=', Timestamp.fromDate(startDate)),
+                orderBy('timestamp', 'asc')
+            );
+            const historicalDataSnapshot = await getDocs(historicalDataQuery);
+            const historicalData = historicalDataSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
 
-            if (error || !historicalData || historicalData.length < 10) {
+            if (!historicalData || historicalData.length < 10) {
                 return null;
             }
 
@@ -804,14 +848,20 @@ export class WaitTimeAnalyticsService {
     ): Promise<OptimizationRecommendation> {
         try {
             // Get all attractions in the park
-            const { data: attractions } = await supabase
-                .from('attractions')
-                .select('id, name')
-                .eq('parkId', parkId);
+            const attractionsQuery = query(
+                collection(firestore, COLLECTIONS.ATTRACTIONS),
+                where('parkId', '==', parkId)
+            );
+            const attractionsSnapshot = await getDocs(attractionsQuery);
 
-            if (!attractions) {
+            if (attractionsSnapshot.empty) {
                 throw new Error('No attractions found for park');
             }
+
+            const attractions = attractionsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                name: doc.data().name
+            }));
 
             // Get predictions for all attractions
             const attractionPredictions = await Promise.all(

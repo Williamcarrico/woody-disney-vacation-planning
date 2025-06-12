@@ -1,6 +1,6 @@
 "use client"
 
-import { Resort } from "@/types/resort"
+import { Resort } from "@/types/unified-resort"
 import ResortCard from "./ResortCard"
 
 interface ResortCategorySectionProps {

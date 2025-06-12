@@ -33,7 +33,7 @@
  * } = await engine.generate()
  */
 
-import { getParkAttractions, getParkLiveData } from '@/lib/api/themeParks'
+import { getParkAttractions, getParkLiveData } from '@/lib/api/themeParks-compat'
 import type {
     Attraction,
     Coordinates,

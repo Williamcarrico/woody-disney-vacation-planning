@@ -2,6 +2,51 @@ import { NextResponse } from 'next/server'
 import { Server as SocketIOServer } from 'socket.io'
 import { Server as HTTPServer } from 'http'
 
+// Type definitions for Socket.IO server data
+interface SocketData {
+    userId?: string
+    userName?: string
+    vacationId?: string
+}
+
+interface AuthenticateData {
+    vacationId?: string
+    userId?: string
+    userName?: string
+}
+
+interface MessageData {
+    vacationId?: string
+    content?: string
+    type?: string
+    replyTo?: string
+    attachments?: unknown[]
+}
+
+interface ReactionData {
+    messageId?: string
+    reaction?: string
+    vacationId?: string
+}
+
+interface LocationData {
+    vacationId?: string
+    latitude?: number
+    longitude?: number
+    accuracy?: number
+    message?: string
+    isEmergency?: boolean
+}
+
+interface VoiceData {
+    vacationId?: string
+    duration?: number
+}
+
+interface TypingData {
+    vacationId?: string
+}
+
 // Store the Socket.io server instance
 let io: SocketIOServer | null = null
 
@@ -28,34 +73,44 @@ function initializeSocketServer(server: HTTPServer) {
         console.log('User connected:', socket.id)
 
         // Handle authentication
-        socket.on('authenticate', async (data) => {
+        socket.on('authenticate', async (data: unknown) => {
             try {
-                const { vacationId, userId, userName } = data
+                // Type guard for authentication data
+                if (!data || typeof data !== 'object') {
+                    socket.emit('auth_error', { message: 'Invalid authentication data format' })
+                    return
+                }
+
+                const authData = data as AuthenticateData
+                const { vacationId, userId, userName } = authData
 
                 // Validate user session (you might want to pass session token)
-                if (!userId || !userName) {
+                if (!userId || !userName || typeof userId !== 'string' || typeof userName !== 'string') {
                     socket.emit('auth_error', { message: 'Invalid authentication data' })
                     return
                 }
 
                 // Join vacation room
-                if (vacationId) {
+                if (vacationId && typeof vacationId === 'string') {
                     await socket.join(`vacation:${vacationId}`)
                     console.log(`User ${userName} joined vacation room: ${vacationId}`)
                 }
 
-                // Store user info in socket
-                socket.data = { userId, userName, vacationId }
+                // Store user info in socket with proper typing
+                const socketData: SocketData = { userId, userName, vacationId }
+                socket.data = socketData
 
                 // Notify successful authentication
                 socket.emit('authenticated', { success: true })
 
                 // Notify others in the room
-                socket.to(`vacation:${vacationId}`).emit('user_joined', {
-                    userId,
-                    userName,
-                    timestamp: Date.now()
-                })
+                if (vacationId) {
+                    socket.to(`vacation:${vacationId}`).emit('user_joined', {
+                        userId,
+                        userName,
+                        timestamp: Date.now()
+                    })
+                }
             } catch (error) {
                 console.error('Authentication error:', error)
                 socket.emit('auth_error', { message: 'Authentication failed' })
@@ -63,27 +118,38 @@ function initializeSocketServer(server: HTTPServer) {
         })
 
         // Handle sending messages
-        socket.on('send_message', async (messageData) => {
+        socket.on('send_message', async (messageData: unknown) => {
             try {
-                const { vacationId, content, type = 'text', replyTo, attachments } = messageData
-                const { userId, userName } = socket.data
+                // Type guard for message data
+                if (!messageData || typeof messageData !== 'object') {
+                    socket.emit('message_error', { message: 'Invalid message data format' })
+                    return
+                }
 
-                if (!userId || !userName || !vacationId) {
-                    socket.emit('message_error', { message: 'Not authenticated' })
+                const msgData = messageData as MessageData
+                const { vacationId, content, type = 'text', replyTo, attachments } = msgData
+                
+                // Safe access to socket.data with type assertion
+                const socketData = socket.data as SocketData | undefined
+                const userId = socketData?.userId
+                const userName = socketData?.userName
+
+                if (!userId || !userName || !vacationId || typeof content !== 'string') {
+                    socket.emit('message_error', { message: 'Not authenticated or invalid message content' })
                     return
                 }
 
                 // Create message object
                 const message = {
-                    id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
                     userId,
                     userName,
                     content,
-                    type,
+                    type: typeof type === 'string' ? type : 'text',
                     timestamp: Date.now(),
                     vacationId,
-                    replyTo,
-                    attachments,
+                    replyTo: typeof replyTo === 'string' ? replyTo : undefined,
+                    attachments: Array.isArray(attachments) ? attachments : undefined,
                     reactions: {},
                     edited: false
                 }
@@ -102,13 +168,24 @@ function initializeSocketServer(server: HTTPServer) {
         })
 
         // Handle message reactions
-        socket.on('add_reaction', async (reactionData) => {
+        socket.on('add_reaction', async (reactionData: unknown) => {
             try {
-                const { messageId, reaction, vacationId } = reactionData
-                const { userId, userName } = socket.data
+                // Type guard for reaction data
+                if (!reactionData || typeof reactionData !== 'object') {
+                    socket.emit('reaction_error', { message: 'Invalid reaction data format' })
+                    return
+                }
 
-                if (!userId || !vacationId) {
-                    socket.emit('reaction_error', { message: 'Not authenticated' })
+                const reactData = reactionData as ReactionData
+                const { messageId, reaction, vacationId } = reactData
+                
+                // Safe access to socket.data
+                const socketData = socket.data as SocketData | undefined
+                const userId = socketData?.userId
+                const userName = socketData?.userName
+
+                if (!userId || !vacationId || typeof messageId !== 'string' || typeof reaction !== 'string') {
+                    socket.emit('reaction_error', { message: 'Not authenticated or invalid reaction data' })
                     return
                 }
 
@@ -129,11 +206,21 @@ function initializeSocketServer(server: HTTPServer) {
         })
 
         // Handle typing indicators
-        socket.on('typing_start', (data) => {
-            const { vacationId } = data
-            const { userId, userName } = socket.data
+        socket.on('typing_start', (data: unknown) => {
+            // Type guard for typing data
+            if (!data || typeof data !== 'object') {
+                return
+            }
 
-            if (userId && vacationId) {
+            const typingData = data as TypingData
+            const { vacationId } = typingData
+            
+            // Safe access to socket.data
+            const socketData = socket.data as SocketData | undefined
+            const userId = socketData?.userId
+            const userName = socketData?.userName
+
+            if (userId && userName && vacationId && typeof vacationId === 'string') {
                 socket.to(`vacation:${vacationId}`).emit('user_typing', {
                     userId,
                     userName,
@@ -142,11 +229,21 @@ function initializeSocketServer(server: HTTPServer) {
             }
         })
 
-        socket.on('typing_stop', (data) => {
-            const { vacationId } = data
-            const { userId, userName } = socket.data
+        socket.on('typing_stop', (data: unknown) => {
+            // Type guard for typing data
+            if (!data || typeof data !== 'object') {
+                return
+            }
 
-            if (userId && vacationId) {
+            const typingData = data as TypingData
+            const { vacationId } = typingData
+            
+            // Safe access to socket.data
+            const socketData = socket.data as SocketData | undefined
+            const userId = socketData?.userId
+            const userName = socketData?.userName
+
+            if (userId && userName && vacationId && typeof vacationId === 'string') {
                 socket.to(`vacation:${vacationId}`).emit('user_typing', {
                     userId,
                     userName,
@@ -156,13 +253,24 @@ function initializeSocketServer(server: HTTPServer) {
         })
 
         // Handle location sharing
-        socket.on('share_location', async (locationData) => {
+        socket.on('share_location', async (locationData: unknown) => {
             try {
-                const { vacationId, latitude, longitude, accuracy, message } = locationData
-                const { userId, userName } = socket.data
+                // Type guard for location data
+                if (!locationData || typeof locationData !== 'object') {
+                    socket.emit('location_error', { message: 'Invalid location data format' })
+                    return
+                }
 
-                if (!userId || !vacationId) {
-                    socket.emit('location_error', { message: 'Not authenticated' })
+                const locData = locationData as LocationData
+                const { vacationId, latitude, longitude, accuracy, message } = locData
+                
+                // Safe access to socket.data
+                const socketData = socket.data as SocketData | undefined
+                const userId = socketData?.userId
+                const userName = socketData?.userName
+
+                if (!userId || !userName || !vacationId || typeof latitude !== 'number' || typeof longitude !== 'number') {
+                    socket.emit('location_error', { message: 'Not authenticated or invalid location data' })
                     return
                 }
 
@@ -171,10 +279,10 @@ function initializeSocketServer(server: HTTPServer) {
                     userName,
                     latitude,
                     longitude,
-                    accuracy,
-                    message,
+                    accuracy: typeof accuracy === 'number' ? accuracy : undefined,
+                    message: typeof message === 'string' ? message : undefined,
                     timestamp: Date.now(),
-                    isEmergency: locationData.isEmergency || false
+                    isEmergency: Boolean(locData.isEmergency)
                 }
 
                 // Broadcast location to all users in the room
@@ -188,23 +296,34 @@ function initializeSocketServer(server: HTTPServer) {
         })
 
         // Handle voice message events
-        socket.on('voice_message', async (voiceData) => {
+        socket.on('voice_message', async (voiceData: unknown) => {
             try {
-                const { vacationId, duration } = voiceData
-                const { userId, userName } = socket.data
+                // Type guard for voice data
+                if (!voiceData || typeof voiceData !== 'object') {
+                    socket.emit('voice_error', { message: 'Invalid voice data format' })
+                    return
+                }
 
-                if (!userId || !vacationId) {
-                    socket.emit('voice_error', { message: 'Not authenticated' })
+                const vData = voiceData as VoiceData
+                const { vacationId, duration } = vData
+                
+                // Safe access to socket.data
+                const socketData = socket.data as SocketData | undefined
+                const userId = socketData?.userId
+                const userName = socketData?.userName
+
+                if (!userId || !userName || !vacationId || typeof duration !== 'number') {
+                    socket.emit('voice_error', { message: 'Not authenticated or invalid voice data' })
                     return
                 }
 
                 // In a real implementation, you'd upload the audio blob to storage
                 // For now, we'll just broadcast the voice message metadata
                 const voiceMessage = {
-                    id: `voice_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    id: `voice_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
                     userId,
                     userName,
-                    type: 'voice',
+                    type: 'voice' as const,
                     duration,
                     timestamp: Date.now(),
                     vacationId
@@ -221,9 +340,13 @@ function initializeSocketServer(server: HTTPServer) {
 
         // Handle disconnection
         socket.on('disconnect', () => {
-            const { userId, userName, vacationId } = socket.data || {}
+            // Safe access to socket.data with proper typing
+            const socketData = socket.data as SocketData | undefined
+            const userId = socketData?.userId
+            const userName = socketData?.userName
+            const vacationId = socketData?.vacationId
 
-            if (vacationId && userId) {
+            if (vacationId && userId && userName) {
                 // Notify others in the room
                 socket.to(`vacation:${vacationId}`).emit('user_left', {
                     userId,

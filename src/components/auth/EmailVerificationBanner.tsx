@@ -73,7 +73,7 @@ export function EmailVerificationBanner({ user }: EmailVerificationBannerProps) 
                 >
                     {isResending ? (
                         <>
-                            <div className="mr-2 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                            <div className="mr-2 h-3 w-3 animate-spin rounded-full spinner"></div>
                             Sending...
                         </>
                     ) : (

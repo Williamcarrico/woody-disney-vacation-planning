@@ -125,21 +125,65 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     }, []);
 
     useEffect(() => {
-        // onAuthStateChanged runs client-side and listens for changes
+        let previousUser: User | null = null;
+
+        // Enhanced auth state listener with sign-out detection
         const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+            console.log('🔐 Auth state changed:', {
+                previousUser: previousUser?.uid,
+                currentUser: firebaseUser?.uid,
+                emailVerified: firebaseUser?.emailVerified
+            });
+
+            // Detect automatic sign-out
+            if (previousUser && !firebaseUser) {
+                console.warn('⚠️ Automatic sign-out detected');
+                setError('Session expired. Please sign in again.');
+            }
+
+            // Clear error when user successfully signs in
+            if (firebaseUser && !previousUser) {
+                setError(null);
+            }
+
             setUser(firebaseUser);
 
             // If user is logged in, create a session
             if (firebaseUser) {
-                const rememberMe = getRememberMePreference();
-                await createSession(firebaseUser, rememberMe);
+                try {
+                    const rememberMe = getRememberMePreference();
+                    const sessionCreated = await createSession(firebaseUser, rememberMe);
+
+                    if (!sessionCreated) {
+                        console.error('Failed to create session for authenticated user');
+                    }
+                } catch (error) {
+                    console.error('Session creation failed during auth state change:', error);
+                }
             }
 
+            previousUser = firebaseUser;
             setLoading(false); // Done checking initial state
         });
 
-        // Clean up the listener when the component unmounts
-        return () => unsubscribe();
+        // Additional auth error listener
+        const authErrorListener = auth.onIdTokenChanged(async (firebaseUser) => {
+            if (firebaseUser) {
+                try {
+                    // Force token refresh to catch any token issues early
+                    await getIdToken(firebaseUser, true);
+                } catch (error) {
+                    console.error('Token refresh failed:', error);
+                    setError('Authentication token expired. Please sign in again.');
+                }
+            }
+        });
+
+        // Clean up listeners when the component unmounts
+        return () => {
+            unsubscribe();
+            authErrorListener();
+        };
     }, [createSession]); // Include createSession in dependencies
 
     // Setup global fetch interceptor for token rotation

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { Resort, ResortCategory } from '@/types/resort'
+import { Resort } from '@/types/unified-resort'
 import dynamic from 'next/dynamic'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -66,24 +66,47 @@ export default function ResortMap({ resorts }: ResortMapProps) {
     }, [])
 
     // Get category color for styling
-
-    const getCategoryColor = (category: ResortCategory) => {
-        switch (category) {
-            case ResortCategory.Value:
+    const getCategoryColor = (category: string) => {
+        switch (category.toLowerCase()) {
+            case "value":
                 return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
-            case ResortCategory.ValuePlus:
-                return "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300"
-            case ResortCategory.Moderate:
+            case "moderate":
                 return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-            case ResortCategory.Deluxe:
+            case "deluxe":
                 return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
-            case ResortCategory.DeluxeVilla:
+            case "villa":
                 return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
-            case ResortCategory.Campground:
+            case "campground":
                 return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
             default:
                 return "bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-300"
         }
+    }
+
+    // Get coordinates from resort location
+    const getResortCoordinates = (resort: Resort): [number, number] | null => {
+        if (typeof resort.location === 'object' && resort.location.coordinates) {
+            return [resort.location.coordinates.latitude, resort.location.coordinates.longitude]
+        }
+        // Return null if coordinates are not available
+        return null
+    }
+
+    // Get resort area for display
+    const getResortArea = (resort: Resort): string => {
+        if (typeof resort.location === 'object' && resort.location.area) {
+            return resort.location.area
+        }
+        return "Disney World"
+    }
+
+    // Get resort address for display
+    const getResortAddress = (resort: Resort): string => {
+        if (typeof resort.location === 'object' && resort.location.address) {
+            const addr = resort.location.address
+            return `${addr.street}, ${addr.city}, ${addr.state} ${addr.zipCode}`
+        }
+        return "Walt Disney World Resort, Orlando, FL"
     }
 
     if (!isMounted) {
@@ -95,6 +118,9 @@ export default function ResortMap({ resorts }: ResortMapProps) {
     }
 
     const disneyWorldCenter: [number, number] = [28.3852, -81.5639] // Disney World coordinates
+
+    // Filter resorts that have valid coordinates
+    const resortsWithCoordinates = resorts.filter(resort => getResortCoordinates(resort) !== null)
 
     return (
         <div className="flex flex-col lg:flex-row gap-6 h-[800px]">
@@ -110,58 +136,59 @@ export default function ResortMap({ resorts }: ResortMapProps) {
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
 
-                    {resorts.map(resort => {
-                        if (typeof window !== 'undefined') {
-                            const categoryColorMap = {
-                                [ResortCategory.Value]: 'blue',
-                                [ResortCategory.ValuePlus]: 'cyan',
-                                [ResortCategory.Moderate]: 'yellow',
-                                [ResortCategory.Deluxe]: 'purple',
-                                [ResortCategory.DeluxeVilla]: 'indigo',
-                                [ResortCategory.Campground]: 'green'
-                            }
+                    {resortsWithCoordinates.map(resort => {
+                        const coordinates = getResortCoordinates(resort)
+                        if (!coordinates || typeof window === 'undefined') return null
 
-                            const color = categoryColorMap[resort.category] || 'blue'
+                        const categoryColorMap = {
+                            "value": 'blue',
+                            "moderate": 'yellow',
+                            "deluxe": 'purple',
+                            "villa": 'indigo',
+                            "campground": 'green'
+                        } as const
 
-                            const icon = L.divIcon({
-                                className: 'bg-transparent',
-                                iconSize: [32, 32],
-                                iconAnchor: [16, 32],
-                                html: `
-                  <div class="flex items-center justify-center w-8 h-8 rounded-full bg-${color}-500 border-2 border-white shadow-lg text-white text-xs font-bold">
-                    ${resort.category[0]}
+                        const categoryKey = resort.category.toLowerCase()
+                        const color = categoryKey in categoryColorMap
+                            ? categoryColorMap[categoryKey as keyof typeof categoryColorMap]
+                            : 'blue'
+
+                        const icon = L.divIcon({
+                            className: 'bg-transparent',
+                            iconSize: [32, 32],
+                            iconAnchor: [16, 32],
+                            html: `
+                  <div class="flex items-center justify-center w-8 h-8 rounded-full bg-${color}-500 border-2 shadow-lg text-white text-xs font-bold" style="border-color: white;">
+                    ${resort.category[0].toUpperCase()}
                   </div>
                 `
-                            })
+                        })
 
-                            return (
-                                <Marker
-                                    key={resort.id}
-                                    position={[resort.location.latitude, resort.location.longitude]}
-                                    icon={icon}
-                                    eventHandlers={{
-                                        click: () => setSelectedResort(resort)
-                                    }}
-                                >
-                                    <Popup>
-                                        <div className="p-2">
-                                            <h3 className="font-bold">{resort.name}</h3>
-                                            <p className="text-sm">{resort.category}</p>
-                                            <Button
-                                                variant="link"
-                                                size="sm"
-                                                className="p-0 h-auto"
-                                                onClick={() => setSelectedResort(resort)}
-                                            >
-                                                View Details
-                                            </Button>
-                                        </div>
-                                    </Popup>
-                                </Marker>
-                            )
-                        }
-
-                        return null
+                        return (
+                            <Marker
+                                key={resort.id}
+                                position={coordinates}
+                                icon={icon}
+                                eventHandlers={{
+                                    click: () => setSelectedResort(resort)
+                                }}
+                            >
+                                <Popup>
+                                    <div className="p-2">
+                                        <h3 className="font-bold">{resort.name}</h3>
+                                        <p className="text-sm">{resort.category}</p>
+                                        <Button
+                                            variant="link"
+                                            size="sm"
+                                            className="p-0 h-auto"
+                                            onClick={() => setSelectedResort(resort)}
+                                        >
+                                            View Details
+                                        </Button>
+                                    </div>
+                                </Popup>
+                            </Marker>
+                        )
                     })}
                 </MapContainer>
             </div>
@@ -194,22 +221,25 @@ export default function ResortMap({ resorts }: ResortMapProps) {
 
                             <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg mb-4">
                                 <h5 className="font-bold text-gray-900 dark:text-white mb-2">Location</h5>
-                                <p className="text-gray-700 dark:text-gray-300 mb-1">{selectedResort.address}</p>
-                                <p className="text-gray-700 dark:text-gray-300">Area: {selectedResort.location.area}</p>
+                                <p className="text-gray-700 dark:text-gray-300 mb-1">{getResortAddress(selectedResort)}</p>
+                                <p className="text-gray-700 dark:text-gray-300">Area: {getResortArea(selectedResort)}</p>
                             </div>
 
-                            <div className="space-y-3">
-                                <h5 className="font-bold text-gray-900 dark:text-white">Distance to Parks</h5>
-                                {Object.entries(selectedResort.location.distanceToParks).map(([park, distance]) => (
-                                    <div key={park} className="flex justify-between">
-                                        <span className="text-gray-700 dark:text-gray-300">{park}</span>
-                                        <span className="text-gray-900 dark:text-white font-medium">{distance} miles</span>
-                                    </div>
-                                ))}
-                            </div>
+                            {/* Show distance to parks if available */}
+                            {typeof selectedResort.location === 'object' && selectedResort.location.distanceToParks && (
+                                <div className="space-y-3">
+                                    <h5 className="font-bold text-gray-900 dark:text-white">Distance to Parks</h5>
+                                    {Object.entries(selectedResort.location.distanceToParks).map(([park, distance]) => (
+                                        <div key={park} className="flex justify-between">
+                                            <span className="text-gray-700 dark:text-gray-300">{park}</span>
+                                            <span className="text-gray-900 dark:text-white font-medium">{distance} miles</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
 
                             <div className="mt-6">
-                                <Link href={`/resorts/${selectedResort.id}`}>
+                                <Link href={`/dashboard/resorts/${selectedResort.id}`}>
                                     <Button className="w-full">
                                         View Resort Details
                                     </Button>
@@ -230,22 +260,21 @@ export default function ResortMap({ resorts }: ResortMapProps) {
 
                     <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-800">
                         <div className="flex flex-wrap gap-2">
-                            {Object.values(ResortCategory).map(category => {
+                            {(["value", "moderate", "deluxe", "villa", "campground"] as const).map(category => {
                                 const categoryColorMap = {
-                                    [ResortCategory.Value]: 'bg-blue-500',
-                                    [ResortCategory.ValuePlus]: 'bg-cyan-500',
-                                    [ResortCategory.Moderate]: 'bg-yellow-500',
-                                    [ResortCategory.Deluxe]: 'bg-purple-500',
-                                    [ResortCategory.DeluxeVilla]: 'bg-indigo-500',
-                                    [ResortCategory.Campground]: 'bg-green-500'
-                                }
+                                    "value": 'bg-blue-500',
+                                    "moderate": 'bg-yellow-500',
+                                    "deluxe": 'bg-purple-500',
+                                    "villa": 'bg-indigo-500',
+                                    "campground": 'bg-green-500'
+                                } as const
 
                                 const colorClass = categoryColorMap[category] || 'bg-gray-500'
 
                                 return (
                                     <div key={category} className="flex items-center gap-2">
                                         <div className={`w-3 h-3 rounded-full ${colorClass}`} />
-                                        <span className="text-xs text-gray-700 dark:text-gray-300">{category}</span>
+                                        <span className="text-xs text-gray-700 dark:text-gray-300 capitalize">{category}</span>
                                     </div>
                                 )
                             })}

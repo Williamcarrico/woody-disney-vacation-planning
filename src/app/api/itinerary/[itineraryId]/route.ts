@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { db } from '@/db/schema'
+import { db, itineraries } from '@/db'
 import { auth } from '@/lib/auth'
 import { eq, and } from 'drizzle-orm'
-import { itineraries } from '@/db/schema/itineraries'
 
 const itineraryUpdateSchema = z.object({
     tripName: z.string().optional(),

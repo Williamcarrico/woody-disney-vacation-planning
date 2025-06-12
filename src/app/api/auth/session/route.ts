@@ -5,7 +5,7 @@ import { createSessionCookie, revokeSessionCookie, rotateSessionToken } from '@/
 export async function POST(request: NextRequest) {
     try {
         console.log('Session API route called');
-        const { idToken, rememberMe } = await request.json()
+        const { idToken, rememberMe } = await request.json() as { idToken?: string; rememberMe?: boolean }
 
         if (!idToken) {
             console.error('idToken missing in request');
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 // Rotate a session token (for enhanced security)
 export async function PATCH(request: NextRequest) {
     try {
-        const { uid, rememberMe } = await request.json()
+        const { uid, rememberMe } = await request.json() as { uid?: string; rememberMe?: boolean }
 
         if (!uid) {
             return NextResponse.json(
@@ -76,7 +76,7 @@ export async function PATCH(request: NextRequest) {
 // End a session (logout)
 export async function DELETE(request: NextRequest) {
     try {
-        const { uid } = await request.json()
+        const { uid } = await request.json() as { uid?: string }
 
         if (!uid) {
             return NextResponse.json(

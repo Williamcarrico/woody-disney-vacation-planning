@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { Resort, ResortCategory } from "@/types/resort"
+import { Resort } from "@/types/unified-resort"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { StarIcon, Utensils, Car } from "lucide-react"
@@ -13,17 +13,17 @@ interface ResortCardProps {
 }
 
 export default function ResortCard({ resort }: ResortCardProps) {
-    const getCategoryColor = (category: ResortCategory) => {
-        switch (category) {
-            case ResortCategory.Value:
+    const getCategoryColor = (category: string) => {
+        switch (category.toLowerCase()) {
+            case "value":
                 return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
-            case ResortCategory.Moderate:
+            case "moderate":
                 return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-            case ResortCategory.Deluxe:
+            case "deluxe":
                 return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
-            case ResortCategory.DeluxeVilla:
+            case "villa":
                 return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
-            case ResortCategory.Campground:
+            case "campground":
                 return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
             default:
                 return "bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-300"
@@ -31,30 +31,52 @@ export default function ResortCard({ resort }: ResortCardProps) {
     }
 
     // Extract key features to highlight
-    const primaryDining = resort.dining.length > 0 ? resort.dining[0] : null
-    const primaryTransportation = resort.transportation.length > 0 ? resort.transportation[0] : null
+    const primaryDining = resort.dining && resort.dining.length > 0 ? resort.dining[0] : null
+    const primaryTransportation = resort.transportation && resort.transportation.length > 0 ? resort.transportation[0] : null
 
     const getPricingDisplay = () => {
-        if (resort.pricing.deluxeRange.low > 0) {
+        if (resort.pricing?.deluxeRange?.low && resort.pricing.deluxeRange.low > 0) {
             return <>${resort.pricing.deluxeRange.low}<span className="text-sm font-normal text-gray-500 dark:text-gray-400">/night</span></>
-        } else if (resort.pricing.moderateRange.low > 0) {
+        } else if (resort.pricing?.moderateRange?.low && resort.pricing.moderateRange.low > 0) {
             return <>${resort.pricing.moderateRange.low}<span className="text-sm font-normal text-gray-500 dark:text-gray-400">/night</span></>
-        } else if (resort.pricing.valueRange.low > 0) {
+        } else if (resort.pricing?.valueRange?.low && resort.pricing.valueRange.low > 0) {
             return <>${resort.pricing.valueRange.low}<span className="text-sm font-normal text-gray-500 dark:text-gray-400">/night</span></>
         } else {
             return <>Call for pricing</>
         }
     }
 
+    // Get the main image URL - handle both unified and legacy formats
+    const getMainImageUrl = () => {
+        if (resort.imageUrl) {
+            return resort.imageUrl
+        }
+        // Fallback to a default image if none available
+        return "/images/resorts/default-resort.jpg"
+    }
+
+    // Get resort area for display
+    const getResortArea = () => {
+        if (resort.location?.area) {
+            return resort.location.area
+        }
+        return "Disney World"
+    }
+
     return (
-        <Link href={`/resorts/${resort.id}`} className="group">
+        <Link href={`/dashboard/resorts/${resort.id}`} className="group">
             <Card className="overflow-hidden h-full border-gray-200 dark:border-gray-800 transition-all hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-700">
                 <div className="relative h-60 w-full">
                     <Image
-                        src={resort.imageUrls.main}
+                        src={getMainImageUrl()}
                         alt={resort.name}
                         fill
                         className="object-cover transition-transform group-hover:scale-105"
+                        onError={(e) => {
+                            // Fallback to default image on error
+                            const target = e.target as HTMLImageElement
+                            target.src = "/images/resorts/default-resort.jpg"
+                        }}
                     />
                     <Badge
                         className={cn(
@@ -78,13 +100,13 @@ export default function ResortCard({ resort }: ResortCardProps) {
                     <div className="flex flex-wrap gap-4 text-sm text-gray-700 dark:text-gray-300">
                         <div className="flex items-center gap-1.5">
                             <StarIcon className="h-4 w-4 text-amber-500" />
-                            <span>{resort.roomTypes.length} Room Types</span>
+                            <span>{resort.roomTypes?.length || 0} Room Types</span>
                         </div>
 
                         {primaryDining && (
                             <div className="flex items-center gap-1.5">
                                 <Utensils className="h-4 w-4 text-red-500" />
-                                <span>{resort.dining.length} Dining Options</span>
+                                <span>{resort.dining?.length || 0} Dining Options</span>
                             </div>
                         )}
 
@@ -104,7 +126,7 @@ export default function ResortCard({ resort }: ResortCardProps) {
                         </div>
 
                         <Badge variant="outline" className="text-xs">
-                            {resort.location.area}
+                            {getResortArea()}
                         </Badge>
                     </div>
                 </CardFooter>

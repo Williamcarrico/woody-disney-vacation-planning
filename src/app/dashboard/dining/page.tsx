@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import { Utensils, MapPin, Star, Clock, Users, DollarSign, Calendar, ChefHat, Award, Sparkles } from "lucide-react"
+import { Utensils, MapPin, Star, Clock, Users, DollarSign, Calendar, ChefHat, Award, Sparkles, Database, Settings } from "lucide-react"
 
 import {
     Card,
@@ -138,6 +138,35 @@ export default function DiningPage() {
                             </div>
                         </div>
                     </MagicCard>
+                </div>
+            </BlurFade>
+
+            {/* Admin Tools */}
+            <BlurFade delay={0.25}>
+                <div className="flex justify-center">
+                    <Card className="border-dashed border-muted-foreground/25 bg-muted/50">
+                        <CardContent className="pt-6">
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-primary/10 rounded-full">
+                                        <Database className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold">Database Management</h3>
+                                        <p className="text-sm text-muted-foreground">Import and manage restaurant data</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button variant="outline" size="sm" asChild>
+                                        <Link href="/dashboard/dining/import">
+                                            <Settings className="h-4 w-4 mr-2" />
+                                            Manage Data
+                                        </Link>
+                                    </Button>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </BlurFade>
 

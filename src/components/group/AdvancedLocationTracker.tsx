@@ -350,9 +350,14 @@ export default function AdvancedLocationTracker({
     })
 
     const { data: locationUpdates } = useQuery({
-        queryKey: ['locationUpdates', vacationId],
+        queryKey: ['locationUpdates', vacationId, user?.uid],
         queryFn: () => {
-            return new Promise<LocationUpdate[]>((resolve) => {
+            return new Promise<LocationUpdate[]>((resolve, reject) => {
+                if (!user) {
+                    reject(new Error('User not authenticated'))
+                    return
+                }
+
                 const updatesRef = collection(db, 'vacations', vacationId, 'locationUpdates')
                 const q = query(updatesRef, orderBy('timestamp', 'desc'), limit(100))
 
@@ -375,19 +380,27 @@ export default function AdvancedLocationTracker({
                         } satisfies LocationUpdate
                     })
                     resolve(updates)
+                }, (error) => {
+                    console.error('Location updates subscription error:', error)
+                    reject(error)
                 })
 
                 return () => unsubscribe()
             })
         },
-        enabled: !!vacationId,
+        enabled: !!vacationId && !!user,
         staleTime: Infinity
     })
 
     const { data: meetupRequests } = useQuery({
-        queryKey: ['meetupRequests', vacationId],
+        queryKey: ['meetupRequests', vacationId, user?.uid],
         queryFn: () => {
-            return new Promise<MeetupRequest[]>((resolve) => {
+            return new Promise<MeetupRequest[]>((resolve, reject) => {
+                if (!user) {
+                    reject(new Error('User not authenticated'))
+                    return
+                }
+
                 const requestsRef = collection(db, 'vacations', vacationId, 'meetupRequests')
                 const q = query(requestsRef, orderBy('timestamp', 'desc'), limit(20))
 
@@ -408,12 +421,15 @@ export default function AdvancedLocationTracker({
                         } satisfies MeetupRequest
                     })
                     resolve(requests)
+                }, (error) => {
+                    console.error('Meetup requests subscription error:', error)
+                    reject(error)
                 })
 
                 return () => unsubscribe()
             })
         },
-        enabled: !!vacationId,
+        enabled: !!vacationId && !!user,
         staleTime: Infinity
     })
 

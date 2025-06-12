@@ -1,4 +1,17 @@
-import { createClient } from '@supabase/supabase-js';
+import {
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    where,
+    orderBy,
+    limit,
+    addDoc,
+    writeBatch,
+    Timestamp
+} from 'firebase/firestore';
+import { firestore } from '@/lib/firebase/firebase.config';
 
 /**
  * Advanced Wait Time Data Scraping Service
@@ -51,15 +64,12 @@ interface ScrapingSession {
     status: 'RUNNING' | 'COMPLETED' | 'FAILED';
 }
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing required Supabase environment variables');
-}
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Firebase collection names
+const COLLECTIONS = {
+    SCRAPED_WAIT_TIMES: 'scrapedWaitTimes',
+    SCRAPING_SESSIONS: 'scrapingSessions',
+    WAIT_TIMES: 'waitTimes'
+} as const;
 
 // Configuration for scraping targets
 const SCRAPING_TARGETS: ScrapingTarget[] = [
@@ -417,40 +427,41 @@ export class WaitTimeDataCollector {
 
     private async storeScrapedData(data: ScrapedWaitTime[]): Promise<void> {
         try {
-            // Store in scraped_wait_times table
-            const { error } = await supabase
-                .from('scraped_wait_times')
-                .insert(data.map(point => ({
-                    attraction_id: point.attractionId,
-                    attraction_name: point.attractionName,
-                    park_id: point.parkId,
-                    wait_time: point.waitTime,
+            // Store in scraped wait times collection using batch writes
+            const batch = writeBatch(firestore);
+
+            data.forEach(point => {
+                const docRef = doc(collection(firestore, COLLECTIONS.SCRAPED_WAIT_TIMES));
+                batch.set(docRef, {
+                    attractionId: point.attractionId,
+                    attractionName: point.attractionName,
+                    parkId: point.parkId,
+                    waitTime: point.waitTime,
                     status: point.status,
                     source: point.source,
-                    timestamp: point.timestamp,
+                    timestamp: Timestamp.fromDate(new Date(point.timestamp)),
                     confidence: point.confidence,
-                    metadata: point.metadata
-                })));
+                    metadata: point.metadata || {},
+                    createdAt: Timestamp.now()
+                });
+            });
 
-            if (error) {
-                console.error('Error storing scraped data:', error);
-                throw error;
-            }
+            await batch.commit();
 
-            // Also update the live_wait_times table with high-confidence data
+            // Also update the live wait times collection with high-confidence data
             const highConfidenceData = data.filter(point => point.confidence > 0.8);
 
             for (const point of highConfidenceData) {
-                await supabase
-                    .from('live_wait_times')
-                    .upsert({
-                        attractionId: point.attractionId,
-                        waitMinutes: point.waitTime,
-                        status: point.status,
-                        timestamp: point.timestamp,
-                        source: `scraped-${point.source}`,
-                        confidence: point.confidence
-                    });
+                const waitTimeDocRef = doc(collection(firestore, COLLECTIONS.WAIT_TIMES), point.attractionId);
+                await addDoc(collection(firestore, COLLECTIONS.WAIT_TIMES), {
+                    attractionId: point.attractionId,
+                    waitMinutes: point.waitTime,
+                    status: point.status,
+                    timestamp: Timestamp.fromDate(new Date(point.timestamp)),
+                    source: `scraped-${point.source}`,
+                    confidence: point.confidence,
+                    createdAt: Timestamp.now()
+                });
             }
 
         } catch (error) {
@@ -464,30 +475,35 @@ export class WaitTimeDataCollector {
     }
 
     async getRecentScrapedData(hours = 24): Promise<ScrapedWaitTime[]> {
-        const since = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+        const since = new Date(Date.now() - hours * 60 * 60 * 1000);
 
-        const { data, error } = await supabase
-            .from('scraped_wait_times')
-            .select('*')
-            .gte('timestamp', since)
-            .order('timestamp', { ascending: false });
+        try {
+            const scrapedDataQuery = query(
+                collection(firestore, COLLECTIONS.SCRAPED_WAIT_TIMES),
+                where('timestamp', '>=', Timestamp.fromDate(since)),
+                orderBy('timestamp', 'desc')
+            );
 
-        if (error) {
+            const scrapedDataSnapshot = await getDocs(scrapedDataQuery);
+
+            return scrapedDataSnapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    attractionId: data.attractionId,
+                    attractionName: data.attractionName,
+                    parkId: data.parkId,
+                    waitTime: data.waitTime,
+                    status: data.status,
+                    source: data.source,
+                    timestamp: data.timestamp.toDate().toISOString(),
+                    confidence: data.confidence,
+                    metadata: data.metadata
+                };
+            });
+        } catch (error) {
             console.error('Error fetching scraped data:', error);
             return [];
         }
-
-        return data.map(row => ({
-            attractionId: row.attraction_id,
-            attractionName: row.attraction_name,
-            parkId: row.park_id,
-            waitTime: row.wait_time,
-            status: row.status,
-            source: row.source,
-            timestamp: row.timestamp,
-            confidence: row.confidence,
-            metadata: row.metadata
-        }));
     }
 
     // Analytics and insights

@@ -50,7 +50,10 @@ export enum AttractionType {
     PhotoOpportunity = "Photo Opportunity",
     Interactive = "Interactive",
     Transport = "Transport",
-    Exhibit = "Exhibit"
+    Exhibit = "Exhibit",
+    WaterAttraction = "Water Attraction",
+    Thrill = "Thrill",
+    KidsArea = "Kids Area"
 }
 
 export enum RideCategory {
@@ -78,16 +81,31 @@ export interface HeightRequirement {
     minHeight?: string; // Human-readable (e.g., "48 inches")
 }
 
-export interface Schedule {
-    openingTime: string;
-    closingTime: string;
+// Base schedule interface for flexibility
+export interface BaseSchedule {
     specialHours?: {
         date: string;
         openingTime: string;
         closingTime: string;
     }[];
+}
+
+// Schedule for attractions with operating hours
+export interface OperatingSchedule extends BaseSchedule {
+    openingTime: string;
+    closingTime: string;
     performanceTimes?: string[];
 }
+
+// Schedule for shows with specific performance times
+export interface ShowSchedule extends BaseSchedule {
+    performanceTimes: string[];
+    openingTime?: string;
+    closingTime?: string;
+}
+
+// Union type for all schedule types
+export type Schedule = OperatingSchedule | ShowSchedule;
 
 export interface AccessibilityInfo {
     wheelchairAccessible: WheelchairAccessibility;
@@ -114,7 +132,8 @@ export enum TransferType {
     None = "None",
     Standard = "Standard",
     EasyTransfer = "Easy Transfer",
-    MustBeAmbulatory = "Must Be Ambulatory"
+    MustBeAmbulatory = "Must Be Ambulatory",
+    Water = "Water Transfer Required"
 }
 
 export interface AttractionStatus {

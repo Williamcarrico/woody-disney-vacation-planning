@@ -84,14 +84,24 @@ function SearchBox() {
     const handleSearch = async () => {
         if (!map || !query) return;
 
-        const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ address: query }, (results, status) => {
-            if (status === google.maps.GeocoderStatus.OK && results?.[0]) {
-                const location = results[0].geometry.location;
-                map.panTo({ lat: location.lat(), lng: location.lng() });
-                map.setZoom(15);
-            }
-        });
+        // Check if Google Maps is loaded before using it
+        if (typeof google === 'undefined' || !google.maps?.Geocoder) {
+            console.warn('Google Maps API not loaded, search functionality unavailable');
+            return;
+        }
+
+        try {
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address: query }, (results, status) => {
+                if (status === google.maps.GeocoderStatus.OK && results?.[0]) {
+                    const location = results[0].geometry.location;
+                    map.panTo({ lat: location.lat(), lng: location.lng() });
+                    map.setZoom(15);
+                }
+            });
+        } catch (error) {
+            console.error('Error during search:', error);
+        }
     };
 
     return (
@@ -411,16 +421,26 @@ function CustomCircle({
     useEffect(() => {
         if (!map) return;
 
-        const circle = new google.maps.Circle({
-            map,
-            center,
-            radius,
-            ...options
-        });
+        // Check if Google Maps is loaded before using it
+        if (typeof google === 'undefined' || !google.maps?.Circle) {
+            console.warn('Google Maps API not loaded, circle rendering unavailable');
+            return;
+        }
 
-        return () => {
-            circle.setMap(null);
-        };
+        try {
+            const circle = new google.maps.Circle({
+                map,
+                center,
+                radius,
+                ...options
+            });
+
+            return () => {
+                circle.setMap(null);
+            };
+        } catch (error) {
+            console.error('Error creating circle:', error);
+        }
     }, [map, center, radius, options]);
 
     return null;
@@ -571,25 +591,35 @@ export function InteractiveMap({
     const checkGeofences = useCallback((location: { lat: number; lng: number }) => {
         if (!onGeofenceEnter || !onGeofenceExit || !location) return;
 
+        // Check if Google Maps is loaded before using it
+        if (typeof google === 'undefined' || !google.maps?.geometry?.spherical) {
+            console.warn('Google Maps geometry library not loaded, skipping geofence checks');
+            return;
+        }
+
         geofences.forEach(geofence => {
-            // Calculate distance between user and geofence center in meters
-            const distance = google.maps.geometry.spherical.computeDistanceBetween(
-                new google.maps.LatLng(location.lat, location.lng),
-                new google.maps.LatLng(geofence.lat, geofence.lng)
-            );
+            try {
+                // Calculate distance between user and geofence center in meters
+                const distance = google.maps.geometry.spherical.computeDistanceBetween(
+                    new google.maps.LatLng(location.lat, location.lng),
+                    new google.maps.LatLng(geofence.lat, geofence.lng)
+                );
 
-            // Store the previous inside state in a ref or state
-            const wasInside = sessionStorage.getItem(`geofence-${geofence.id}`) === 'inside';
-            const isInside = distance <= geofence.radius;
+                // Store the previous inside state in a ref or state
+                const wasInside = sessionStorage.getItem(`geofence-${geofence.id}`) === 'inside';
+                const isInside = distance <= geofence.radius;
 
-            if (isInside && !wasInside) {
-                // User entered the geofence
-                sessionStorage.setItem(`geofence-${geofence.id}`, 'inside');
-                onGeofenceEnter(geofence);
-            } else if (!isInside && wasInside) {
-                // User exited the geofence
-                sessionStorage.setItem(`geofence-${geofence.id}`, 'outside');
-                onGeofenceExit(geofence);
+                if (isInside && !wasInside) {
+                    // User entered the geofence
+                    sessionStorage.setItem(`geofence-${geofence.id}`, 'inside');
+                    onGeofenceEnter(geofence);
+                } else if (!isInside && wasInside) {
+                    // User exited the geofence
+                    sessionStorage.setItem(`geofence-${geofence.id}`, 'outside');
+                    onGeofenceExit(geofence);
+                }
+            } catch (error) {
+                console.error('Error checking geofences:', error);
             }
         });
     }, [geofences, onGeofenceEnter, onGeofenceExit]);
@@ -598,23 +628,33 @@ export function InteractiveMap({
     const checkGroupSeparation = useCallback((location: { lat: number; lng: number }) => {
         if (!onGroupMemberDistanceAlert || !location) return;
 
+        // Check if Google Maps is loaded before using it
+        if (typeof google === 'undefined' || !google.maps?.geometry?.spherical) {
+            console.warn('Google Maps geometry library not loaded, skipping group separation checks');
+            return;
+        }
+
         groupMembers.forEach(member => {
-            // Calculate distance between user and group member in meters
-            const distance = google.maps.geometry.spherical.computeDistanceBetween(
-                new google.maps.LatLng(location.lat, location.lng),
-                new google.maps.LatLng(member.lat, member.lng)
-            );
+            try {
+                // Calculate distance between user and group member in meters
+                const distance = google.maps.geometry.spherical.computeDistanceBetween(
+                    new google.maps.LatLng(location.lat, location.lng),
+                    new google.maps.LatLng(member.lat, member.lng)
+                );
 
-            // Check if distance exceeds max separation and alert hasn't been sent recently
-            const recentAlertKey = `distance-alert-${member.id}`;
-            const lastAlertTime = sessionStorage.getItem(recentAlertKey);
-            const currentTime = Date.now();
+                // Check if distance exceeds max separation and alert hasn't been sent recently
+                const recentAlertKey = `distance-alert-${member.id}`;
+                const lastAlertTime = sessionStorage.getItem(recentAlertKey);
+                const currentTime = Date.now();
 
-            // Only alert if it's been more than 5 minutes since the last alert
-            if (distance > maxGroupSeparationDistance &&
-                (!lastAlertTime || (currentTime - parseInt(lastAlertTime)) > 5 * 60 * 1000)) {
-                onGroupMemberDistanceAlert(member.id, distance);
-                sessionStorage.setItem(recentAlertKey, currentTime.toString());
+                // Only alert if it's been more than 5 minutes since the last alert
+                if (distance > maxGroupSeparationDistance &&
+                    (!lastAlertTime || (currentTime - parseInt(lastAlertTime)) > 5 * 60 * 1000)) {
+                    onGroupMemberDistanceAlert(member.id, distance);
+                    sessionStorage.setItem(recentAlertKey, currentTime.toString());
+                }
+            } catch (error) {
+                console.error('Error checking group separation:', error);
             }
         });
     }, [groupMembers, maxGroupSeparationDistance, onGroupMemberDistanceAlert]);
@@ -683,6 +723,25 @@ export function InteractiveMap({
 
     if (!isLoaded) {
         return <MapSkeleton height={height} width={width} />;
+    }
+
+    // Check if Google Maps is available before rendering the map
+    if (typeof google === 'undefined' || !google.maps) {
+        return (
+            <div className={cn(
+                styles.mapContainer,
+                className
+            )} style={{ height: typeof height === 'number' ? `${height}px` : height, width: typeof width === 'number' ? `${width}px` : width }}>
+                <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">
+                    <div className="text-center p-4">
+                        <div className="text-gray-500 mb-2">Map Loading...</div>
+                        <div className="text-sm text-gray-400">
+                            Please make sure this component is wrapped in a GoogleMapsProvider
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     // Determine height class based on the height prop
@@ -762,7 +821,7 @@ export function InteractiveMap({
                 defaultZoom={initialZoom}
                 gestureHandling={'greedy'}
                 disableDefaultUI={false}
-                mapTypeId={google.maps.MapTypeId.ROADMAP}
+                mapTypeId={google.maps?.MapTypeId?.ROADMAP || 'roadmap'}
                 mapTypeControl={true}
                 zoomControl={true}
                 streetViewControl={true}

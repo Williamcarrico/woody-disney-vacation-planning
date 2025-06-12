@@ -1,5 +1,5 @@
 // src/engines/itinerary/optimizer.ts
-import { getParkLiveData, getParkAttractions, getParkSchedule } from '@/lib/api/themeParks';
+import { getParkLiveData, getParkAttractions, getParkSchedule } from '@/lib/api/themeParks-compat';
 import type {
     Attraction,
     LiveData,

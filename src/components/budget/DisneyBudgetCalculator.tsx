@@ -326,37 +326,37 @@ function DisneyBudgetCalculator() {
         active: { scale: 1, opacity: 1 }
     };
 
-    // Improved type checking functions with better error handling
-    const isValidViewMode = (value: string): value is typeof viewMode => {
-        return VALID_VIEW_MODES.includes(value as typeof VALID_VIEW_MODES[number]);
+    // Type-safe checking functions using proper type guards
+    const isValidViewMode = (value: string): value is typeof VALID_VIEW_MODES[number] => {
+        return (VALID_VIEW_MODES as readonly string[]).includes(value);
     };
 
     const isValidGroupType = (value: string): value is TripDetails['groupType'] => {
-        return VALID_GROUP_TYPES.includes(value as typeof VALID_GROUP_TYPES[number]);
+        return (VALID_GROUP_TYPES as readonly string[]).includes(value);
     };
 
     const isValidBudgetLevel = (value: string): value is TripDetails['budgetLevel'] => {
-        return VALID_BUDGET_LEVELS.includes(value as typeof VALID_BUDGET_LEVELS[number]);
+        return (VALID_BUDGET_LEVELS as readonly string[]).includes(value);
     };
 
     const isValidSeasonType = (value: string): value is TicketOptions['seasonType'] => {
-        return VALID_SEASON_TYPES.includes(value as typeof VALID_SEASON_TYPES[number]);
+        return (VALID_SEASON_TYPES as readonly string[]).includes(value);
     };
 
     const isValidTicketType = (value: string): value is TicketOptions['ticketType'] => {
-        return VALID_TICKET_TYPES.includes(value as typeof VALID_TICKET_TYPES[number]);
+        return (VALID_TICKET_TYPES as readonly string[]).includes(value);
     };
 
     const isValidResortType = (value: string): value is AccommodationOptions['resortType'] => {
-        return VALID_RESORT_TYPES.includes(value as typeof VALID_RESORT_TYPES[number]);
+        return (VALID_RESORT_TYPES as readonly string[]).includes(value);
     };
 
     const isValidRoomType = (value: string): value is AccommodationOptions['roomType'] => {
-        return VALID_ROOM_TYPES.includes(value as typeof VALID_ROOM_TYPES[number]);
+        return (VALID_ROOM_TYPES as readonly string[]).includes(value);
     };
 
     const isValidViewType = (value: string): value is AccommodationOptions['views'] => {
-        return VALID_VIEW_TYPES.includes(value as typeof VALID_VIEW_TYPES[number]);
+        return (VALID_VIEW_TYPES as readonly string[]).includes(value);
     };
 
     // Enhanced calculations with more sophisticated logic
@@ -500,7 +500,7 @@ function DisneyBudgetCalculator() {
         return Math.min((value / total) * 100, 100);
     }, []);
 
-    // Progress Bar Component to avoid inline styles
+    // Progress Bar Component using CSS custom properties safely
     const ProgressBar = ({ progress, colorClass, height = 'h-2', useGradient = false }: {
         progress: number;
         colorClass: string;
@@ -512,8 +512,8 @@ function DisneyBudgetCalculator() {
         return (
             <div className={`w-full bg-gray-200 rounded-full ${height} mt-3`}>
                 <div
-                    className={`${useGradient ? 'bg-gradient-to-r from-green-400 to-green-600' : colorClass} ${height} rounded-full transition-all duration-500`}
-                    style={{ width: `${progressClampedPercent}%` }}
+                    className={`${useGradient ? 'bg-gradient-to-r from-green-400 to-green-600' : colorClass} ${height} rounded-full transition-all duration-500 progress-bar`}
+                    style={{ '--progress-width': `${progressClampedPercent}%` } as React.CSSProperties}
                 />
             </div>
         );

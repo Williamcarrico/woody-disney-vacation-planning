@@ -4,6 +4,7 @@ import { db } from '@/db'
 import { itineraries } from '@/db/schema/itineraries'
 import { eq } from 'drizzle-orm'
 import { format } from 'date-fns'
+import { AsyncPageProps, extractParam } from '@/lib/utils/next-params'
 import {
     Calendar,
     MapPin,
@@ -42,11 +43,7 @@ export const metadata: Metadata = {
     description: 'View a shared Disney vacation itinerary',
 }
 
-interface SharedItineraryPageProps {
-    params: {
-        shareCode: string
-    }
-}
+interface SharedItineraryPageProps extends AsyncPageProps<{ shareCode: string }> {}
 
 // Define the type for park day activities
 interface Activity {
@@ -70,7 +67,7 @@ interface ParkDay {
 }
 
 export default async function SharedItineraryPage({ params }: SharedItineraryPageProps) {
-    const { shareCode } = params
+    const shareCode = await extractParam(params, 'shareCode')
 
     // Fetch itinerary from database using the share code
     const itinerary = await db.query.itineraries.findFirst({

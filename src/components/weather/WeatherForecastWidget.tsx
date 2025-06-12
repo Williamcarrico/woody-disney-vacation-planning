@@ -1,11 +1,9 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { cn } from '@/lib/utils'
-import { fetchRealtimeWeather, fetchWeatherForecast } from '@/lib/api/weather'
+import { useWeatherData } from '@/hooks/useWeatherData'
 import {
-    ForecastResponse,
-    RealtimeWeatherResponse,
     TemperatureUnit,
     TimelineData,
     WeatherForecastWidgetProps,
@@ -30,85 +28,65 @@ function WeatherForecastWidget({
     className,
     onLocationChange
 }: WeatherForecastWidgetProps) {
-    // State for holding API data
-    const [currentWeather, setCurrentWeather] = useState<RealtimeWeatherResponse | null>(null)
-    const [forecast, setForecast] = useState<ForecastResponse | null>(null)
+    // State for UI interactions
     const [location, setLocation] = useState<string | WeatherLocation>(initialLocation)
-    const [isLoading, setIsLoading] = useState<boolean>(true)
-    const [error, setError] = useState<string | null>(null)
     const [selectedForecastTab, setSelectedForecastTab] = useState<'hourly' | 'daily'>('daily')
     const [selectedForecastItem, setSelectedForecastItem] = useState<string | null>(null)
-    const [retryCount, setRetryCount] = useState(0)
 
-    // Fetch weather data
+    // Use the weather data hook with caching
+    const {
+        realtime: currentWeather,
+        forecast,
+        isLoading,
+        error: hookError,
+        isRefetching,
+        cacheHit,
+        lastUpdated,
+        refetch,
+        invalidateCache
+    } = useWeatherData({
+        location,
+        units,
+        enabled: true,
+        refetchInterval: 600000, // 10 minutes
+        staleTime: 300000, // 5 minutes
+        onError: useCallback((error: Error) => {
+            console.error('Weather data fetch error:', error)
+        }, []),
+        onSuccess: useCallback((data: { realtime: any; forecast: any }) => {
+            console.log('Weather data fetched successfully', data)
+        }, [])
+    })
+
+    // Convert hook error to string for UI
+    const error = hookError?.message || null
+
+    // Auto-select first forecast item when forecast data changes
     useEffect(() => {
-        let isMounted = true;
-
-        async function fetchWeatherData() {
-            if (!isMounted) return;
-
-            setIsLoading(true)
-            setError(null)
-
-            try {
-                // Fetch current weather and forecast in parallel
-                const [currentRes, forecastRes] = await Promise.all([
-                    fetchRealtimeWeather(location, units),
-                    fetchWeatherForecast(location, units)
-                ])
-
-                if (!isMounted) return;
-
-                setCurrentWeather(currentRes)
-                setForecast(forecastRes)
-                setRetryCount(0) // Reset retry count on success
-
-                // Select first item in daily forecast by default
-                if (forecastRes?.timelines?.daily && forecastRes.timelines.daily.length > 0) {
-                    setSelectedForecastItem(forecastRes.timelines.daily[0].time)
-                }
-
-                // Notify parent component of location change if provided
-                if (onLocationChange && currentRes.location) {
-                    onLocationChange({
-                        lat: currentRes.location.lat,
-                        lon: currentRes.location.lon,
-                        name: currentRes.location.name
-                    })
-                }
-            } catch (err) {
-                if (!isMounted) return;
-
-                console.error('Error fetching weather data:', err)
-                setError('Unable to fetch weather data. Please try again.')
-
-                // Retry logic - retry up to 3 times with exponential backoff
-                if (retryCount < 3) {
-                    const retryDelay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
-                    setTimeout(() => {
-                        if (isMounted) {
-                            setRetryCount(prev => prev + 1);
-                        }
-                    }, retryDelay);
-                }
-            } finally {
-                if (isMounted) {
-                    setIsLoading(false)
-                }
-            }
+        if (forecast?.timelines?.daily && forecast.timelines.daily.length > 0 && !selectedForecastItem) {
+            setSelectedForecastItem(forecast.timelines.daily[0].time)
         }
+    }, [forecast, selectedForecastItem])
 
-        fetchWeatherData()
+    // Use a ref to store the callback to prevent infinite loops
+    const onLocationChangeRef = useRef(onLocationChange)
+    onLocationChangeRef.current = onLocationChange
 
-        return () => {
-            isMounted = false;
+    // Separate effect for handling location change callback to avoid infinite loops
+    useEffect(() => {
+        if (currentWeather?.location && onLocationChangeRef.current) {
+            onLocationChangeRef.current({
+                lat: currentWeather.location.lat,
+                lon: currentWeather.location.lon,
+                name: currentWeather.location.name || 'Unknown location'
+            })
         }
-    }, [location, units, onLocationChange, retryCount])
+    }, [currentWeather?.location])
 
     // Handle location change
     const handleLocationChange = (newLocation: string | WeatherLocation) => {
         setLocation(newLocation)
-        setRetryCount(0) // Reset retry count when location changes
+        setSelectedForecastItem(null) // Reset selected item when location changes
     }
 
     // Functions to limit and extract forecast data
@@ -159,21 +137,29 @@ function WeatherForecastWidget({
                         <p className="text-sm text-muted-foreground mt-1">
                             {error || 'Unable to load weather data'}
                         </p>
-                        {retryCount < 3 && (
+                        {isRefetching && (
                             <p className="text-xs text-muted-foreground mt-2">
-                                Retrying... ({retryCount + 1}/3)
+                                Refreshing data...
                             </p>
                         )}
-                        {location && (
-                            <button
-                                onClick={() => {
-                                    setRetryCount(0);
-                                    setLocation(initialLocation);
-                                }}
-                                className="mt-4 text-sm text-primary hover:underline"
-                            >
-                                Reset location
-                            </button>
+                        {error && (
+                            <div className="mt-4 space-y-2">
+                                <button
+                                    onClick={() => refetch()}
+                                    className="text-sm text-primary hover:underline"
+                                >
+                                    Try again
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        invalidateCache();
+                                        setLocation(initialLocation);
+                                    }}
+                                    className="block text-sm text-muted-foreground hover:underline"
+                                >
+                                    Reset location
+                                </button>
+                            </div>
                         )}
                     </div>
                 </CardContent>
@@ -182,7 +168,7 @@ function WeatherForecastWidget({
     }
 
     // Format location display name
-    const locationDisplayName = typeof currentWeather.location.name === 'string'
+    const locationDisplayName = currentWeather?.location?.name
         ? currentWeather.location.name
         : typeof location === 'string'
             ? location
@@ -192,7 +178,19 @@ function WeatherForecastWidget({
         <Card className={cn('overflow-hidden', className)}>
             <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">Weather</h3>
+                    <div>
+                        <h3 className="text-lg font-semibold">Weather</h3>
+                        {/* Cache status indicator for development */}
+                        {process.env.NODE_ENV === 'development' && (
+                            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                                <span className={`w-2 h-2 rounded-full ${cacheHit ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                                <span>{cacheHit ? 'Cached' : 'Fresh'}</span>
+                                {lastUpdated && (
+                                    <span>• Updated {Math.floor((Date.now() - lastUpdated) / 1000)}s ago</span>
+                                )}
+                            </div>
+                        )}
+                    </div>
                     <LocationSearch
                         defaultLocation={locationDisplayName}
                         onLocationSelect={handleLocationChange}
@@ -204,7 +202,28 @@ function WeatherForecastWidget({
                 {/* Current weather section */}
                 <CurrentWeather
                     location={locationDisplayName}
-                    values={currentWeather.data.values}
+                    values={currentWeather?.data?.values || {
+                        cloudBase: 0,
+                        cloudCeiling: 0,
+                        cloudCover: 0,
+                        dewPoint: 0,
+                        freezingRainIntensity: 0,
+                        humidity: 0,
+                        precipitationProbability: 0,
+                        pressureSurfaceLevel: 0,
+                        rainIntensity: 0,
+                        sleetIntensity: 0,
+                        snowIntensity: 0,
+                        temperature: 0,
+                        temperatureApparent: 0,
+                        uvHealthConcern: 0,
+                        uvIndex: 0,
+                        visibility: 0,
+                        weatherCode: 1000,
+                        windDirection: 0,
+                        windGust: 0,
+                        windSpeed: 0
+                    }}
                     units={units}
                 />
 

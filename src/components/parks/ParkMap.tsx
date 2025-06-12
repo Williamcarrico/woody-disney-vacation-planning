@@ -1,8 +1,10 @@
+'use client';
+
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
-import { getPark } from '@/lib/api/themeParks';
+import { getPark } from '@/lib/api/themeParks-compat';
 import type { Attraction, Coordinates } from '@/types/api';
 import {
     Card,

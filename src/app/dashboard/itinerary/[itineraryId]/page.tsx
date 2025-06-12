@@ -6,6 +6,7 @@ import { itineraries, type Itinerary } from '@/db/schema/itineraries'
 import { eq } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 import { format } from 'date-fns'
+import { AsyncPageProps, extractParam } from '@/lib/utils/next-params'
 import {
     Calendar,
     ArrowLeft,
@@ -37,11 +38,7 @@ export const metadata: Metadata = {
     description: 'View your Disney vacation itinerary details',
 }
 
-interface ItineraryPageProps {
-    params: {
-        itineraryId: string
-    }
-}
+interface ItineraryPageProps extends AsyncPageProps<{ itineraryId: string }> {}
 
 export default async function ItineraryPage({ params }: ItineraryPageProps) {
     const session = await auth()
@@ -51,7 +48,7 @@ export default async function ItineraryPage({ params }: ItineraryPageProps) {
     }
 
     const userId = session.user.id
-    const { itineraryId } = params
+    const itineraryId = await extractParam(params, 'itineraryId')
 
     // Fetch itinerary from database
     const itinerary = await db.query.itineraries.findFirst({

@@ -1,0 +1,22 @@
+{
+    "name": "Woody Disney Vacation Planning",
+    "short_name": "DisneyPlan",
+    "description": "Plan your magical Disney vacation with real-time weather updates, attraction information, and more.",
+    "icons": [
+        {
+            "src": "android-chrome-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "android-chrome-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "theme_color": "#ffffff",
+    "background_color": "#ffffff",
+    "display": "standalone",
+    "start_url": "/",
+    "scope": "/"
+}

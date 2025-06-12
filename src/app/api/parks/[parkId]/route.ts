@@ -1,103 +1,133 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cache } from 'react';
-
-const BASE_URL = 'https://api.themeparks.wiki/v1';
-
-// Mapping from internal park slugs to ThemeParks.wiki UUIDs
-const PARK_ID_MAPPINGS: Record<string, string> = {
-    'magic-kingdom': '75ea578a-adc8-4116-a54d-dccb60765ef9',
-    'epcot': '47f90d2c-e191-4239-a466-5892ef59a88b',
-    'hollywood-studios': '288747d1-8b4f-4a64-867e-ea7c9b27bad8',
-    'animal-kingdom': '1c84a229-8862-4648-9c71-378ddd2c7693',
-    'typhoon-lagoon': 'b070cbc5-feaa-4b87-a8c1-f94cca037a18',
-    'blizzard-beach': '8fe7ba5c-1a8e-4e6e-9d9e-8c8f8b8c8b8c'
-};
-
-// Cache the fetch function
-const cachedFetch = cache(async (url: string) => {
-    const response = await fetch(url, {
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        next: { revalidate: 300 }, // Cache for 5 minutes
-    });
-
-    if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
-    }
-
-    return response.json();
-});
+import * as themeParksAPI from '@/lib/services/themeparks-api';
+import { parksService } from '@/lib/firebase/parks-service';
 
 interface RouteParams {
-    params: Promise<{
+    params: {
         parkId: string;
-    }>;
+    };
 }
 
-// GET handler for /api/parks/[parkId]
-export async function GET(
-    request: NextRequest,
-    { params }: RouteParams
-) {
+/**
+ * GET /api/parks/[parkId]
+ *
+ * Comprehensive park data endpoint supporting multiple data types
+ *
+ * Query parameters:
+ * - entity: 'details' | 'attractions' | 'live' | 'schedule' | 'showtimes'
+ * - year: YYYY (for schedule)
+ * - month: MM (for schedule)
+ */
+export async function GET(request: NextRequest, { params }: RouteParams) {
     try {
-        const { parkId } = await params;
+        const { parkId } = params;
         const searchParams = request.nextUrl.searchParams;
-        const entity = searchParams.get('entity');
+        const entity = searchParams.get('entity') || 'details';
 
-        // Map internal park ID to ThemeParks.wiki UUID
-        const themeParksId = PARK_ID_MAPPINGS[parkId];
-        if (!themeParksId) {
+        if (!parkId) {
             return NextResponse.json(
                 {
-                    error: 'Park not found',
-                    availableParks: Object.keys(PARK_ID_MAPPINGS),
-                    requestedPark: parkId
+                    success: false,
+                    error: 'Park ID is required'
                 },
-                { status: 404 }
+                { status: 400 }
             );
         }
 
-        // Determine what data to fetch based on the 'entity' parameter
-        if (entity === 'attractions') {
-            const data = await cachedFetch(`${BASE_URL}/entity/${themeParksId}/children`);
-            // Return just the children array which contains the attractions
-            return NextResponse.json(data.children || []);
-        } else if (entity === 'live') {
-            const data = await cachedFetch(`${BASE_URL}/entity/${themeParksId}/live`);
-            // Return the liveData array which contains the attraction wait times
-            return NextResponse.json(data.liveData || []);
-        } else if (entity === 'schedule') {
-            const startDate = searchParams.get('startDate');
-            const endDate = searchParams.get('endDate');
+        // Handle different entity types
+        switch (entity) {
+            case 'live':
+                try {
+                    const liveData = await themeParksAPI.getParkLiveDataBySlug(parkId);
+                    return NextResponse.json({
+                        success: true,
+                        data: liveData
+                    });
+                } catch (error) {
+                    console.error('Error fetching live data:', error);
+                    return NextResponse.json(
+                        {
+                            success: false,
+                            error: 'Failed to fetch live data'
+                        },
+                        { status: 500 }
+                    );
+                }
 
-            let url = `${BASE_URL}/entity/${themeParksId}/schedule`;
-            if (startDate && endDate) {
-                url += `?startDate=${startDate}&endDate=${endDate}`;
-            }
+            case 'attractions':
+                try {
+                    const attractions = await themeParksAPI.getParkAttractionsBySlug(parkId);
+                    return NextResponse.json({
+                        success: true,
+                        data: attractions
+                    });
+                } catch (error) {
+                    console.error('Error fetching attractions:', error);
+                    return NextResponse.json(
+                        {
+                            success: false,
+                            error: 'Failed to fetch attractions'
+                        },
+                        { status: 500 }
+                    );
+                }
 
-            const data = await cachedFetch(url);
-            return NextResponse.json(data);
-        } else if (entity === 'showtimes') {
-            const date = searchParams.get('date');
+            case 'schedule':
+                try {
+                    const year = searchParams.get('year') ? parseInt(searchParams.get('year')!) : undefined;
+                    const month = searchParams.get('month') ? parseInt(searchParams.get('month')!) : undefined;
+                    const schedule = await themeParksAPI.getParkScheduleBySlug(parkId, year, month);
+                    return NextResponse.json({
+                        success: true,
+                        data: schedule
+                    });
+                } catch (error) {
+                    console.error('Error fetching schedule:', error);
+                    return NextResponse.json(
+                        {
+                            success: false,
+                            error: 'Failed to fetch schedule'
+                        },
+                        { status: 500 }
+                    );
+                }
 
-            let url = `${BASE_URL}/entity/${themeParksId}/showtimes`;
-            if (date) {
-                url += `?date=${date}`;
-            }
+            case 'details':
+            default:
+                try {
+                    const park = await parksService.getParkById(parkId);
+                    if (!park) {
+                        return NextResponse.json(
+                            {
+                                success: false,
+                                error: 'Park not found'
+                            },
+                            { status: 404 }
+                        );
+                    }
 
-            const data = await cachedFetch(url);
-            return NextResponse.json(data);
-        } else {
-            // Default: return park details
-            const data = await cachedFetch(`${BASE_URL}/entity/${themeParksId}`);
-            return NextResponse.json(data);
+                    return NextResponse.json({
+                        success: true,
+                        data: park
+                    });
+                } catch (error) {
+                    console.error('Error fetching park details:', error);
+                    return NextResponse.json(
+                        {
+                            success: false,
+                            error: 'Failed to fetch park details'
+                        },
+                        { status: 500 }
+                    );
+                }
         }
     } catch (error) {
-        const { parkId } = await params;
-        console.error(`Error fetching data for park ${parkId}:`, error);
+        console.error('Error in park API:', error);
         return NextResponse.json(
-            { error: 'Failed to fetch park data' },
+            {
+                success: false,
+                error: 'Internal server error'
+            },
             { status: 500 }
         );
     }

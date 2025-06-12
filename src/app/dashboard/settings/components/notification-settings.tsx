@@ -15,7 +15,8 @@ import {
     ParkingSquare,
     TicketCheck,
     Utensils,
-    Sparkles
+    Sparkles,
+    Smartphone
 } from "lucide-react"
 import {
     Select,
@@ -25,6 +26,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
+import NotificationSetup from "@/components/messaging/NotificationSetup"
 
 const notificationFormSchema = z.object({
     emailNotifications: z.boolean().default(true),
@@ -70,6 +72,15 @@ export function NotificationSettings() {
 
     return (
         <div className="space-y-6">
+            <SettingsSection
+                title="Push Notification Setup"
+                description="Enable and configure Firebase Cloud Messaging for real-time notifications."
+                icon={<Smartphone className="h-5 w-5" />}
+                defaultOpen={true}
+            >
+                <NotificationSetup showAsCard={false} />
+            </SettingsSection>
+
             <SettingsSection
                 title="Notification Methods"
                 description="Control how and when you receive notifications."

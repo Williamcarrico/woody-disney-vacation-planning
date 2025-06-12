@@ -1,0 +1,94 @@
+{
+  // Example:
+  //
+  // "indexes": [
+  //   {
+  //     "collectionGroup": "widgets",
+  //     "queryScope": "COLLECTION",
+  //     "fields": [
+  //       { "fieldPath": "foo", "arrayConfig": "CONTAINS" },
+  //       { "fieldPath": "bar", "mode": "DESCENDING" }
+  //     ]
+  //   },
+  //
+  //  "fieldOverrides": [
+  //    {
+  //      "collectionGroup": "widgets",
+  //      "fieldPath": "baz",
+  //      "indexes": [
+  //        { "order": "ASCENDING", "queryScope": "COLLECTION" }
+  //      ]
+  //    },
+  //   ]
+  // ]
+  "indexes": [
+    {
+      "collectionGroup": "resorts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "category", "order": "ASCENDING" },
+        { "fieldPath": "priceIndex", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "resorts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "category", "order": "ASCENDING" },
+        { "fieldPath": "ratingIndex", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "resorts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "areaIndex", "order": "ASCENDING" },
+        { "fieldPath": "priceIndex", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "resorts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "name", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "resorts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isDVC", "order": "ASCENDING" },
+        { "fieldPath": "priceIndex", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "resorts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "amenityIndex", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "ratingIndex", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "resorts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "searchTerms", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "ratingIndex", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": [
+    {
+      "collectionGroup": "resorts",
+      "fieldPath": "amenityIndex",
+      "indexes": [{ "arrayConfig": "CONTAINS", "queryScope": "COLLECTION" }]
+    },
+    {
+      "collectionGroup": "resorts",
+      "fieldPath": "searchTerms",
+      "indexes": [{ "arrayConfig": "CONTAINS", "queryScope": "COLLECTION" }]
+    }
+  ]
+}

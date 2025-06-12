@@ -121,7 +121,7 @@ export default function RestaurantCard({
                     {/* Image */}
                     <div className="relative md:w-48 md:h-32 w-full h-48 flex-shrink-0">
                         <Image
-                            src={restaurant.imageUrl || "/images/restaurants/placeholder.jpg"}
+                            src={restaurant.imageUrl || "/images/restaurants/default-restaurant.webp"}
                             alt={restaurant.name}
                             fill
                             className="object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
@@ -226,7 +226,7 @@ export default function RestaurantCard({
             <MagicCard className={`relative overflow-hidden ${className}`}>
                 <div className="relative h-80 w-full">
                     <Image
-                        src={restaurant.imageUrl || "/images/restaurants/placeholder.jpg"}
+                        src={restaurant.imageUrl || "/images/restaurants/default-restaurant.webp"}
                         alt={restaurant.name}
                         fill
                         className="object-cover"
@@ -308,7 +308,7 @@ export default function RestaurantCard({
             <CardHeader className="p-0">
                 <div className="relative h-48 w-full overflow-hidden">
                     <Image
-                        src={restaurant.imageUrl || "/images/restaurants/placeholder.jpg"}
+                        src={restaurant.imageUrl || "/images/restaurants/default-restaurant.webp"}
                         alt={restaurant.name}
                         fill
                         className="object-cover transition-transform duration-300 group-hover:scale-105"

@@ -1,0 +1,296 @@
+# User Queries
+query GetUser($id: UUID!) {
+  user(id: $id) {
+    id
+    displayName
+    email
+    photoUrl
+    preferences
+    createdAt
+  }
+}
+
+query GetUserByEmail($email: String!) {
+  users(where: { email: { eq: $email } }) {
+    id
+    displayName
+    email
+    photoUrl
+    preferences
+    createdAt
+  }
+}
+
+# Park Queries
+query GetAllParks {
+  parks {
+    id
+    name
+    description
+    operatingHours
+  }
+}
+
+query GetPark($id: UUID!) {
+  park(id: $id) {
+    id
+    name
+    description
+    operatingHours
+    attractions {
+      id
+      name
+      description
+      rideType
+      waitTime
+      heightRestriction
+      userRating
+    }
+    restaurants {
+      id
+      name
+      cuisine
+      priceRange
+      menu
+      userReviews
+    }
+  }
+}
+
+# Attraction Queries
+query GetAttraction($id: UUID!) {
+  attraction(id: $id) {
+    id
+    park {
+      id
+      name
+    }
+    name
+    description
+    rideType
+    waitTime
+    heightRestriction
+    userRating
+  }
+}
+
+query GetAttractionsByPark($parkId: UUID!) {
+  attractions(where: { park: { id: { eq: $parkId } } }) {
+    id
+    name
+    description
+    rideType
+    waitTime
+    heightRestriction
+    userRating
+  }
+}
+
+# Restaurant Queries
+query GetRestaurant($id: UUID!) {
+  restaurant(id: $id) {
+    id
+    park {
+      id
+      name
+    }
+    name
+    cuisine
+    priceRange
+    menu
+    userReviews
+  }
+}
+
+query GetRestaurantsByPark($parkId: UUID!) {
+  restaurants(where: { park: { id: { eq: $parkId } } }) {
+    id
+    name
+    cuisine
+    priceRange
+    menu
+    userReviews
+  }
+}
+
+# Resort Queries
+query GetAllResorts {
+  resorts {
+    id
+    name
+    description
+    category
+    address
+    phoneNumber
+    amenities
+  }
+}
+
+query GetResort($id: UUID!) {
+  resort(id: $id) {
+    id
+    name
+    description
+    category
+    address
+    phoneNumber
+    amenities
+  }
+}
+
+query GetResortsByCategory($category: String!) {
+  resorts(where: { category: { eq: $category } }) {
+    id
+    name
+    description
+    category
+    address
+    phoneNumber
+    amenities
+  }
+}
+
+# Itinerary Queries
+query GetUserItineraries($userId: UUID!) {
+  itineraries(where: { user: { id: { eq: $userId } } }) {
+    id
+    name
+    startDate
+    endDate
+    notes
+    items {
+      id
+      startTime
+      endTime
+      itemType
+      notes
+      confirmationNumber
+    }
+  }
+}
+
+query GetItinerary($id: UUID!) {
+  itinerary(id: $id) {
+    id
+    user {
+      id
+      displayName
+    }
+    name
+    startDate
+    endDate
+    notes
+    items {
+      id
+      startTime
+      endTime
+      itemType
+      attraction {
+        id
+        name
+      }
+      restaurant {
+        id
+        name
+      }
+      resort {
+        id
+        name
+      }
+      travelDetails {
+        id
+        transportationType
+        departureLocation
+        arrivalLocation
+        departureTime
+        arrivalTime
+      }
+      notes
+      confirmationNumber
+    }
+  }
+}
+
+# Vacation Party Queries
+query GetVacationParty($id: UUID!) {
+  vacationParty(id: $id) {
+    id
+    name
+    createdAt
+    users {
+      user {
+        id
+        displayName
+        email
+      }
+      joinedAt
+    }
+    messages {
+      id
+      user {
+        id
+        displayName
+      }
+      content
+      sentAt
+    }
+  }
+}
+
+query GetUserVacationParties($userId: UUID!) {
+  vacationPartyUsers(where: { user: { id: { eq: $userId } } }) {
+    vacationParty {
+      id
+      name
+      createdAt
+    }
+    joinedAt
+  }
+}
+
+# Message Queries
+query GetVacationPartyMessages($vacationPartyId: UUID!, $limit: Int = 50) {
+  messages(
+    where: { vacationParty: { id: { eq: $vacationPartyId } } }
+    orderBy: { sentAt: DESC }
+    limit: $limit
+  ) {
+    id
+    user {
+      id
+      displayName
+    }
+    content
+    sentAt
+  }
+}
+
+# Location Queries
+query GetUserLocation($userId: UUID!) {
+  locations(
+    where: { user: { id: { eq: $userId } } }
+    orderBy: { timestamp: DESC }
+    limit: 1
+  ) {
+    id
+    latitude
+    longitude
+    timestamp
+  }
+}
+
+query GetRecentLocations($userIds: [UUID!]!, $since: Timestamp!) {
+  locations(
+    where: { user: { id: { in: $userIds } }, timestamp: { gte: $since } }
+    orderBy: { timestamp: DESC }
+  ) {
+    id
+    user {
+      id
+      displayName
+    }
+    latitude
+    longitude
+    timestamp
+  }
+}

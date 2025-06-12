@@ -74,12 +74,12 @@ export function formatDuration(durationInMinutes?: number): string {
 }
 
 /**
- * Gets a placeholder image URL if the item's imageUrl is missing.
- * @param {RecommendableItem} item - The recommendable item.
- * @returns {string} The item's image URL or a default placeholder.
+ * Gets the image URL for a recommendation item.
+ * @param {any} item - The item (attraction, restaurant, etc.)
+ * @returns {string} The item's image URL or a default fallback image.
  */
-export function getItemImageUrl(item: RecommendableItem): string {
-    return item.imageUrl || "/images/placeholder-disney.jpg" // Ensure you have this placeholder image
+export function getItemImageUrl(item: any): string {
+    return item.imageUrl || "/images/disney/default-attraction.webp" // Using webp format for better performance
 }
 
 /**

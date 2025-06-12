@@ -1,0 +1,29 @@
+rules_version = '2';
+
+// Craft rules based on data in your Firestore database
+// allow write: if firestore.get(resource.bucket + '/users/' + request.auth.uid).data.isAdmin == true;
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Users can upload and read their own files
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Vacation-related files - members can read/write
+    match /vacations/{vacationId}/{allPaths=**} {
+      allow read, write: if request.auth != null &&
+        firestore.exists(/databases/(default)/documents/vacations/$(vacationId)/members/$(request.auth.uid));
+    }
+
+    // Public files (like attraction images) - anyone can read
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if false; // Only allow writes through admin functions
+    }
+
+    // Default deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

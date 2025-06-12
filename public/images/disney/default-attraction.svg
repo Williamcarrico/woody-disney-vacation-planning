@@ -1,0 +1,87 @@
+<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#dbeafe;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#bfdbfe;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#93c5fd;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="castleGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f3f4f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d1d5db;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="sunGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#fef3c7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#fbbf24;stop-opacity:1" />
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Sky background -->
+  <rect width="400" height="300" fill="url(#skyGradient)"/>
+
+  <!-- Sun -->
+  <circle cx="320" cy="60" r="25" fill="url(#sunGradient)" opacity="0.8"/>
+
+  <!-- Clouds -->
+  <g fill="#ffffff" opacity="0.7">
+    <ellipse cx="80" cy="50" rx="25" ry="15"/>
+    <ellipse cx="95" cy="45" rx="30" ry="18"/>
+    <ellipse cx="110" cy="50" rx="20" ry="12"/>
+
+    <ellipse cx="280" cy="40" rx="20" ry="12"/>
+    <ellipse cx="290" cy="35" rx="25" ry="15"/>
+    <ellipse cx="305" cy="40" rx="18" ry="10"/>
+  </g>
+
+  <!-- Castle silhouette -->
+  <g fill="url(#castleGradient)" stroke="#9ca3af" stroke-width="1">
+    <!-- Main tower -->
+    <rect x="180" y="120" width="40" height="80" rx="2"/>
+    <polygon points="175,120 200,95 225,120" />
+
+    <!-- Left tower -->
+    <rect x="140" y="140" width="30" height="60" rx="2"/>
+    <polygon points="137,140 155,122 173,140" />
+
+    <!-- Right tower -->
+    <rect x="230" y="140" width="30" height="60" rx="2"/>
+    <polygon points="227,140 245,122 263,140" />
+
+    <!-- Small spires -->
+    <rect x="195" y="95" width="4" height="20"/>
+    <rect x="150" y="122" width="3" height="15"/>
+    <rect x="240" y="122" width="3" height="15"/>
+
+    <!-- Flags -->
+    <polygon points="199,95 199,85 206,88 199,91" fill="#dc2626"/>
+    <polygon points="151.5,122 151.5,115 157,117 151.5,119" fill="#2563eb"/>
+    <polygon points="241.5,122 241.5,115 247,117 241.5,119" fill="#dc2626"/>
+  </g>
+
+  <!-- Magic sparkles -->
+  <g fill="#fbbf24" filter="url(#glow)">
+    <circle cx="120" cy="80" r="2"/>
+    <circle cx="350" cy="90" r="1.5"/>
+    <circle cx="60" cy="120" r="1"/>
+    <circle cx="380" cy="140" r="2"/>
+    <circle cx="30" cy="160" r="1.5"/>
+    <circle cx="370" cy="180" r="1"/>
+  </g>
+
+  <!-- Decorative stars -->
+  <g fill="#f59e0b" opacity="0.8">
+    <polygon points="150,70 151.5,74 156,74 152.5,77 154,81 150,78 146,81 147.5,77 144,74 148.5,74" />
+    <polygon points="300,120 301.5,124 306,124 302.5,127 304,131 300,128 296,131 297.5,127 294,124 298.5,124" />
+    <polygon points="50,180 51.5,184 56,184 52.5,187 54,191 50,188 46,191 47.5,187 44,184 48.5,184" />
+  </g>
+
+  <!-- Text -->
+  <text x="200" y="240" text-anchor="middle" font-family="serif" font-size="18" font-weight="bold" fill="#1f2937">Disney Attraction</text>
+  <text x="200" y="260" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#4b5563">Where Dreams Come True</text>
+</svg>

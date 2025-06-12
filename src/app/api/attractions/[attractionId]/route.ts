@@ -44,11 +44,11 @@ export async function GET(
                 url += `?startDate=${startDate}&endDate=${endDate}`;
             }
 
-            const data = await cachedFetch(url);
+            const data = await cachedFetch(url) as unknown;
             return NextResponse.json(data);
         } else {
             // Default: return attraction details
-            const data = await cachedFetch(`${BASE_URL}/attraction/${attractionId}`);
+            const data = await cachedFetch(`${BASE_URL}/attraction/${attractionId}`) as unknown;
             return NextResponse.json(data);
         }
     } catch (error) {

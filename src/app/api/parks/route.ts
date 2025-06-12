@@ -1,73 +1,48 @@
-import { NextRequest, NextFetchEvent } from 'next/server';
-import { z } from 'zod';
-import { cache } from 'react';
-import { withEdge } from '../config';
-import { validateQuery } from '@/lib/api/validation';
-import { errorResponse, successResponse } from '@/lib/api/response';
-import { Destination } from '@/types/api';
+import { NextRequest, NextResponse } from 'next/server';
+import { parksService } from '@/lib/firebase/parks-service';
+import type { ParkFilters } from '@/types/parks';
 
-// Define schema for query validation
-const ParksQuerySchema = z.object({
-    destination: z.string().optional()
-});
-
-export const runtime = 'edge';
-
-const BASE_URL = 'https://api.themeparks.wiki/v1';
-
-// Cache the fetch function to reduce redundant API calls
-const cachedFetch = cache(async (url: string) => {
-    const response = await fetch(url, {
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        next: { revalidate: 300 }, // Cache for 5 minutes
-    });
-
-    if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
-    }
-
-    return response.json();
-});
-
-// GET handler for /api/parks
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function handleGet(request: NextRequest, _event: NextFetchEvent) {
+/**
+ * GET /api/parks
+ * Returns all Disney parks with optional filtering
+ */
+export async function GET(request: NextRequest) {
     try {
-        // Validate query parameters
-        const validation = await validateQuery(request, ParksQuerySchema);
-        if (!validation.success) {
-            return validation.error!;
+        const { searchParams } = new URL(request.url);
+
+        // Extract filter parameters
+        const filters: ParkFilters = {
+            searchTerm: searchParams.get('searchTerm') || undefined,
+            hasAttraction: searchParams.get('hasAttraction') || undefined,
+            hasLand: searchParams.get('hasLand') || undefined,
+            operatingStatus: searchParams.get('operatingStatus') as 'open' | 'closed' | 'seasonal' || undefined
+        };
+
+        // Remove undefined filters
+        const cleanFilters = Object.fromEntries(
+            Object.entries(filters).filter(([_, value]) => value !== undefined)
+        ) as ParkFilters;
+
+        let parks;
+        if (Object.keys(cleanFilters).length > 0) {
+            parks = await parksService.searchParks(cleanFilters);
+        } else {
+            parks = await parksService.getAllParks();
         }
 
-        const { destination } = validation.data;
-
-        // If a specific destination is requested, return only that destination's parks
-        if (destination) {
-            const data = await cachedFetch(`${BASE_URL}/destination/${destination}/parks`);
-            return successResponse(data);
-        }
-
-        // Otherwise, return all Disney parks
-        const allDestinations = await cachedFetch(`${BASE_URL}/destinations`);
-        const disneyDestinations = (allDestinations as Destination[]).filter(
-            (dest: Destination) => dest.slug.includes('disney')
-        );
-
-        return successResponse(disneyDestinations);
+        return NextResponse.json({
+            success: true,
+            data: parks,
+            total: parks.length
+        });
     } catch (error) {
-        console.error('Error fetching parks data:', error);
-        return errorResponse(
-            'Failed to fetch parks data',
-            'API_ERROR',
-            500
+        console.error('Error fetching parks:', error);
+        return NextResponse.json(
+            {
+                success: false,
+                error: 'Failed to fetch parks'
+            },
+            { status: 500 }
         );
     }
 }
-
-// Use the edge function wrapper with caching enabled
-export const GET = withEdge(handleGet, {
-    cacheTtl: 300, // 5 minutes
-    edgeCaching: true
-});

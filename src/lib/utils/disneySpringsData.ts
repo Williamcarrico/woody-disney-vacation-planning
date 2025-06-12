@@ -1,261 +1,417 @@
+import { useState, useEffect } from 'react'
+import {
+    getAllDisneySpringsLocations,
+    getLocationsByCategory,
+    getLocationsByArea,
+    getDisneySpringsLocationById,
+    searchDisneySpringsLocations,
+    getDisneySpringsMetadata,
+    getOperationalInfo,
+    getDisneySpringsEvents,
+    getDisneySpringsServices,
+    getDisneySpringsTips
+} from '@/lib/firebase/disneysprings'
 import {
     DisneySpringLocation,
+    DisneySpringsData,
     LocationCategory,
     LocationArea,
-    ShoppingSubcategory,
-    DiningSubcategory,
+    LocationFilters,
+    LocationSearchResult,
     ShoppingLocation,
     DiningLocation,
     EntertainmentLocation,
     PriceRange
 } from "@/types/disneysprings"
 
-// Shopping Locations
-export const shoppingLocations: ShoppingLocation[] = [
-    {
-        id: "world-of-disney",
-        name: "World of Disney",
-        description: "The ultimate Disney merchandise destination featuring the largest collection of Disney toys, souvenirs, accessories, collectibles and more.",
-        category: LocationCategory.Shopping,
-        subcategory: ShoppingSubcategory.ToysAndPlush,
-        area: LocationArea.Marketplace,
-        tags: ["Disney merchandise", "Souvenirs", "Toys", "Apparel"],
-        imageUrl: "/images/disney-springs/world-of-disney.jpg",
-        hours: "10:00 AM - 11:00 PM",
-        featuredItems: ["Mickey Mouse plush toys", "Disney Princess merchandise", "Exclusive Disney Springs collections"],
-    },
-    {
-        id: "uniqlo",
-        name: "UNIQLO",
-        description: "Japanese retailer offering high-quality casual wear, innovative fabrics, and affordable basics for everyone.",
-        category: LocationCategory.Shopping,
-        subcategory: ShoppingSubcategory.ApparelAndAccessories,
-        area: LocationArea.TownCenter,
-        tags: ["Apparel", "Fashion", "T-shirts", "Casual wear"],
-        imageUrl: "/images/disney-springs/uniqlo.jpg",
-        hours: "10:00 AM - 11:00 PM",
-        featuredItems: ["Disney-themed T-shirts", "AIRism technology clothing", "UltraLight Down jackets"],
-    },
-    {
-        id: "the-lego-store",
-        name: "The LEGO Store",
-        description: "An immersive LEGO shopping experience with impressive LEGO sculptures, build stations, and the largest selection of LEGO sets.",
-        category: LocationCategory.Shopping,
-        subcategory: ShoppingSubcategory.ToysAndPlush,
-        area: LocationArea.Marketplace,
-        tags: ["LEGO", "Building sets", "Toys", "Family-friendly"],
-        imageUrl: "/images/disney-springs/lego-store.jpg",
-        hours: "10:00 AM - 11:00 PM",
-        featuredItems: ["Disney Castle LEGO set", "Star Wars collections", "Pick-a-Brick wall"],
-    },
-    {
-        id: "sephora",
-        name: "Sephora",
-        description: "Beauty retailer offering cosmetics, skincare, fragrance, and personal care products from a variety of brands.",
-        category: LocationCategory.Shopping,
-        subcategory: ShoppingSubcategory.HealthAndBeauty,
-        area: LocationArea.TownCenter,
-        tags: ["Beauty", "Cosmetics", "Skincare", "Fragrance"],
-        imageUrl: "/images/disney-springs/sephora.jpg",
-        hours: "10:00 AM - 11:00 PM",
-    },
-    {
-        id: "anthropologie",
-        name: "Anthropologie",
-        description: "Unique, eclectic retail destination offering women's clothing, accessories, home décor, and gifts.",
-        category: LocationCategory.Shopping,
-        subcategory: ShoppingSubcategory.ApparelAndAccessories,
-        area: LocationArea.TownCenter,
-        tags: ["Women's fashion", "Home décor", "Bohemian style", "Gifts"],
-        imageUrl: "/images/disney-springs/anthropologie.jpg",
-        hours: "10:00 AM - 11:00 PM",
-    },
-]
+// React hooks for data fetching
+export function useDisneySpringsLocations() {
+    const [locations, setLocations] = useState<DisneySpringLocation[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
 
-// Dining Locations
-export const diningLocations: DiningLocation[] = [
-    {
-        id: "the-boathouse",
-        name: "The BOATHOUSE",
-        description: "Upscale, waterfront dining featuring steaks, chops, fresh seafood and a raw bar in a nautical setting.",
-        category: LocationCategory.Dining,
-        subcategory: DiningSubcategory.TableService,
-        area: LocationArea.TheLanding,
-        tags: ["Waterfront dining", "Seafood", "Steaks", "Amphicar tours"],
-        imageUrl: "/images/disney-springs/boathouse.jpg",
-        priceRange: PriceRange.High,
-        cuisine: ["Seafood", "American", "Steakhouse"],
-        requiresReservation: true,
-        hours: "11:00 AM - 11:00 PM",
-        phoneNumber: "(407) 939-2628",
-        menu: [
-            {
-                name: "Filet Mignon",
-                description: "8oz center-cut filet with choice of two sides",
-                price: 49,
-            },
-            {
-                name: "Lobster Roll",
-                description: "Maine lobster with drawn butter on a New England roll",
-                price: 34,
-            },
-        ],
-    },
-    {
-        id: "chef-art-smith-homecomin",
-        name: "Chef Art Smith's Homecomin'",
-        description: "Farm-to-table Southern cuisine featuring locally sourced ingredients and Chef Art Smith's famous fried chicken.",
-        category: LocationCategory.Dining,
-        subcategory: DiningSubcategory.TableService,
-        area: LocationArea.TheLanding,
-        tags: ["Southern cuisine", "Fried chicken", "Comfort food", "Farm-to-table"],
-        imageUrl: "/images/disney-springs/homecomin.jpg",
-        priceRange: PriceRange.Medium,
-        cuisine: ["Southern", "American", "Comfort Food"],
-        requiresReservation: true,
-        hours: "11:00 AM - 11:00 PM",
-        phoneNumber: "(407) 560-0100",
-        menu: [
-            {
-                name: "Art's Famous Fried Chicken",
-                description: "Buttermilk-brined for 24 hours and double-battered, with mashed potatoes and a cheddar drop biscuit",
-                price: 32,
-            },
-            {
-                name: "Hummingbird Cake",
-                description: "Pineapple-banana cake with cream cheese frosting",
-                price: 12,
-            },
-        ],
-    },
-    {
-        id: "gideons-bakehouse",
-        name: "Gideon's Bakehouse",
-        description: "Artisanal bakery known for nearly half-pound cookies and decadent cake slices in a Victorian-inspired setting.",
-        category: LocationCategory.Dining,
-        subcategory: DiningSubcategory.SpecialtyFoodAndBeverage,
-        area: LocationArea.TheLanding,
-        tags: ["Cookies", "Desserts", "Bakery", "Coffee"],
-        imageUrl: "/images/disney-springs/gideons.jpg",
-        priceRange: PriceRange.Low,
-        cuisine: ["Bakery", "Desserts"],
-        hours: "10:00 AM - 10:00 PM",
-        menu: [
-            {
-                name: "Original Chocolate Chip Cookie",
-                description: "Nearly half-pound cookie loaded with chocolate chips",
-                price: 6,
-            },
-            {
-                name: "Peanut Butter Cold Brew",
-                description: "Cold brew coffee infused with peanut butter flavor",
-                price: 6.5,
-            },
-        ],
-        isNew: true,
-    },
-    {
-        id: "wine-bar-george",
-        name: "Wine Bar George",
-        description: "The only Master Sommelier-led wine bar in Florida offering more than 140 wines by the glass and bottle.",
-        category: LocationCategory.Dining,
-        subcategory: DiningSubcategory.BarsAndLounges,
-        area: LocationArea.TheLanding,
-        tags: ["Wine", "Small plates", "Charcuterie", "Upscale casual"],
-        imageUrl: "/images/disney-springs/wine-bar-george.jpg",
-        priceRange: PriceRange.Medium,
-        cuisine: ["Wine Bar", "American", "Small Plates"],
-        requiresReservation: true,
-        hours: "11:00 AM - 12:00 AM",
-        phoneNumber: "(407) 490-1800",
-    },
-    {
-        id: "d-luxe-burger",
-        name: "D-Luxe Burger",
-        description: "Gourmet burgers, hand-cut fries, and artisanal milkshakes in a ranch-inspired setting.",
-        category: LocationCategory.Dining,
-        subcategory: DiningSubcategory.QuickService,
-        area: LocationArea.TownCenter,
-        tags: ["Burgers", "Fries", "Milkshakes", "Quick service"],
-        imageUrl: "/images/disney-springs/d-luxe-burger.jpg",
-        priceRange: PriceRange.Low,
-        cuisine: ["American", "Burgers"],
-        hours: "10:30 AM - 11:00 PM",
-    },
-]
+    useEffect(() => {
+        async function fetchLocations() {
+            try {
+                setLoading(true)
+                const data = await getAllDisneySpringsLocations()
+                setLocations(data)
+                setError(null)
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to fetch locations')
+            } finally {
+                setLoading(false)
+            }
+        }
 
-// Entertainment and Experiences
-export const entertainmentLocations: EntertainmentLocation[] = [
-    {
-        id: "drawn-to-life",
-        name: "Drawn to Life Presented by Cirque du Soleil & Disney",
-        description: "A creative collaboration between Cirque du Soleil, Walt Disney Animation Studios, and Walt Disney Imagineering bringing animation to life through acrobatic performances.",
-        category: LocationCategory.Entertainment,
-        area: LocationArea.WestSide,
-        tags: ["Cirque du Soleil", "Live show", "Performance", "Acrobatics"],
-        imageUrl: "/images/disney-springs/cirque-du-soleil.jpg",
-        ticketRequired: true,
-        duration: "90 minutes",
-        ageRecommendation: "All ages",
-        hours: "Shows at 5:30 PM and 8:30 PM, Tuesday-Saturday",
-        phoneNumber: "(407) 939-7600",
-    },
-    {
-        id: "aerophile-balloon-flight",
-        name: "Aerophile – The World Leader in Balloon Flight",
-        description: "Soar to heights of 400 feet in the world's largest tethered helium balloon for breathtaking 360-degree views of Walt Disney World Resort.",
-        category: LocationCategory.Entertainment,
-        area: LocationArea.WestSide,
-        tags: ["Aerial views", "Balloon ride", "Photo opportunity", "Unique experience"],
-        imageUrl: "/images/disney-springs/aerophile.jpg",
-        ticketRequired: true,
-        duration: "8-10 minutes",
-        ageRecommendation: "All ages",
-        hours: "8:30 AM - 12:00 AM (Weather permitting)",
-        phoneNumber: "(407) 939-7900",
-    },
-    {
-        id: "splitsville-luxury-lanes",
-        name: "Splitsville Luxury Lanes",
-        description: "A bowling and entertainment complex offering a unique atmosphere with 30 lanes across two floors, plus billiards, live music, and full-service dining.",
-        category: LocationCategory.Entertainment,
-        area: LocationArea.WestSide,
-        tags: ["Bowling", "Family entertainment", "Dining", "Games"],
-        imageUrl: "/images/disney-springs/splitsville.jpg",
-        hours: "11:00 AM - 1:00 AM",
-        phoneNumber: "(407) 938-7467",
-    },
-    {
-        id: "amphicar-tours",
-        name: "Vintage Amphicar Tours",
-        description: "Experience a captain-guided tour aboard a rare Amphicar that drives on land and cruises through water.",
-        category: LocationCategory.Entertainment,
-        area: LocationArea.TheLanding,
-        tags: ["Water tour", "Vintage cars", "Unique experience", "Photo opportunity"],
-        imageUrl: "/images/disney-springs/amphicar.jpg",
-        ticketRequired: true,
-        duration: "20 minutes",
-        hours: "10:00 AM - 10:00 PM (Weather permitting)",
-        phoneNumber: "(407) 939-2628",
-    },
-    {
-        id: "marketplace-carousel",
-        name: "Marketplace Carousel",
-        description: "A classic carousel offering a nostalgic ride experience for children and families.",
-        category: LocationCategory.Entertainment,
-        area: LocationArea.Marketplace,
-        tags: ["Family attraction", "Kids", "Classic ride"],
-        imageUrl: "/images/disney-springs/carousel.jpg",
-        ticketRequired: true,
-        duration: "5 minutes",
-        ageRecommendation: "All ages",
-        hours: "10:00 AM - 11:00 PM",
-    },
-]
+        fetchLocations()
+    }, [])
 
-// Combined Locations
-export const disneySpringsLocations: DisneySpringLocation[] = [
-    ...shoppingLocations,
-    ...diningLocations,
-    ...entertainmentLocations,
-]
+    return { locations, loading, error }
+}
+
+export function useDisneySpringsLocationsByCategory(category: LocationCategory) {
+    const [locations, setLocations] = useState<DisneySpringLocation[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        async function fetchLocations() {
+            try {
+                setLoading(true)
+                const data = await getLocationsByCategory(category)
+                setLocations(data)
+                setError(null)
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to fetch locations')
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchLocations()
+    }, [category])
+
+    return { locations, loading, error }
+}
+
+export function useDisneySpringsLocationsByArea(area: LocationArea) {
+    const [locations, setLocations] = useState<DisneySpringLocation[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        async function fetchLocations() {
+            try {
+                setLoading(true)
+                const data = await getLocationsByArea(area)
+                setLocations(data)
+                setError(null)
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to fetch locations')
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchLocations()
+    }, [area])
+
+    return { locations, loading, error }
+}
+
+export function useDisneySpringsLocation(id: string) {
+    const [location, setLocation] = useState<DisneySpringLocation | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        async function fetchLocation() {
+            try {
+                setLoading(true)
+                const data = await getDisneySpringsLocationById(id)
+                setLocation(data)
+                setError(null)
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to fetch location')
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        if (id) {
+            fetchLocation()
+        }
+    }, [id])
+
+    return { location, loading, error }
+}
+
+export function useDisneySpringsSearch(filters: LocationFilters) {
+    const [results, setResults] = useState<LocationSearchResult[]>([])
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        async function performSearch() {
+            try {
+                setLoading(true)
+                const data = await searchDisneySpringsLocations(filters)
+                setResults(data)
+                setError(null)
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to perform search')
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        performSearch()
+    }, [filters])
+
+    return { results, loading, error }
+}
+
+export function useDisneySpringsMetadata() {
+    const [metadata, setMetadata] = useState<DisneySpringsData['metadata'] | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        async function fetchMetadata() {
+            try {
+                setLoading(true)
+                const data = await getDisneySpringsMetadata()
+                setMetadata(data)
+                setError(null)
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to fetch metadata')
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchMetadata()
+    }, [])
+
+    return { metadata, loading, error }
+}
+
+export function useOperationalInfo() {
+    const [operationalInfo, setOperationalInfo] = useState<DisneySpringsData['operationalInfo'] | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        async function fetchOperationalInfo() {
+            try {
+                setLoading(true)
+                const data = await getOperationalInfo()
+                setOperationalInfo(data)
+                setError(null)
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to fetch operational info')
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchOperationalInfo()
+    }, [])
+
+    return { operationalInfo, loading, error }
+}
+
+export function useDisneySpringsEvents() {
+    const [events, setEvents] = useState<DisneySpringsData['events'] | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        async function fetchEvents() {
+            try {
+                setLoading(true)
+                const data = await getDisneySpringsEvents()
+                setEvents(data)
+                setError(null)
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to fetch events')
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchEvents()
+    }, [])
+
+    return { events, loading, error }
+}
+
+// Legacy compatibility - these are the original static exports
+// They now fetch from Firebase but maintain the same interface
+let cachedLocations: DisneySpringLocation[] = []
+
+export async function getDisneySpringsLocations(): Promise<DisneySpringLocation[]> {
+    if (cachedLocations.length === 0) {
+        cachedLocations = await getAllDisneySpringsLocations()
+    }
+    return cachedLocations
+}
+
+export const shoppingLocations: ShoppingLocation[] = []
+export const diningLocations: DiningLocation[] = []
+export const entertainmentLocations: EntertainmentLocation[] = []
+export const disneySpringsLocations: DisneySpringLocation[] = []
+
+// Initialize the legacy arrays from Firebase data
+async function initializeLegacyArrays() {
+    try {
+        const allLocations = await getAllDisneySpringsLocations()
+
+        // Clear and populate the legacy arrays
+        shoppingLocations.length = 0
+        diningLocations.length = 0
+        entertainmentLocations.length = 0
+        disneySpringsLocations.length = 0
+
+        allLocations.forEach(location => {
+            disneySpringsLocations.push(location)
+
+            if (location.category === LocationCategory.Shopping) {
+                shoppingLocations.push(location as ShoppingLocation)
+            } else if (location.category === LocationCategory.Dining) {
+                diningLocations.push(location as DiningLocation)
+            } else if (location.category === LocationCategory.Entertainment) {
+                entertainmentLocations.push(location as EntertainmentLocation)
+            }
+        })
+    } catch (error) {
+        console.error('Failed to initialize legacy arrays:', error)
+    }
+}
+
+// Initialize legacy arrays when the module is loaded
+initializeLegacyArrays()
+
+// Helper functions for filtering and searching
+export function filterLocationsByCategory(
+    locations: DisneySpringLocation[],
+    category: LocationCategory | "all"
+): DisneySpringLocation[] {
+    if (category === "all") return locations
+    return locations.filter(location => location.category === category)
+}
+
+export function filterLocationsByArea(
+    locations: DisneySpringLocation[],
+    area: LocationArea | "all"
+): DisneySpringLocation[] {
+    if (area === "all") return locations
+    return locations.filter(location => location.area === area)
+}
+
+export function filterLocationsByPriceRange(
+    locations: DisneySpringLocation[],
+    priceRanges: PriceRange[]
+): DisneySpringLocation[] {
+    if (priceRanges.length === 0) return locations
+    return locations.filter(location =>
+        location.priceRange && priceRanges.includes(location.priceRange)
+    )
+}
+
+export function searchLocations(
+    locations: DisneySpringLocation[],
+    searchTerm: string
+): DisneySpringLocation[] {
+    if (!searchTerm.trim()) return locations
+
+    const term = searchTerm.toLowerCase()
+    return locations.filter(location => {
+        const searchableText = [
+            location.name,
+            location.description,
+            ...(location.tags || []),
+            ...(location.specialties || []),
+            ...(location.features || [])
+        ].join(' ').toLowerCase()
+
+        return searchableText.includes(term)
+    })
+}
+
+export function getLocationsByTags(
+    locations: DisneySpringLocation[],
+    tags: string[]
+): DisneySpringLocation[] {
+    if (tags.length === 0) return locations
+
+    return locations.filter(location =>
+        tags.some(tag =>
+            location.tags?.some(locationTag =>
+                locationTag.toLowerCase().includes(tag.toLowerCase())
+            )
+        )
+    )
+}
+
+export function getPopularLocations(locations: DisneySpringLocation[]): DisneySpringLocation[] {
+    return locations.filter(location => location.popular)
+}
+
+export function getNewLocations(locations: DisneySpringLocation[]): DisneySpringLocation[] {
+    return locations.filter(location => location.isNew)
+}
+
+export function getLocationsByFeatures(
+    locations: DisneySpringLocation[],
+    features: string[]
+): DisneySpringLocation[] {
+    if (features.length === 0) return locations
+
+    return locations.filter(location =>
+        features.some(feature =>
+            location.features?.some(locationFeature =>
+                locationFeature.toLowerCase().includes(feature.toLowerCase())
+            )
+        )
+    )
+}
+
+// Utility function to get recommended locations based on user preferences
+export function getRecommendedLocations(
+    locations: DisneySpringLocation[],
+    preferences: {
+        categories?: LocationCategory[]
+        areas?: LocationArea[]
+        priceRanges?: PriceRange[]
+        interests?: string[]
+    }
+): DisneySpringLocation[] {
+    let recommended = [...locations]
+
+    // Filter by categories
+    if (preferences.categories && preferences.categories.length > 0) {
+        recommended = recommended.filter(location =>
+            preferences.categories!.includes(location.category)
+        )
+    }
+
+    // Filter by areas
+    if (preferences.areas && preferences.areas.length > 0) {
+        recommended = recommended.filter(location =>
+            preferences.areas!.includes(location.area)
+        )
+    }
+
+    // Filter by price ranges
+    if (preferences.priceRanges && preferences.priceRanges.length > 0) {
+        recommended = filterLocationsByPriceRange(recommended, preferences.priceRanges)
+    }
+
+    // Filter by interests (tags, features, specialties)
+    if (preferences.interests && preferences.interests.length > 0) {
+        recommended = recommended.filter(location => {
+            const locationKeywords = [
+                ...(location.tags || []),
+                ...(location.features || []),
+                ...(location.specialties || [])
+            ].map(keyword => keyword.toLowerCase())
+
+            return preferences.interests!.some(interest =>
+                locationKeywords.some(keyword =>
+                    keyword.includes(interest.toLowerCase())
+                )
+            )
+        })
+    }
+
+    // Prioritize popular locations
+    recommended.sort((a, b) => {
+        if (a.popular && !b.popular) return -1
+        if (!a.popular && b.popular) return 1
+        return 0
+    })
+
+    return recommended
+}

@@ -1,6 +1,9 @@
 import { Attraction, AttractionType, Park, RideCategory, TransferType, WheelchairAccessibility } from "@/types/attraction";
+import { createOperatingSchedule, createShowSchedule } from "@/lib/utils/schedule-helpers";
+import typhoonLagoonAttractions from "@/lib/data/typhoon-lagoon-attractions";
 
 export const attractions: Attraction[] = [
+    ...typhoonLagoonAttractions,
     {
         id: "advanced-training-lab",
         name: "Advanced Training Lab",
@@ -19,10 +22,7 @@ export const attractions: Attraction[] = [
             hasReflectiveCaption: false,
             mustTransfer: TransferType.None
         },
-        schedule: {
-            openingTime: "12:00 PM",
-            closingTime: "6:00 PM"
-        }
+        schedule: createOperatingSchedule("12:00 PM", "6:00 PM")
     },
     {
         id: "aerophile-balloon-flight",
@@ -43,10 +43,7 @@ export const attractions: Attraction[] = [
             hasReflectiveCaption: false,
             mustTransfer: TransferType.Standard
         },
-        schedule: {
-            openingTime: "9:30 AM",
-            closingTime: "11:30 PM"
-        },
+        schedule: createOperatingSchedule("9:30 AM", "11:30 PM"),
         duration: 8
     },
     {
@@ -67,10 +64,7 @@ export const attractions: Attraction[] = [
             hasReflectiveCaption: false,
             mustTransfer: TransferType.Standard
         },
-        schedule: {
-            openingTime: "9:30 AM",
-            closingTime: "5:00 PM"
-        }
+        schedule: createOperatingSchedule("9:30 AM", "5:00 PM")
     },
     {
         id: "african-birds",
@@ -115,10 +109,7 @@ export const attractions: Attraction[] = [
             hasReflectiveCaption: false,
             mustTransfer: TransferType.Standard
         },
-        schedule: {
-            openingTime: "9:00 AM",
-            closingTime: "9:00 PM"
-        },
+        schedule: createOperatingSchedule("9:00 AM", "9:00 PM"),
         duration: 2
     },
     {
@@ -139,10 +130,7 @@ export const attractions: Attraction[] = [
             hasReflectiveCaption: false,
             mustTransfer: TransferType.Standard
         },
-        schedule: {
-            openingTime: "9:00 AM",
-            closingTime: "10:00 PM"
-        },
+        schedule: createOperatingSchedule("9:00 AM", "10:00 PM"),
         duration: 4
     },
     {
@@ -169,10 +157,7 @@ export const attractions: Attraction[] = [
             hasReflectiveCaption: false,
             mustTransfer: TransferType.Standard
         },
-        schedule: {
-            openingTime: "8:00 AM",
-            closingTime: "7:00 PM"
-        },
+        schedule: createOperatingSchedule("8:00 AM", "7:00 PM"),
         duration: 4.5,
         isFastPassAvailable: true
     },
@@ -195,9 +180,7 @@ export const attractions: Attraction[] = [
             hasReflectiveCaption: false,
             mustTransfer: TransferType.None
         },
-        schedule: {
-            performanceTimes: ["11:00 AM", "1:00 PM", "2:00 PM", "4:00 PM", "5:00 PM"]
-        },
+        schedule: createShowSchedule(["11:00 AM", "1:00 PM", "2:00 PM", "4:00 PM", "5:00 PM"]),
         duration: 30
     },
     {
@@ -219,10 +202,7 @@ export const attractions: Attraction[] = [
             hasReflectiveCaption: false,
             mustTransfer: TransferType.None
         },
-        schedule: {
-            openingTime: "8:00 AM",
-            closingTime: "7:00 PM"
-        },
+        schedule: createOperatingSchedule("8:00 AM", "7:00 PM"),
         duration: 4.5,
         isFastPassAvailable: true
     },
@@ -244,10 +224,7 @@ export const attractions: Attraction[] = [
             hasReflectiveCaption: false,
             mustTransfer: TransferType.None
         },
-        schedule: {
-            openingTime: "8:00 AM",
-            closingTime: "7:00 PM"
-        },
+        schedule: createOperatingSchedule("8:00 AM", "7:00 PM"),
         duration: 18,
         isFastPassAvailable: true
     }

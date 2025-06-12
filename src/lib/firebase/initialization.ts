@@ -29,8 +29,8 @@ export async function initializeUserProfile(firebaseUser: FirebaseUser): Promise
         profile: {
             displayName: firebaseUser.displayName || 'Disney Fan',
             email: firebaseUser.email || '',
-            photoURL: firebaseUser.photoURL,
-            phoneNumber: firebaseUser.phoneNumber,
+            photoURL: firebaseUser.photoURL || undefined,
+            phoneNumber: firebaseUser.phoneNumber || undefined,
             createdAt: Date.now(),
             lastActive: Date.now()
         },
@@ -77,8 +77,7 @@ export async function createNewVacation(userId: string, vacationDetails: {
         startDate: vacationDetails.startDate,
         endDate: vacationDetails.endDate,
         status: 'planning',
-        imageUrl: vacationDetails.imageUrl,
-        travelers: { adults: 2, children: 0 }
+        imageUrl: vacationDetails.imageUrl
     }
 
     const vacationId = await createVacation(vacationData, userId)

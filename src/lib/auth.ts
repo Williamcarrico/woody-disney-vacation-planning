@@ -1,11 +1,11 @@
-import { getCurrentUser } from './firebase/auth-session-server'
+import { getCurrentUserSafe } from './firebase/auth-client-safe'
 
 /**
  * Server-side auth helper function
  * Returns the current authenticated user from session cookies
  */
 export async function auth() {
-    const currentUser = await getCurrentUser()
+    const currentUser = await getCurrentUserSafe()
 
     if (!currentUser) {
         return null
@@ -16,9 +16,9 @@ export async function auth() {
         user: {
             id: currentUser.uid,
             email: currentUser.email,
-            name: currentUser.displayName,
-            image: currentUser.photoURL,
-            emailVerified: currentUser.emailVerified
+            name: currentUser.decodedClaims?.name || currentUser.decodedClaims?.display_name,
+            image: currentUser.decodedClaims?.picture,
+            emailVerified: currentUser.decodedClaims?.email_verified
         }
     }
 }

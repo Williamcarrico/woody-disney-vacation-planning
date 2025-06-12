@@ -79,19 +79,35 @@ export class GeofencingService {
     public async loadGeofences(vacationId: string): Promise<void> {
         try {
             const response = await fetch(`/api/geofences?vacationId=${vacationId}`)
-            if (!response.ok) throw new Error('Failed to load geofences')
+
+            if (!response.ok) {
+                console.warn(`Failed to load geofences for vacation ${vacationId}: ${response.status}`)
+                // Clear active geofences but don't throw error
+                this.activeGeofences.clear()
+                return
+            }
 
             const geofences: EnhancedGeofence[] = await response.json()
 
             this.activeGeofences.clear()
+
+            // Handle case where API returns empty array (database not available)
+            if (!Array.isArray(geofences)) {
+                console.warn('Invalid geofences response format, clearing active geofences')
+                return
+            }
+
             geofences.forEach(geofence => {
                 if (geofence.isActive) {
                     this.activeGeofences.set(geofence.id, geofence)
                 }
             })
+
+            console.log(`Loaded ${this.activeGeofences.size} active geofences for vacation ${vacationId}`)
         } catch (error) {
-            console.error('Error loading geofences:', error)
-            throw error
+            console.warn('Error loading geofences, continuing without geofencing:', error)
+            // Clear active geofences but don't throw error to prevent app crashes
+            this.activeGeofences.clear()
         }
     }
 

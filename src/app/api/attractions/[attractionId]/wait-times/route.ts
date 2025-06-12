@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { getCurrentWaitTimes, predictWaitTime } from "@/engines/waitTimes";
-import { getParkLiveData } from "@/lib/api/themeParks";
-import { createClient } from "@supabase/supabase-js";
+import { getParkLiveData } from "@/lib/api/themeParks-compat";
+import {
+  collection,
+  doc,
+  serverTimestamp,
+  writeBatch
+} from 'firebase/firestore';
+import { firestore } from '@/lib/firebase/firebase.config';
 
 // Enhanced types for the response with comprehensive analytics
 interface LiveAttractionData {
@@ -109,15 +115,12 @@ interface ParkWaitTimesResponse {
   };
 }
 
-// Initialize Supabase client for data persistence
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing required Supabase environment variables');
-}
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Firebase collection names
+const COLLECTIONS = {
+  WAIT_TIMES: 'waitTimes',
+  HISTORICAL_WAIT_TIMES: 'historicalWaitTimes',
+  ANALYTICS: 'analytics'
+} as const;
 
 // Enhanced park ID mappings for ThemeParks.wiki API
 const PARK_ID_MAPPINGS: Record<string, string> = {
@@ -673,52 +676,52 @@ async function storeAdvancedWaitTimeData(
   waitTimeData: WaitTimeResponse
 ): Promise<void> {
   try {
-    const timestamp = new Date().toISOString();
+    const batch = writeBatch(firestore);
+    const timestamp = serverTimestamp();
 
-    // Store in live_wait_times table for real-time access
-    await supabase
-      .from('live_wait_times')
-      .upsert({
+    // Store in live wait times collection for real-time access
+    const liveWaitTimeRef = doc(collection(firestore, COLLECTIONS.WAIT_TIMES), `${attractionId}_${Date.now()}`);
+    batch.set(liveWaitTimeRef, {
+      attractionId,
+      waitMinutes: waitTimeData.waitTime,
+      status: waitTimeData.status,
+      timestamp,
+      confidence: waitTimeData.confidence,
+      predictedWaitTime: waitTimeData.predictedWaitTime,
+      predictionConfidence: waitTimeData.predictionConfidence,
+      metadata: waitTimeData.metadata,
+      lightningLaneAvailable: waitTimeData.lightningLane?.available,
+      virtualQueueAvailable: waitTimeData.virtualQueue?.available
+    });
+
+    // Store in historical wait times for trend analysis (only if operating)
+    if (waitTimeData.status === 'OPERATING') {
+      const historicalWaitTimeRef = doc(collection(firestore, COLLECTIONS.HISTORICAL_WAIT_TIMES));
+      batch.set(historicalWaitTimeRef, {
         attractionId,
         waitMinutes: waitTimeData.waitTime,
-        status: waitTimeData.status,
         timestamp,
+        crowdLevel: waitTimeData.metadata?.crowdLevel,
+        weatherImpact: waitTimeData.metadata?.weatherImpact,
         confidence: waitTimeData.confidence,
-        predictedWaitTime: waitTimeData.predictedWaitTime,
-        predictionConfidence: waitTimeData.predictionConfidence,
-        metadata: waitTimeData.metadata,
-        lightningLaneAvailable: waitTimeData.lightningLane?.available,
-        virtualQueueAvailable: waitTimeData.virtualQueue?.available
+        trendDirection: waitTimeData.metadata?.trendDirection,
+        percentileRanking: waitTimeData.metadata?.percentileRanking
       });
-
-    // Store in historical_wait_times for trend analysis (only if operating)
-    if (waitTimeData.status === 'OPERATING') {
-      await supabase
-        .from('historical_wait_times')
-        .insert({
-          attractionId,
-          waitMinutes: waitTimeData.waitTime,
-          timestamp,
-          crowdLevel: waitTimeData.metadata?.crowdLevel,
-          weatherImpact: waitTimeData.metadata?.weatherImpact,
-          confidence: waitTimeData.confidence,
-          trendDirection: waitTimeData.metadata?.trendDirection,
-          percentileRanking: waitTimeData.metadata?.percentileRanking
-        });
     }
 
     // Store analytics data if available
     if (waitTimeData.analytics) {
-      await supabase
-        .from('wait_time_analytics')
-        .insert({
-          attractionId,
-          timestamp,
-          hourlyPredictions: waitTimeData.analytics.hourlyPredictions,
-          waitTimeDistribution: waitTimeData.analytics.waitTimeDistribution,
-          seasonalTrends: waitTimeData.analytics.seasonalTrends
-        });
+      const analyticsRef = doc(collection(firestore, COLLECTIONS.ANALYTICS));
+      batch.set(analyticsRef, {
+        attractionId,
+        timestamp,
+        hourlyPredictions: waitTimeData.analytics.hourlyPredictions,
+        waitTimeDistribution: waitTimeData.analytics.waitTimeDistribution,
+        seasonalTrends: waitTimeData.analytics.seasonalTrends
+      });
     }
+
+    await batch.commit();
   } catch (error) {
     console.error('Error storing advanced wait time data:', error);
     // Don't throw - storage failure shouldn't break the API
@@ -938,7 +941,13 @@ export async function GET(
 // Enhanced POST handler for bulk wait times with advanced park analytics
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await request.json() as {
+      parkId: string;
+      attractionIds?: string[];
+      includeMetadata?: boolean;
+      includePredictions?: boolean;
+      includeAnalytics?: boolean;
+    };
     const {
       parkId,
       attractionIds,

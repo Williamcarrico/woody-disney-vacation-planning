@@ -1,0 +1,82 @@
+{
+  "metadata": {
+    "total_locations": 1,
+    "last_updated": "2025-06-10",
+    "data_sources": [
+      "Disney Official Website",
+      "Setup Script"
+    ],
+    "note": "Sample data created by setup script for testing the Disney restaurant database system"
+  },
+  "locations": {
+    "magic-kingdom": {
+      "name": "Magic Kingdom",
+      "restaurants": [
+        {
+          "id": "sample-be-our-guest",
+          "name": "Be Our Guest Restaurant (Sample)",
+          "description": "Experience the magic of Beauty and the Beast in this enchanted castle restaurant. This is sample data created during setup.",
+          "short_description": "French-inspired dining in Beast's Castle",
+          "location": {
+            "latitude": 28.4211,
+            "longitude": -81.5812,
+            "areaName": "Fantasyland"
+          },
+          "cuisine_types": [
+            "French",
+            "American"
+          ],
+          "service_type": "Table Service",
+          "price_range": "$$$",
+          "dining_experience": "Themed Dining",
+          "operating_hours": {
+            "Monday": "11:30 AM - 9:00 PM",
+            "Tuesday": "11:30 AM - 9:00 PM",
+            "Wednesday": "11:30 AM - 9:00 PM",
+            "Thursday": "11:30 AM - 9:00 PM",
+            "Friday": "11:30 AM - 9:00 PM",
+            "Saturday": "11:30 AM - 9:00 PM",
+            "Sunday": "11:30 AM - 9:00 PM"
+          },
+          "phone_number": "(407) 939-3463",
+          "reservation_info": {
+            "accepts_reservations": true,
+            "requires_reservations": true,
+            "advance_reservation_days": 60,
+            "reservation_url": "https://disneyworld.disney.go.com/dining/magic-kingdom/be-our-guest-restaurant/",
+            "walk_ups_accepted": false,
+            "reservation_tips": [
+              "Very popular - book as early as possible",
+              "This is sample data for testing"
+            ]
+          },
+          "dining_plan_info": {
+            "accepts_dining_plan": true,
+            "table_service_credits": 1,
+            "eligible_plans": [
+              "Disney Dining Plan",
+              "Deluxe Dining Plan"
+            ]
+          },
+          "special_features": [
+            "Themed Dining",
+            "Kids Menu",
+            "Allergy Friendly"
+          ],
+          "character_dining": {
+            "has_character_dining": false
+          },
+          "average_rating": 4.3,
+          "review_count": 1000,
+          "tags": [
+            "Beauty and the Beast",
+            "Themed",
+            "Sample Data"
+          ],
+          "is_popular": true,
+          "is_new": false
+        }
+      ]
+    }
+  }
+}

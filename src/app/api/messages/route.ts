@@ -3,7 +3,8 @@ import { getCurrentUser } from '@/lib/firebase/auth-session-server'
 import {
     sendGroupMessage,
     editMessage,
-    removeMessage} from '@/lib/firebase/realtime-database'
+    removeMessage
+} from '@/lib/firebase/realtime-database'
 import { ref, get } from 'firebase/database'
 import { database } from '@/lib/firebase/firebase.config'
 import {
@@ -12,6 +13,7 @@ import {
     validateMessageContent,
     validateMessageType
 } from '@/lib/utils/vacation-access'
+import { messagingAdmin } from '@/lib/firebase/messaging-admin'
 
 
 
@@ -190,6 +192,21 @@ export async function POST(request: NextRequest) {
             type,
             undefined // photoURL - you might want to get this from user profile
         )
+
+        // Send push notification to other vacation party members
+        try {
+            await messagingAdmin.sendGroupMessage(
+                vacationId,
+                messageId,
+                currentUser.uid,
+                currentUser.displayName || currentUser.email || 'Unknown User',
+                content,
+                currentUser.photoURL || undefined
+            )
+        } catch (notificationError) {
+            console.error('Failed to send push notification:', notificationError)
+            // Don't fail the message sending if push notification fails
+        }
 
         return NextResponse.json({
             success: true,

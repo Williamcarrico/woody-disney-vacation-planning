@@ -19,7 +19,7 @@ const technologies = [
         items: [
             { name: "Node.js", color: "from-green-600 to-green-400" },
             { name: "Prisma", color: "from-indigo-600 to-purple-500" },
-            { name: "Supabase", color: "from-emerald-600 to-teal-500" },
+            { name: "Firebase", color: "from-orange-600 to-yellow-500" },
             { name: "GraphQL", color: "from-pink-600 to-purple-500" }
         ]
     },

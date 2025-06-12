@@ -19,7 +19,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, Clock, Filter, Map as MapIcon, RefreshCw } from "lucide-react";
-import { getWaltDisneyWorldParks, getParkAttractions } from '@/lib/api/themeParks';
+import { getWaltDisneyWorldParks, getParkAttractions } from '@/lib/api/themeParks-compat';
 import { Attraction, AttractionType, AttractionStatus } from '@/types/api';
 import { useWaitTimes } from '@/hooks/useWaitTimes';
 import AttractionCard from './AttractionCard';
@@ -64,6 +64,21 @@ export default function ParkExplorer({
     } = useQuery({
         queryKey: ['wdwParks'],
         queryFn: getWaltDisneyWorldParks,
+        retry: (failureCount, error) => {
+            console.log(`[ParkExplorer] Retry attempt ${failureCount} for parks:`, error)
+            // Don't retry more than 3 times for network errors
+            if (error instanceof Error && error.message.includes('Failed to fetch')) {
+                return failureCount < 3
+            }
+            return failureCount < 1
+        },
+        retryDelay: (attemptIndex) => Math.min(1000 * (2 ** attemptIndex), 5000),
+        onError: (error) => {
+            console.error('[ParkExplorer] Parks fetch error:', error)
+        },
+        onSuccess: (data) => {
+            console.log('[ParkExplorer] Parks fetched successfully:', data?.length, 'parks')
+        }
     });
 
     // Set default park if not yet selected and parks are loaded

@@ -46,9 +46,10 @@ import {
     CalendarDays,
     CheckIcon
 } from 'lucide-react';
-import { getWaltDisneyWorldParks } from '@/lib/api/themeParks';
+import { getWaltDisneyWorldParks } from '@/lib/api/themeParks-compat';
 import { useItineraryOptimizer } from '@/engines/itinerary/optimizer';
-import { Park } from '@/types/api';
+import { Park, AttractionType } from '@/types/api';
+import type { Coordinates } from '@/types/api';
 
 dayjs.extend(advancedFormat);
 dayjs.extend(customParseFormat);

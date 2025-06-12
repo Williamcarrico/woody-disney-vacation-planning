@@ -1,14 +1,84 @@
 "use client"
 
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useCallback, useMemo, memo } from 'react'
 import { usePathname } from 'next/navigation'
-import { motion } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
+import dynamic from 'next/dynamic'
 
 // Auth & Context
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { useAuth } from '@/contexts/AuthContext'
 
-// UI Components
+// Hooks for real data
+import { useUserStats } from '@/hooks/useUserStats'
+import { useNotifications } from '@/hooks/useNotifications'
+
+// Import hook return types
+import type { UseUserStatsReturn } from '@/hooks/useUserStats'
+import type { UseNotificationsReturn } from '@/hooks/useNotifications'
+
+// Import Notification interface for type safety
+interface Notification {
+    id: string
+    title: string
+    message: string
+    category: string
+    read: boolean
+    createdAt: string
+    actionUrl?: string
+    priority: 'low' | 'medium' | 'high'
+    type: 'wait_time' | 'dining' | 'weather' | 'system' | 'achievement'
+}
+
+// Type guard function with proper safety checks
+function isValidNotification(item: unknown): item is Notification {
+    if (typeof item !== 'object' || item === null) {
+        return false
+    }
+
+    const obj = item as Record<string, unknown>
+
+    // Check required properties with proper type guards
+    const hasRequiredProps = (
+        typeof obj.id === 'string' &&
+        typeof obj.title === 'string' &&
+        typeof obj.message === 'string' &&
+        typeof obj.category === 'string' &&
+        typeof obj.read === 'boolean' &&
+        typeof obj.createdAt === 'string'
+    )
+
+    if (!hasRequiredProps) return false
+
+    // Check optional properties safely
+    const validPriority = obj.priority === undefined ||
+        (typeof obj.priority === 'string' && ['low', 'medium', 'high'].includes(obj.priority))
+    const validType = obj.type === undefined ||
+        (typeof obj.type === 'string' && ['wait_time', 'dining', 'weather', 'system', 'achievement'].includes(obj.type))
+
+    return validPriority && validType
+}
+
+// Type guard for user stats with improved safety
+function isValidUserStats(data: unknown): data is {
+    achievementLevel?: string
+    totalVisits?: number
+    upcomingReservations?: number
+} {
+    if (typeof data !== 'object' || data === null) {
+        return false
+    }
+
+    const obj = data as Record<string, unknown>
+
+    const validAchievementLevel = obj.achievementLevel === undefined || typeof obj.achievementLevel === 'string'
+    const validTotalVisits = obj.totalVisits === undefined || typeof obj.totalVisits === 'number'
+    const validUpcomingReservations = obj.upcomingReservations === undefined || typeof obj.upcomingReservations === 'number'
+
+    return validAchievementLevel && validTotalVisits && validUpcomingReservations
+}
+
+// UI Components (optimized imports)
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -32,11 +102,24 @@ import {
     BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 
-// Magic UI Components
-import { MagicCard } from '@/components/magicui/magic-card'
-import { BorderBeam } from '@/components/magicui/border-beam'
-import { SparklesText } from '@/components/magicui/sparkles-text'
-import { BlurFade } from '@/components/magicui/blur-fade'
+// Dynamic imports for optimization
+const MagicCard = dynamic(() => import('@/components/magicui/magic-card').then(mod => ({ default: mod.MagicCard })), {
+    loading: () => <div className="animate-pulse bg-muted rounded-lg h-32" />,
+    ssr: false
+})
+
+const BorderBeam = dynamic(() => import('@/components/magicui/border-beam').then(mod => ({ default: mod.BorderBeam })), {
+    ssr: false
+})
+
+const SparklesText = dynamic(() => import('@/components/magicui/sparkles-text').then(mod => ({ default: mod.SparklesText })), {
+    loading: () => <span className="text-lg font-bold">Disney Magic</span>,
+    ssr: false
+})
+
+const BlurFade = dynamic(() => import('@/components/magicui/blur-fade').then(mod => ({ default: mod.BlurFade })), {
+    ssr: false
+})
 
 // Icons
 import {
@@ -59,10 +142,14 @@ import {
     LogOut,
     User,
     ChevronRight,
-    ChevronLeft,
     HelpCircle,
     Globe,
-    Map
+    Map,
+    Camera,
+    Bookmark,
+    Shield,
+    Zap,
+    Phone
 } from 'lucide-react'
 
 // Utils
@@ -82,30 +169,25 @@ interface NavigationItem {
     isPremium?: boolean
     description?: string
     children?: NavigationItem[]
+    notification?: number
 }
 
-interface UserStats {
-    totalVisits: number
-    upcomingReservations: number
-    magicMoments: number
-    achievementLevel: string
-}
-
+// Enhanced navigation with real features
 const navigationItems: NavigationItem[] = [
     {
         id: 'overview',
         title: 'Dashboard',
         href: '/dashboard',
         icon: <LayoutDashboard className="h-4 w-4" />,
-        description: 'Your vacation overview'
+        description: 'Your vacation command center'
     },
     {
         id: 'planning',
-        title: 'Trip Planner',
+        title: 'AI Trip Planner',
         href: '/dashboard/planning',
         icon: <Calendar className="h-4 w-4" />,
         badge: 'AI',
-        description: 'Plan your perfect Disney day'
+        description: 'Intelligent Disney day planning'
     },
     {
         id: 'optimizer',
@@ -113,173 +195,293 @@ const navigationItems: NavigationItem[] = [
         href: '/dashboard/optimizer',
         icon: <Route className="h-4 w-4" />,
         isNew: true,
-        description: 'Optimize your park routes'
+        description: 'Minimize wait times with smart routing'
     },
     {
         id: 'attractions',
-        title: 'Attractions',
+        title: 'Live Wait Times',
         href: '/dashboard/attractions',
         icon: <Star className="h-4 w-4" />,
-        description: 'Wait times & Lightning Lanes'
+        description: 'Real-time attraction data & Lightning Lanes'
     },
     {
         id: 'dining',
-        title: 'Dining',
+        title: 'Dining Reservations',
         href: '/dashboard/dining',
         icon: <Utensils className="h-4 w-4" />,
-        description: 'Reservations & meal plans'
+        description: 'Restaurant bookings & meal plans'
     },
     {
         id: 'resorts',
-        title: 'Resorts',
+        title: 'Resort Booking',
         href: '/dashboard/resorts',
         icon: <Hotel className="h-4 w-4" />,
-        description: 'Hotel bookings & amenities'
+        description: 'Hotels, amenities & room service'
     },
     {
         id: 'group',
-        title: 'My Party',
+        title: 'Travel Party',
         href: '/dashboard/group',
         icon: <Users className="h-4 w-4" />,
-        description: 'Manage your travel group'
+        description: 'Coordinate with family & friends'
     },
     {
         id: 'itinerary',
-        title: 'Itineraries',
+        title: 'My Itineraries',
         href: '/dashboard/itinerary',
         icon: <Map className="h-4 w-4" />,
-        description: 'Your saved plans'
+        description: 'Saved plans & shared itineraries'
     },
     {
         id: 'parks',
-        title: 'Park Maps',
+        title: 'Interactive Maps',
         href: '/dashboard/parks',
         icon: <MapPin className="h-4 w-4" />,
-        description: 'Interactive park maps'
+        description: 'Navigate parks with GPS precision'
     },
     {
         id: 'events',
         title: 'Special Events',
         href: '/dashboard/events',
         icon: <PartyPopper className="h-4 w-4" />,
-        description: 'Seasonal celebrations'
+        description: 'Seasonal celebrations & limited events'
     },
     {
         id: 'disneysprings',
         title: 'Disney Springs',
         href: '/dashboard/disneysprings',
         icon: <Globe className="h-4 w-4" />,
-        description: 'Shopping & entertainment'
+        description: 'Shopping, dining & entertainment hub'
+    },
+    {
+        id: 'memories',
+        title: 'Photo Memories',
+        href: '/dashboard/memories',
+        icon: <Camera className="h-4 w-4" />,
+        isNew: true,
+        description: 'PhotoPass & vacation memories'
     }
 ]
 
 const quickActions = [
-    { title: 'Book Dining', icon: <Utensils className="h-3 w-3" />, href: '/dashboard/dining' },
-    { title: 'Check Wait Times', icon: <Clock className="h-3 w-3" />, href: '/dashboard/attractions' },
-    { title: 'Plan Route', icon: <Route className="h-3 w-3" />, href: '/dashboard/optimizer' },
-    { title: 'View Map', icon: <Map className="h-3 w-3" />, href: '/dashboard/parks' }
+    {
+        title: 'Book Dining',
+        icon: <Utensils className="h-3 w-3" />,
+        href: '/dashboard/dining',
+        description: 'Find & reserve restaurants'
+    },
+    {
+        title: 'Check Wait Times',
+        icon: <Clock className="h-3 w-3" />,
+        href: '/dashboard/attractions',
+        description: 'Live attraction data'
+    },
+    {
+        title: 'Optimize Route',
+        icon: <Route className="h-3 w-3" />,
+        href: '/dashboard/optimizer',
+        description: 'Plan efficient park routes'
+    },
+    {
+        title: 'View Maps',
+        icon: <Map className="h-3 w-3" />,
+        href: '/dashboard/parks',
+        description: 'Interactive park navigation'
+    },
+    {
+        title: 'Live Updates',
+        icon: <Zap className="h-3 w-3" />,
+        href: '/dashboard/notifications',
+        description: 'Real-time park alerts'
+    },
+    {
+        title: 'Support',
+        icon: <Phone className="h-3 w-3" />,
+        href: '/dashboard/support',
+        description: '24/7 vacation assistance'
+    }
 ]
 
-function DashboardSidebar({ isCollapsed, onToggle }: { isCollapsed: boolean; onToggle: () => void }) {
+// Memoized sidebar component for performance
+const DashboardSidebar = memo(({ isCollapsed, onToggle }: { isCollapsed: boolean; onToggle: () => void }) => {
     const pathname = usePathname()
     const { user } = useAuth()
 
-    const mockUserStats: UserStats = {
-        totalVisits: 12,
-        upcomingReservations: 8,
-        magicMoments: 23,
-        achievementLevel: 'Magic Kingdom Explorer'
+    // Get hook data with proper typing
+    const userStatsResult: UseUserStatsReturn = useUserStats()
+    const notificationsResult: UseNotificationsReturn = useNotifications()
+
+    // Memoize active state calculation
+    const isItemActive = useCallback((href: string) => {
+        return pathname === href || pathname.startsWith(href + '/')
+    }, [pathname])
+
+    // Memoize user display data
+    const userDisplayData = useMemo(() => {
+        if (!user) return { initials: 'G', displayName: 'Disney Guest' }
+
+        const displayName = user.displayName || user.email?.split('@')[0] || 'Disney Guest'
+        const initials = displayName
+            .split(' ')
+            .map(name => name.charAt(0))
+            .join('')
+            .toUpperCase()
+            .slice(0, 2)
+
+        return { initials, displayName }
+    }, [user])
+
+    // Extract and validate data safely with proper type checking
+    const rawUserStats = userStatsResult.userStats
+    const userStatsError = userStatsResult.error
+    const statsLoading = userStatsResult.isLoading
+
+    const rawNotifications = notificationsResult.notifications
+    const notificationsError = notificationsResult.error
+
+    // Safe userStats with proper type checking
+    const safeUserStats = rawUserStats && !userStatsError && isValidUserStats(rawUserStats)
+        ? rawUserStats
+        : null
+
+    // Safe notifications with proper type checking and filtering
+    const safeNotifications = Array.isArray(rawNotifications) && !notificationsError
+        ? rawNotifications.filter(isValidNotification)
+        : []
+
+    // Animation variants
+    const sidebarVariants = {
+        expanded: { width: 280 },
+        collapsed: { width: 80 }
+    }
+
+    const contentVariants = {
+        expanded: { opacity: 1, x: 0 },
+        collapsed: { opacity: 0, x: -20 }
     }
 
     return (
         <motion.div
             initial={false}
-            animate={{ width: isCollapsed ? 80 : 280 }}
+            animate={isCollapsed ? "collapsed" : "expanded"}
+            variants={sidebarVariants}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="relative h-full bg-gradient-to-b from-blue-50 via-purple-50 to-pink-50 dark:from-blue-950 dark:via-purple-950 dark:to-pink-950 border-r border-border/50"
+            className="relative h-full bg-gradient-to-b from-blue-50 via-purple-50 to-pink-50 dark:from-blue-950 dark:via-purple-950 dark:to-pink-950 border-r border-border/50 overflow-hidden"
         >
             <BorderBeam size={250} duration={12} delay={9} />
 
             {/* Header */}
             <div className="p-4 border-b border-border/50">
                 <div className="flex items-center justify-between">
-                    {!isCollapsed && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.2 }}
-                            className="flex items-center gap-2"
-                        >
-                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                <Sparkles className="h-4 w-4 text-white" />
-                            </div>
-                            <SparklesText className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                Disney Magic
-                            </SparklesText>
-                        </motion.div>
-                    )}
+                    <AnimatePresence mode="wait">
+                        {!isCollapsed && (
+                            <motion.div
+                                key="logo"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                transition={{ duration: 0.2 }}
+                                className="flex items-center gap-2"
+                            >
+                                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+                                    <Sparkles className="h-4 w-4 text-white" />
+                                </div>
+                                <SparklesText className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                    Disney Magic
+                                </SparklesText>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={onToggle}
-                        className="h-8 w-8 hover:bg-white/50 dark:hover:bg-black/20"
+                        className="h-8 w-8 hover:bg-white/50 dark:hover:bg-black/20 transition-colors"
+                        aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                     >
-                        {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                        <motion.div
+                            animate={{ rotate: isCollapsed ? 0 : 180 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            <ChevronRight className="h-4 w-4" />
+                        </motion.div>
                     </Button>
                 </div>
             </div>
 
             {/* User Stats Card */}
-            {!isCollapsed && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="p-4"
-                >
-                    <MagicCard className="p-4 bg-white/50 dark:bg-black/20 backdrop-blur-sm">
-                        <div className="flex items-center gap-3 mb-3">
-                            <Avatar className="h-10 w-10 ring-purple-200 dark:ring-purple-800">
-                                <AvatarImage src={user?.photoURL || ''} />
-                                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                                    {user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                                </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">
-                                    {user?.displayName || 'Disney Guest'}
-                                </p>
-                                <div className="flex items-center gap-1">
-                                    <Crown className="h-3 w-3 text-yellow-500" />
-                                    <p className="text-xs text-muted-foreground truncate">
-                                        {mockUserStats.achievementLevel}
+            <AnimatePresence mode="wait">
+                {!isCollapsed && (
+                    <motion.div
+                        key="user-stats"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="p-4"
+                    >
+                        <MagicCard className="p-4 bg-white/50 dark:bg-black/20 backdrop-blur-sm border-0 shadow-lg">
+                            <div className="flex items-center gap-3 mb-3">
+                                <Avatar className="h-10 w-10 ring-purple-200 dark:ring-purple-800 ring-offset-2">
+                                    <AvatarImage
+                                        src={user?.photoURL || ''}
+                                        alt={userDisplayData.displayName}
+                                        className="object-cover"
+                                    />
+                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+                                        {userDisplayData.initials}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">
+                                        {userDisplayData.displayName}
                                     </p>
+                                    <div className="flex items-center gap-1">
+                                        <Crown className="h-3 w-3 text-yellow-500" />
+                                        <p className="text-xs text-muted-foreground truncate">
+                                            {statsLoading ? 'Loading...' : (safeUserStats?.achievementLevel || 'New Explorer')}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="text-center p-2 bg-blue-100 dark:bg-blue-900/30 rounded">
-                                <div className="font-semibold text-blue-700 dark:text-blue-300">
-                                    {mockUserStats.totalVisits}
+
+                            {userStatsError ? (
+                                <div className="text-xs text-red-500 text-center py-2">
+                                    Unable to load stats
                                 </div>
-                                <div className="text-blue-600 dark:text-blue-400">Visits</div>
-                            </div>
-                            <div className="text-center p-2 bg-purple-100 dark:bg-purple-900/30 rounded">
-                                <div className="font-semibold text-purple-700 dark:text-purple-300">
-                                    {mockUserStats.upcomingReservations}
+                            ) : (
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <motion.div
+                                        whileHover={{ scale: 1.02 }}
+                                        className="text-center p-2 bg-blue-100 dark:bg-blue-900/30 rounded cursor-pointer"
+                                    >
+                                        <div className="font-semibold text-blue-700 dark:text-blue-300">
+                                            {statsLoading ? '...' : safeUserStats?.totalVisits || 0}
+                                        </div>
+                                        <div className="text-blue-600 dark:text-blue-400">Visits</div>
+                                    </motion.div>
+                                    <motion.div
+                                        whileHover={{ scale: 1.02 }}
+                                        className="text-center p-2 bg-purple-100 dark:bg-purple-900/30 rounded cursor-pointer"
+                                    >
+                                        <div className="font-semibold text-purple-700 dark:text-purple-300">
+                                            {statsLoading ? '...' : safeUserStats?.upcomingReservations || 0}
+                                        </div>
+                                        <div className="text-purple-600 dark:text-purple-400">Plans</div>
+                                    </motion.div>
                                 </div>
-                                <div className="text-purple-600 dark:text-purple-400">Plans</div>
-                            </div>
-                        </div>
-                    </MagicCard>
-                </motion.div>
-            )}
+                            )}
+                        </MagicCard>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Navigation */}
             <ScrollArea className="flex-1 px-4">
-                <nav className="space-y-2 py-4">
+                <nav className="space-y-1 py-4" role="navigation" aria-label="Main navigation">
                     {navigationItems.map((item, index) => {
-                        const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                        const isActive = isItemActive(item.href)
+                        const hasNotification = safeNotifications.some(n => n.category === item.id && !n.read)
 
                         return (
                             <TooltipProvider key={item.id}>
@@ -288,42 +490,57 @@ function DashboardSidebar({ isCollapsed, onToggle }: { isCollapsed: boolean; onT
                                         <motion.div
                                             initial={{ opacity: 0, x: -20 }}
                                             animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: index * 0.05 }}
+                                            transition={{ delay: index * 0.03 }}
+                                            whileHover={{ x: isCollapsed ? 0 : 4 }}
                                         >
                                             <Button
                                                 variant={isActive ? "default" : "ghost"}
                                                 className={cn(
-                                                    "w-full justify-start gap-3 h-10 relative group",
+                                                    "w-full justify-start gap-3 h-10 relative group transition-all duration-200",
                                                     isActive
-                                                        ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg"
-                                                        : "hover:bg-white/50 dark:hover:bg-black/20",
+                                                        ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg scale-105"
+                                                        : "hover:bg-white/60 dark:hover:bg-black/30 hover:shadow-md",
                                                     isCollapsed && "justify-center px-2"
                                                 )}
                                                 asChild
                                             >
-                                                <a href={item.href}>
-                                                    <div className="flex items-center gap-3">
-                                                        {item.icon}
-                                                        {!isCollapsed && (
-                                                            <>
-                                                                <span className="flex-1 text-left">{item.title}</span>
-                                                                <div className="flex items-center gap-1">
-                                                                    {item.badge && (
-                                                                        <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-                                                                            {item.badge}
-                                                                        </Badge>
-                                                                    )}
-                                                                    {item.isNew && (
-                                                                        <Badge variant="destructive" className="text-xs px-1.5 py-0.5">
-                                                                            New
-                                                                        </Badge>
-                                                                    )}
-                                                                    {item.isPremium && (
-                                                                        <Crown className="h-3 w-3 text-yellow-500" />
-                                                                    )}
-                                                                </div>
-                                                            </>
-                                                        )}
+                                                <a href={item.href} aria-label={item.title}>
+                                                    <div className="flex items-center gap-3 w-full">
+                                                        <div className="relative">
+                                                            {item.icon}
+                                                            {hasNotification && (
+                                                                <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                                            )}
+                                                        </div>
+                                                        <AnimatePresence mode="wait">
+                                                            {!isCollapsed && (
+                                                                <motion.div
+                                                                    key="nav-content"
+                                                                    variants={contentVariants}
+                                                                    initial="collapsed"
+                                                                    animate="expanded"
+                                                                    exit="collapsed"
+                                                                    className="flex items-center justify-between w-full"
+                                                                >
+                                                                    <span className="flex-1 text-left font-medium">{item.title}</span>
+                                                                    <div className="flex items-center gap-1">
+                                                                        {item.badge && (
+                                                                            <Badge variant="secondary" className="text-xs px-1.5 py-0.5 font-semibold">
+                                                                                {item.badge}
+                                                                            </Badge>
+                                                                        )}
+                                                                        {item.isNew && (
+                                                                            <Badge variant="destructive" className="text-xs px-1.5 py-0.5 animate-pulse">
+                                                                                New
+                                                                            </Badge>
+                                                                        )}
+                                                                        {item.isPremium && (
+                                                                            <Crown className="h-3 w-3 text-yellow-500" />
+                                                                        )}
+                                                                    </div>
+                                                                </motion.div>
+                                                            )}
+                                                        </AnimatePresence>
                                                     </div>
                                                     {isActive && (
                                                         <motion.div
@@ -337,10 +554,10 @@ function DashboardSidebar({ isCollapsed, onToggle }: { isCollapsed: boolean; onT
                                         </motion.div>
                                     </TooltipTrigger>
                                     {isCollapsed && (
-                                        <TooltipContent side="right" className="ml-2">
+                                        <TooltipContent side="right" className="ml-2 max-w-xs">
                                             <p className="font-medium">{item.title}</p>
                                             {item.description && (
-                                                <p className="text-xs text-muted-foreground">{item.description}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
                                             )}
                                         </TooltipContent>
                                     )}
@@ -352,63 +569,121 @@ function DashboardSidebar({ isCollapsed, onToggle }: { isCollapsed: boolean; onT
             </ScrollArea>
 
             {/* Quick Actions */}
-            {!isCollapsed && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4 }}
-                    className="p-4 border-t border-border/50"
-                >
-                    <h4 className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
-                        Quick Actions
-                    </h4>
-                    <div className="grid grid-cols-2 gap-2">
-                        {quickActions.map((action) => (
-                            <Button
-                                key={action.title}
-                                variant="outline"
-                                size="sm"
-                                className="h-8 text-xs bg-white/50 dark:bg-black/20 hover:bg-white dark:hover:bg-black/40 border-border/50"
-                                asChild
-                            >
-                                <a href={action.href} className="flex items-center gap-1.5">
-                                    {action.icon}
-                                    <span className="truncate">{action.title}</span>
-                                </a>
-                            </Button>
-                        ))}
-                    </div>
-                </motion.div>
-            )}
+            <AnimatePresence mode="wait">
+                {!isCollapsed && (
+                    <motion.div
+                        key="quick-actions"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ delay: 0.4 }}
+                        className="p-4 border-t border-border/50"
+                    >
+                        <h4 className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider flex items-center gap-2">
+                            <Zap className="h-3 w-3" />
+                            Quick Actions
+                        </h4>
+                        <div className="grid grid-cols-2 gap-2">
+                            {quickActions.map((action, index) => (
+                                <motion.div
+                                    key={action.title}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.5 + index * 0.05 }}
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                >
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 text-xs bg-white/50 dark:bg-black/20 hover:bg-white dark:hover:bg-black/40 border-border/50 transition-all duration-200 group"
+                                        asChild
+                                    >
+                                        <a href={action.href} className="flex items-center gap-1.5" title={action.description}>
+                                            <div className="group-hover:scale-110 transition-transform duration-200">
+                                                {action.icon}
+                                            </div>
+                                            <span className="truncate font-medium">{action.title}</span>
+                                        </a>
+                                    </Button>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     )
-}
+})
 
-function DashboardHeader() {
+DashboardSidebar.displayName = 'DashboardSidebar'
+
+// Memoized header component
+const DashboardHeader = memo(() => {
     const pathname = usePathname()
     const { user, logout } = useAuth()
-    const [notifications] = useState(3) // Mock notification count
+    const { notifications, markAsRead, unreadCount, error: notificationsError } = useNotifications()
+    const [_searchOpen, setSearchOpen] = useState(false)
+
+    // Safe notifications with proper type checking and memoized markAsRead function
+    const safeNotifications = notifications && !notificationsError && Array.isArray(notifications)
+        ? notifications.filter(isValidNotification)
+        : []
+    const safeUnreadCount = typeof unreadCount === 'number' ? unreadCount : 0
+
+    const safeMarkAsRead = useMemo(() => {
+        return markAsRead && typeof markAsRead === 'function' ? markAsRead : () => Promise.resolve()
+    }, [markAsRead])
 
     // Generate breadcrumbs from pathname
-    const generateBreadcrumbs = () => {
+    const breadcrumbs = useMemo(() => {
         const segments = pathname.split('/').filter(Boolean)
-        const breadcrumbs: Array<{ title: string; href: string; isLast?: boolean }> = [{ title: 'Home', href: '/' }]
+        const crumbs: Array<{ title: string; href: string; isLast?: boolean }> = []
 
         let currentPath = ''
         segments.forEach((segment, index) => {
             currentPath += `/${segment}`
-            const title = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ')
-            breadcrumbs.push({
+
+            // Map segments to friendly names
+            const segmentMap: Record<string, string> = {
+                'dashboard': 'Dashboard',
+                'planning': 'AI Trip Planner',
+                'optimizer': 'Route Optimizer',
+                'attractions': 'Live Wait Times',
+                'dining': 'Dining Reservations',
+                'resorts': 'Resort Booking',
+                'group': 'Travel Party',
+                'itinerary': 'My Itineraries',
+                'parks': 'Interactive Maps',
+                'events': 'Special Events',
+                'disneysprings': 'Disney Springs',
+                'memories': 'Photo Memories',
+                'settings': 'Settings'
+            }
+
+            const title = segmentMap[segment] || segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ')
+
+            crumbs.push({
                 title,
                 href: currentPath,
                 isLast: index === segments.length - 1
             })
         })
 
-        return breadcrumbs
-    }
+        return crumbs
+    }, [pathname])
 
-    const breadcrumbs = generateBreadcrumbs()
+    const handleNotificationClick = useCallback(async (notificationId: string) => {
+        await safeMarkAsRead(notificationId)
+    }, [safeMarkAsRead])
+
+    const handleLogout = useCallback(async () => {
+        try {
+            await logout()
+        } catch (error) {
+            console.error('Logout failed:', error)
+        }
+    }, [logout])
 
     return (
         <header className="sticky top-0 z-40 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -443,24 +718,91 @@ function DashboardHeader() {
                 {/* Header Actions */}
                 <BlurFade delay={0.2}>
                     <div className="flex items-center gap-3">
-                        {/* Search */}
-                        <Button variant="outline" size="sm" className="gap-2 bg-white/50 dark:bg-black/20">
-                            <Search className="h-4 w-4" />
-                            <span className="hidden sm:inline">Search...</span>
-                        </Button>
+                        {/* Global Search */}
+                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-2 bg-white/50 dark:bg-black/20 hover:bg-white dark:hover:bg-black/40 transition-all duration-200 min-w-[120px] justify-start"
+                                onClick={() => setSearchOpen(true)}
+                            >
+                                <Search className="h-4 w-4" />
+                                <span className="hidden sm:inline text-muted-foreground">Search...</span>
+                                <kbd className="pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground ml-auto">
+                                    ⌘K
+                                </kbd>
+                            </Button>
+                        </motion.div>
 
                         {/* Notifications */}
-                        <Button variant="outline" size="icon" className="relative bg-white/50 dark:bg-black/20">
-                            <Bell className="h-4 w-4" />
-                            {notifications > 0 && (
-                                <Badge
-                                    variant="destructive"
-                                    className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-                                >
-                                    {notifications}
-                                </Badge>
-                            )}
-                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="relative bg-white/50 dark:bg-black/20 hover:bg-white dark:hover:bg-black/40 transition-all duration-200"
+                                    >
+                                        <Bell className="h-4 w-4" />
+                                        <AnimatePresence>
+                                            {safeUnreadCount > 0 && (
+                                                <motion.div
+                                                    initial={{ scale: 0 }}
+                                                    animate={{ scale: 1 }}
+                                                    exit={{ scale: 0 }}
+                                                    className="absolute -top-2 -right-2"
+                                                >
+                                                    <Badge
+                                                        variant="destructive"
+                                                        className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs animate-pulse"
+                                                    >
+                                                        {safeUnreadCount > 99 ? '99+' : safeUnreadCount}
+                                                    </Badge>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </Button>
+                                </motion.div>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto" align="end">
+                                <DropdownMenuLabel className="flex items-center justify-between">
+                                    <span>Notifications</span>
+                                    {safeUnreadCount > 0 && (
+                                        <Badge variant="secondary" className="text-xs">
+                                            {safeUnreadCount} new
+                                        </Badge>
+                                    )}
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {safeNotifications?.length ? (
+                                    safeNotifications.slice(0, 10).map((notification) => (
+                                        <DropdownMenuItem
+                                            key={notification.id}
+                                            className="flex flex-col items-start gap-1 p-3 cursor-pointer"
+                                            onClick={() => handleNotificationClick(notification.id)}
+                                        >
+                                            <div className="flex items-center gap-2 w-full">
+                                                <div className={cn(
+                                                    "w-2 h-2 rounded-full",
+                                                    notification.read ? "bg-muted" : "bg-blue-500 animate-pulse"
+                                                )} />
+                                                <span className="font-medium text-sm">{notification.title}</span>
+                                                <span className="text-xs text-muted-foreground ml-auto">
+                                                    {new Date(notification.createdAt).toLocaleTimeString()}
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground ml-4">
+                                                {notification.message}
+                                            </p>
+                                        </DropdownMenuItem>
+                                    ))
+                                ) : (
+                                    <DropdownMenuItem disabled className="text-center text-muted-foreground">
+                                        No notifications
+                                    </DropdownMenuItem>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
 
                         {/* User Menu */}
                         <DropdownMenu>
@@ -489,26 +831,36 @@ function DashboardHeader() {
                                 <DropdownMenuItem asChild>
                                     <a href="/dashboard/settings" className="flex items-center gap-2">
                                         <User className="h-4 w-4" />
-                                        Profile
+                                        Profile Settings
                                     </a>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
                                     <a href="/dashboard/settings" className="flex items-center gap-2">
                                         <Settings className="h-4 w-4" />
-                                        Settings
+                                        Preferences
+                                    </a>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <a href="/dashboard/memories" className="flex items-center gap-2">
+                                        <Bookmark className="h-4 w-4" />
+                                        Saved Items
                                     </a>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem className="flex items-center gap-2">
                                     <HelpCircle className="h-4 w-4" />
                                     Help & Support
                                 </DropdownMenuItem>
+                                <DropdownMenuItem className="flex items-center gap-2">
+                                    <Shield className="h-4 w-4" />
+                                    Privacy & Security
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                    className="flex items-center gap-2 text-red-600 dark:text-red-400"
-                                    onClick={() => logout()}
+                                    className="flex items-center gap-2 text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+                                    onClick={handleLogout}
                                 >
                                     <LogOut className="h-4 w-4" />
-                                    Log out
+                                    Sign Out
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -517,9 +869,12 @@ function DashboardHeader() {
             </div>
         </header>
     )
-}
+})
 
-function MobileSidebar({ children }: { children: React.ReactNode }) {
+DashboardHeader.displayName = 'DashboardHeader'
+
+// Mobile sidebar component
+const MobileSidebar = memo(({ children }: { children: React.ReactNode }) => {
     const [isOpen, setIsOpen] = useState(false)
 
     return (
@@ -527,6 +882,7 @@ function MobileSidebar({ children }: { children: React.ReactNode }) {
             <SheetTrigger asChild>
                 <Button variant="outline" size="icon" className="md:hidden">
                     <Menu className="h-4 w-4" />
+                    <span className="sr-only">Open navigation menu</span>
                 </Button>
             </SheetTrigger>
             <SheetContent side="left" className="p-0 w-80">
@@ -534,7 +890,11 @@ function MobileSidebar({ children }: { children: React.ReactNode }) {
             </SheetContent>
         </Sheet>
     )
-}
+})
+
+MobileSidebar.displayName = 'MobileSidebar'
+
+// Main layout component
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)

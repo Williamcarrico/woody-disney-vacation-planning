@@ -33,6 +33,28 @@ export interface DietaryInfo {
     paleo: boolean;
 }
 
+// New pricing structure for different meal periods
+export interface MealPricing {
+    adult: number;
+    child: number;
+}
+
+export interface PricingInfo {
+    breakfast?: MealPricing;
+    lunch?: MealPricing;
+    dinner?: MealPricing;
+    entrees?: string; // for price ranges like "28-68"
+}
+
+// Enhanced reservation difficulty enum
+export enum ReservationDifficulty {
+    EASY = "easy",
+    MODERATE = "moderate",
+    DIFFICULT = "difficult",
+    VERY_DIFFICULT = "very_difficult",
+    EXTREMELY_DIFFICULT = "extremely_difficult"
+}
+
 export interface DisneyRestaurant {
     id: string;
     name: string;
@@ -54,6 +76,10 @@ export interface DisneyRestaurant {
     priceRange: PriceRange;
     diningExperience: DiningExperience;
 
+    // Meal Information
+    mealPeriods: MealPeriod[];
+    pricing?: PricingInfo;
+
     // Operating Information
     operatingHours: OperatingHours;
     phoneNumber?: string;
@@ -64,16 +90,25 @@ export interface DisneyRestaurant {
     characterDining?: CharacterDiningInfo;
     specialFeatures: SpecialFeature[];
 
+    // Mobile & Digital Features
+    mobileOrdering: boolean;
+    timeLimit?: string; // For locations like Oga's Cantina
+
     // Content
     menu?: MenuHighlight[];
+    menuHighlights?: string[];
     imageUrl?: string;
     thumbnailUrl?: string;
     galleryImages?: string[];
 
+    // Operational Notes
+    challenges?: string[];
+    dietaryAccommodations: string[];
+
     // Metadata
     tags: string[];
     popularItems?: string[];
-    chefSpecialties?: string[];
+    chefSpecialities?: string[];
     ambiance: string[];
     accessibility: AccessibilityFeature[];
 
@@ -97,6 +132,15 @@ export interface DisneyRestaurant {
     updatedAt: string;
 }
 
+// New meal periods enum
+export enum MealPeriod {
+    BREAKFAST = "breakfast",
+    LUNCH = "lunch",
+    DINNER = "dinner",
+    SNACK = "snack",
+    BEVERAGES = "beverages"
+}
+
 export enum CuisineType {
     AMERICAN = "American",
     ITALIAN = "Italian",
@@ -109,25 +153,49 @@ export enum CuisineType {
     SEAFOOD = "Seafood",
     STEAKHOUSE = "Steakhouse",
     FRENCH = "French",
+    FRENCH_INSPIRED = "French-inspired",
     MEDITERRANEAN = "Mediterranean",
     MIDDLE_EASTERN = "Middle Eastern",
     AFRICAN = "African",
+    AFRICAN_INSPIRED = "African-inspired",
     LATIN_AMERICAN = "Latin American",
     CARIBBEAN = "Caribbean",
     SOUTHERN = "Southern",
+    SOUTHERN_COMFORT = "Southern Comfort Food",
     PIZZA = "Pizza",
+    NEAPOLITAN_PIZZA = "Neapolitan Pizza",
     BAKERY = "Bakery",
     DESSERTS = "Desserts",
     ICE_CREAM = "Ice Cream",
+    FROZEN_TREATS = "Frozen Treats",
     COFFEE = "Coffee",
     BAR = "Bar",
     BUFFET = "Buffet",
+    AMERICAN_BUFFET = "American Buffet",
     VEGETARIAN = "Vegetarian",
     VEGAN = "Vegan",
     HEALTHY = "Healthy",
+    HEALTHY_OPTIONS = "Healthy Options",
     COMFORT_FOOD = "Comfort Food",
+    AMERICAN_COMFORT_FOOD = "American Comfort Food",
     INTERNATIONAL = "International",
-    FUSION = "Fusion"
+    INTERNATIONAL_INSPIRED = "International-inspired",
+    FUSION = "Fusion",
+    MODERN_AMERICAN = "Modern American",
+    AMERICAN_FINE_DINING = "American Fine Dining",
+    CALIFORNIA_CUISINE = "California Cuisine",
+    NORWEGIAN_INSPIRED = "Norwegian-inspired",
+    CANADIAN_STEAKHOUSE = "Canadian Steakhouse",
+    PAN_ASIAN = "Pan-Asian",
+    MODERN_BBQ = "Modern BBQ",
+    GOURMET_BURGERS = "Gourmet Burgers",
+    UPSCALE_SEAFOOD = "Upscale Seafood",
+    STAR_WARS_THEMED = "Star Wars Themed Beverages",
+    GALACTIC_FARE = "Star Wars Themed Galactic Fare",
+    POLYNESIAN = "Polynesian",
+    SPANISH = "Spanish",
+    BARBECUE = "Barbecue",
+    BEVERAGES_LIGHT_SNACKS = "Beverages and Light Snacks"
 }
 
 export enum ServiceType {
@@ -136,6 +204,7 @@ export enum ServiceType {
     SIGNATURE_DINING = "Signature Dining",
     FINE_DINING = "Fine Dining",
     LOUNGE = "Lounge",
+    LOUNGE_BAR = "Lounge/Bar",
     BAR = "Bar",
     CAFE = "Cafe",
     KIOSK = "Kiosk",
@@ -170,6 +239,7 @@ export interface ReservationInfo {
     acceptsReservations: boolean;
     requiresReservations: boolean;
     advanceReservationDays: number; // How many days in advance you can book
+    reservationDifficulty: ReservationDifficulty;
     reservationUrl?: string;
     walkUpsAccepted: boolean;
     reservationTips?: string[];
@@ -179,6 +249,9 @@ export interface ReservationInfo {
 
 export interface DiningPlanInfo {
     acceptsDiningPlan: boolean;
+    participating: boolean;
+    creditsRequired: number;
+    isSignatureDining: boolean;
     tableServiceCredits?: number;
     quickServiceCredits?: number;
     snackCredits?: number;
@@ -231,7 +304,16 @@ export enum SpecialFeature {
     SEASONAL_MENU = "Seasonal Menu",
     FARM_TO_TABLE = "Farm to Table",
     SUSTAINABLE = "Sustainable",
-    LOCAL_INGREDIENTS = "Local Ingredients"
+    LOCAL_INGREDIENTS = "Local Ingredients",
+    WATERFRONT = "Waterfront",
+    AMPHICAR_TOURS = "Amphicar Tours",
+    BOAT_COLLECTION = "Boat Collection Display",
+    EXHIBITION_KITCHEN = "Exhibition Kitchen",
+    MULTIPLE_LEVELS = "Multiple Dining Levels",
+    BOURBON_BAR = "Bourbon Bar",
+    CRAFT_BEER = "Craft Beer Selection",
+    GOURMET_OPTIONS = "Gourmet Options",
+    ARTISANAL_SHAKES = "Artisanal Gelato Shakes"
 }
 
 export enum AccessibilityFeature {
@@ -243,7 +325,8 @@ export enum AccessibilityFeature {
     DIETARY_ACCOMMODATIONS = "Dietary Accommodations",
     SERVICE_ANIMAL_FRIENDLY = "Service Animal Friendly",
     ACCESSIBLE_PARKING = "Accessible Parking",
-    ACCESSIBLE_RESTROOMS = "Accessible Restrooms"
+    ACCESSIBLE_RESTROOMS = "Accessible Restrooms",
+    KIDS_MENU = "Kids Menu"
 }
 
 export interface DiningFilters {
@@ -274,11 +357,11 @@ export interface DiningSuggestion {
 
 // Location-specific types
 export enum DisneyLocation {
-    MAGIC_KINGDOM = "magic-kingdom",
+    MAGIC_KINGDOM = "magic_kingdom",
     EPCOT = "epcot",
-    HOLLYWOOD_STUDIOS = "hollywood-studios",
-    ANIMAL_KINGDOM = "animal-kingdom",
-    DISNEY_SPRINGS = "disney-springs",
+    HOLLYWOOD_STUDIOS = "hollywood_studios",
+    ANIMAL_KINGDOM = "animal_kingdom",
+    DISNEY_SPRINGS = "disney_springs",
     BOARDWALK = "boardwalk",
     GRAND_FLORIDIAN = "grand-floridian",
     POLYNESIAN = "polynesian",
@@ -307,4 +390,82 @@ export interface LocationInfo {
     restaurantCount: number;
     popularCuisines: CuisineType[];
     priceRangeDistribution: Record<PriceRange, number>;
+}
+
+// Database metadata interface
+export interface DisneyDiningDatabase {
+    metadata: {
+        total_locations: number;
+        last_updated: string;
+        data_sources: string[];
+        note: string;
+    };
+    locations: Record<string, LocationData>;
+    dining_plan_info: DiningPlanConfiguration;
+    reservation_info: ReservationConfiguration;
+    special_categories: SpecialCategoriesInfo;
+    operational_notes: OperationalNotesInfo;
+}
+
+export interface LocationData {
+    name: string;
+    total_restaurants: number;
+    areas?: string[];
+    restaurants: DisneyRestaurant[];
+}
+
+export interface DiningPlanConfiguration {
+    quick_service: {
+        credits_required: number;
+        participating_locations: string;
+    };
+    table_service: {
+        standard: {
+            credits_required: number;
+            participating_locations: string;
+        };
+        signature: {
+            credits_required: number;
+            participating_locations: string;
+        };
+    };
+    snack_credits: {
+        credits_required: number;
+        participating_locations: string;
+    };
+}
+
+export interface ReservationConfiguration {
+    advance_booking_window: {
+        general_public: string;
+        disney_resort_guests: string;
+    };
+    difficulty_levels: Record<string, string>;
+}
+
+export interface SpecialCategoriesInfo {
+    character_dining: {
+        total_locations: number;
+        advance_reservations_essential: boolean;
+        popular_locations: string[];
+    };
+    signature_dining: {
+        total_locations: number;
+        dining_plan_credits: number;
+        dress_code: string;
+        premium_experiences: string[];
+    };
+    quick_service: {
+        total_locations: number;
+        mobile_ordering: string;
+        peak_times: string;
+    };
+}
+
+export interface OperationalNotesInfo {
+    hours: string;
+    menus: string;
+    availability: string;
+    reservations: string;
+    dietary_accommodations: string;
 }

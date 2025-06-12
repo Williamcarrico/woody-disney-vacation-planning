@@ -1,0 +1,60 @@
+{
+  "users": {
+    "user123": {
+      "uid": "user123",
+      "displayName": "Disney Explorer",
+      "email": "explorer@example.com",
+      "photoURL": null,
+      "currentVacationId": "vacation123",
+      "currentVacation": {
+        "id": "vacation123",
+        "startDate": "2024-01-15",
+        "endDate": "2024-01-20",
+        "partySize": 4,
+        "resortName": "Disney's Grand Floridian Resort",
+        "ticketType": "Park Hopper Plus"
+      }
+    }
+  },
+  "attractions": {
+    "space-mountain": {
+      "id": "space-mountain",
+      "name": "Space Mountain",
+      "park": "Magic Kingdom",
+      "land": "Tomorrowland",
+      "type": "attraction",
+      "category": "thrill",
+      "height_requirement": 44,
+      "fastpass_available": true,
+      "single_rider": false,
+      "description": "An indoor roller coaster in complete darkness",
+      "wait_time_average": 45
+    },
+    "haunted-mansion": {
+      "id": "haunted-mansion",
+      "name": "Haunted Mansion",
+      "park": "Magic Kingdom",
+      "land": "Liberty Square",
+      "type": "attraction",
+      "category": "dark_ride",
+      "height_requirement": null,
+      "fastpass_available": true,
+      "single_rider": false,
+      "description": "A spooky boat ride through a haunted house",
+      "wait_time_average": 35
+    }
+  },
+  "userPreferences": {
+    "user123": {
+      "userId": "user123",
+      "favoriteParks": ["Magic Kingdom", "EPCOT"],
+      "dietaryRestrictions": [],
+      "accessibilityNeeds": [],
+      "waitTimeNotifications": true,
+      "reservationNotifications": true,
+      "weatherNotifications": true,
+      "socialNotifications": true,
+      "budget": 1000
+    }
+  }
+}

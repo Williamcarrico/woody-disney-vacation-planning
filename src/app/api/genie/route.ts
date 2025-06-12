@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         const searchParams = request.nextUrl.searchParams;
         const resort = searchParams.get('resort') || 'waltdisneyworldresort';
 
-        const data = await cachedFetch(`${BASE_URL}/destination/${resort}/genie`);
+        const data = await cachedFetch(`${BASE_URL}/destination/${resort}/genie`) as unknown;
         return NextResponse.json(data);
     } catch (error) {
         console.error('Error fetching Genie data:', error);

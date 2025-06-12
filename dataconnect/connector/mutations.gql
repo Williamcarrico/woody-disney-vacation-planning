@@ -1,0 +1,305 @@
+# User Mutations
+mutation CreateUser($displayName: String!, $email: String, $photoUrl: String, $preferences: Any) {
+  user_insert(data: {
+    displayName: $displayName
+    email: $email
+    photoUrl: $photoUrl
+    preferences: $preferences
+  })
+}
+
+mutation UpdateUser($id: UUID!, $displayName: String, $email: String, $photoUrl: String, $preferences: Any) {
+  user_update(id: $id, data: {
+    displayName: $displayName
+    email: $email
+    photoUrl: $photoUrl
+    preferences: $preferences
+  })
+}
+
+mutation DeleteUser($id: UUID!) {
+  user_delete(id: $id)
+}
+
+# Park Mutations
+mutation CreatePark($name: String!, $description: String!, $operatingHours: String) {
+  park_insert(data: {
+    name: $name
+    description: $description
+    operatingHours: $operatingHours
+  })
+}
+
+mutation UpdatePark($id: UUID!, $name: String, $description: String, $operatingHours: String) {
+  park_update(id: $id, data: {
+    name: $name
+    description: $description
+    operatingHours: $operatingHours
+  })
+}
+
+# Attraction Mutations
+mutation CreateAttraction(
+  $parkId: UUID!
+  $name: String!
+  $description: String!
+  $rideType: String!
+  $waitTime: Int
+  $heightRestriction: String
+  $userRating: Float
+) {
+  attraction_insert(data: {
+    park: { id: $parkId }
+    name: $name
+    description: $description
+    rideType: $rideType
+    waitTime: $waitTime
+    heightRestriction: $heightRestriction
+    userRating: $userRating
+  })
+}
+
+mutation UpdateAttractionWaitTime($id: UUID!, $waitTime: Int!) {
+  attraction_update(id: $id, data: {
+    waitTime: $waitTime
+  })
+}
+
+mutation UpdateAttractionRating($id: UUID!, $userRating: Float!) {
+  attraction_update(id: $id, data: {
+    userRating: $userRating
+  })
+}
+
+# Restaurant Mutations
+mutation CreateRestaurant(
+  $parkId: UUID!
+  $name: String!
+  $cuisine: String!
+  $priceRange: String!
+  $menu: String
+  $userReviews: String
+) {
+  restaurant_insert(data: {
+    park: { id: $parkId }
+    name: $name
+    cuisine: $cuisine
+    priceRange: $priceRange
+    menu: $menu
+    userReviews: $userReviews
+  })
+}
+
+mutation UpdateRestaurant(
+  $id: UUID!
+  $name: String
+  $cuisine: String
+  $priceRange: String
+  $menu: String
+  $userReviews: String
+) {
+  restaurant_update(id: $id, data: {
+    name: $name
+    cuisine: $cuisine
+    priceRange: $priceRange
+    menu: $menu
+    userReviews: $userReviews
+  })
+}
+
+# Resort Mutations
+mutation CreateResort(
+  $name: String!
+  $description: String!
+  $category: String!
+  $address: String
+  $phoneNumber: String
+  $amenities: String
+) {
+  resort_insert(data: {
+    name: $name
+    description: $description
+    category: $category
+    address: $address
+    phoneNumber: $phoneNumber
+    amenities: $amenities
+  })
+}
+
+mutation UpdateResort(
+  $id: UUID!
+  $name: String
+  $description: String
+  $category: String
+  $address: String
+  $phoneNumber: String
+  $amenities: String
+) {
+  resort_update(id: $id, data: {
+    name: $name
+    description: $description
+    category: $category
+    address: $address
+    phoneNumber: $phoneNumber
+    amenities: $amenities
+  })
+}
+
+# Itinerary Mutations
+mutation CreateItinerary(
+  $userId: UUID!
+  $name: String!
+  $startDate: Date!
+  $endDate: Date!
+  $notes: String
+) {
+  itinerary_insert(data: {
+    user: { id: $userId }
+    name: $name
+    startDate: $startDate
+    endDate: $endDate
+    notes: $notes
+  })
+}
+
+mutation UpdateItinerary(
+  $id: UUID!
+  $name: String
+  $startDate: Date
+  $endDate: Date
+  $notes: String
+) {
+  itinerary_update(id: $id, data: {
+    name: $name
+    startDate: $startDate
+    endDate: $endDate
+    notes: $notes
+  })
+}
+
+mutation DeleteItinerary($id: UUID!) {
+  itinerary_delete(id: $id)
+}
+
+# Itinerary Item Mutations
+mutation CreateItineraryItem(
+  $itineraryId: UUID!
+  $startTime: Timestamp!
+  $endTime: Timestamp!
+  $itemType: String!
+  $attractionId: UUID
+  $restaurantId: UUID
+  $resortId: UUID
+  $notes: String
+  $confirmationNumber: String
+) {
+  itineraryItem_insert(data: {
+    itinerary: { id: $itineraryId }
+    startTime: $startTime
+    endTime: $endTime
+    itemType: $itemType
+    attraction: $attractionId ? { id: $attractionId } : null
+    restaurant: $restaurantId ? { id: $restaurantId } : null
+    resort: $resortId ? { id: $resortId } : null
+    notes: $notes
+    confirmationNumber: $confirmationNumber
+  })
+}
+
+mutation UpdateItineraryItem(
+  $id: UUID!
+  $startTime: Timestamp
+  $endTime: Timestamp
+  $notes: String
+  $confirmationNumber: String
+) {
+  itineraryItem_update(id: $id, data: {
+    startTime: $startTime
+    endTime: $endTime
+    notes: $notes
+    confirmationNumber: $confirmationNumber
+  })
+}
+
+mutation DeleteItineraryItem($id: UUID!) {
+  itineraryItem_delete(id: $id)
+}
+
+# Travel Detail Mutations
+mutation CreateTravelDetail(
+  $transportationType: String!
+  $departureLocation: String!
+  $arrivalLocation: String!
+  $departureTime: Timestamp!
+  $arrivalTime: Timestamp!
+  $notes: String
+) {
+  travelDetail_insert(data: {
+    transportationType: $transportationType
+    departureLocation: $departureLocation
+    arrivalLocation: $arrivalLocation
+    departureTime: $departureTime
+    arrivalTime: $arrivalTime
+    notes: $notes
+  })
+}
+
+# Vacation Party Mutations
+mutation CreateVacationParty($name: String!) {
+  vacationParty_insert(data: {
+    name: $name
+  })
+}
+
+mutation UpdateVacationParty($id: UUID!, $name: String!) {
+  vacationParty_update(id: $id, data: {
+    name: $name
+  })
+}
+
+mutation DeleteVacationParty($id: UUID!) {
+  vacationParty_delete(id: $id)
+}
+
+# Vacation Party User Mutations
+mutation AddUserToVacationParty($userId: UUID!, $vacationPartyId: UUID!) {
+  vacationPartyUser_insert(data: {
+    user: { id: $userId }
+    vacationParty: { id: $vacationPartyId }
+  })
+}
+
+mutation RemoveUserFromVacationParty($userId: UUID!, $vacationPartyId: UUID!) {
+  vacationPartyUser_delete(
+    where: {
+      user: { id: { eq: $userId } }
+      vacationParty: { id: { eq: $vacationPartyId } }
+    }
+  )
+}
+
+# Message Mutations
+mutation SendMessage($userId: UUID!, $vacationPartyId: UUID!, $content: String!) {
+  message_insert(data: {
+    user: { id: $userId }
+    vacationParty: { id: $vacationPartyId }
+    content: $content
+  })
+}
+
+mutation DeleteMessage($id: UUID!) {
+  message_delete(id: $id)
+}
+
+# Location Mutations
+mutation UpdateLocation($userId: UUID!, $latitude: Float!, $longitude: Float!) {
+  location_insert(data: {
+    user: { id: $userId }
+    latitude: $latitude
+    longitude: $longitude
+  })
+}
+
+mutation DeleteLocation($id: UUID!) {
+  location_delete(id: $id)
+}

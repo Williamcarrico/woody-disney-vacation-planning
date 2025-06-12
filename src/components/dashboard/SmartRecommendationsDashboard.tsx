@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/AuthContext'
 import {
@@ -64,7 +64,16 @@ interface RecommendationData {
         lat: number
         lng: number
     }
-    [key: string]: unknown
+    waitTime?: number
+    rating?: number
+    priceLevel?: number
+    operatingHours?: {
+        open: string
+        close: string
+    }
+    capacity?: number
+    tags?: string[]
+    metadata?: Record<string, unknown>
 }
 
 interface Recommendation {
@@ -113,7 +122,7 @@ interface Weather {
     description: string
 }
 
-export default function SmartRecommendationsDashboard({
+const SmartRecommendationsDashboard = memo(function SmartRecommendationsDashboard({
     vacationId,
     className
 }: SmartRecommendationsDashboardProps) {
@@ -182,25 +191,26 @@ export default function SmartRecommendationsDashboard({
         refetchInterval: autoRefresh ? refreshInterval : false
     })
 
+    // Memoized weather fetch function
+    const fetchWeather = useCallback(async () => {
+        try {
+            // Mock weather data (in real app, fetch from weather API)
+            setCurrentWeather({
+                temperature: 28,
+                condition: 'sunny',
+                precipitation: 0,
+                uvIndex: 7,
+                description: 'Sunny and warm'
+            })
+        } catch (error) {
+            console.error('Failed to fetch weather:', error)
+        }
+    }, [])
+
     // Fetch current weather
     useEffect(() => {
-        const fetchWeather = async () => {
-            try {
-                // Mock weather data (in real app, fetch from weather API)
-                setCurrentWeather({
-                    temperature: 28,
-                    condition: 'sunny',
-                    precipitation: 0,
-                    uvIndex: 7,
-                    description: 'Sunny and warm'
-                })
-            } catch (error) {
-                console.error('Failed to fetch weather:', error)
-            }
-        }
-
         fetchWeather()
-    }, [])
+    }, [fetchWeather])
 
     // Filter recommendations
     const filteredRecommendations = useMemo(() => {
@@ -723,4 +733,6 @@ export default function SmartRecommendationsDashboard({
             </Tabs>
         </div>
     )
-}
+})
+
+export default SmartRecommendationsDashboard

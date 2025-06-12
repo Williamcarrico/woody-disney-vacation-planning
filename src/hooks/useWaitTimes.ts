@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getParkLiveData, getAttractionHistoricalData } from '@/lib/api/themeParks';
+import { getParkLiveData, getAttractionHistoricalData } from '@/lib/api/themeParks-compat';
 import type { LiveData } from '@/types/api';
 import { useState, useMemo, useEffect } from 'react';
 import { useWaitTimePredictor, type HistoricalData, type WaitTimeDataPoint } from './useWaitTimePredictor';

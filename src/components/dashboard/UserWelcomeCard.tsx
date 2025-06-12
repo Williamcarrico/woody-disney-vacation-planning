@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, memo } from 'react';
 import Link from 'next/link';
 import { format, differenceInDays } from 'date-fns';
 import {
@@ -19,15 +19,19 @@ interface UserWelcomeCardProps {
     upcomingVacation?: Vacation;
 }
 
-export function UserWelcomeCard({
+const UserWelcomeCard = memo(function UserWelcomeCard({
     userName,
     upcomingVacation,
 }: Readonly<UserWelcomeCardProps>) {
-    const [greeting, setGreeting] = useState('');
-    const [currentTime, setCurrentTime] = useState<string>('');
+    const [greeting, setGreeting] = useState('Hello');
+    const [currentTime, setCurrentTime] = useState<string>('--:--');
+    const [isClient, setIsClient] = useState(false);
 
     // Update greeting based on time of day
     useEffect(() => {
+        // Set client flag
+        setIsClient(true);
+
         const updateGreeting = () => {
             const hour = new Date().getHours();
             let newGreeting = '';
@@ -64,6 +68,20 @@ export function UserWelcomeCard({
         };
     }, []);
 
+    // Memoized vacation calculations
+    const vacationInfo = useMemo(() => {
+        if (!upcomingVacation) return null;
+        
+        const startDate = upcomingVacation.startDate.toDate();
+        const endDate = upcomingVacation.endDate.toDate();
+        const daysUntil = differenceInDays(startDate, new Date());
+        
+        return {
+            dateRange: `${format(startDate, 'MMMM d')} - ${format(endDate, 'MMMM d, yyyy')}`,
+            daysUntil
+        };
+    }, [upcomingVacation]);
+
     return (
         <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-none shadow-md">
             <CardHeader className="pb-2">
@@ -71,7 +89,7 @@ export function UserWelcomeCard({
                     <div>
                         <CardTitle className="text-2xl md:text-3xl font-bold">{greeting}, {userName}!</CardTitle>
                         <CardDescription className="text-base mt-1">
-                            Welcome to your Disney Vacation Planner dashboard. {currentTime}
+                            Welcome to your Disney Vacation Planner dashboard. {isClient ? currentTime : '--:--'}
                         </CardDescription>
                     </div>
 
@@ -95,9 +113,9 @@ export function UserWelcomeCard({
                             <div>
                                 <h3 className="font-medium">Your Disney World vacation is coming up!</h3>
                                 <p className="text-sm text-muted-foreground mt-1">
-                                    {format(upcomingVacation.startDate.toDate(), 'MMMM d')} - {format(upcomingVacation.endDate.toDate(), 'MMMM d, yyyy')}
+                                    {vacationInfo?.dateRange}
                                     {' · '}
-                                    {differenceInDays(upcomingVacation.startDate.toDate(), new Date())} days to go!
+                                    {vacationInfo?.daysUntil} days to go!
                                 </p>
                             </div>
                         </div>
@@ -140,4 +158,6 @@ export function UserWelcomeCard({
             </CardContent>
         </Card>
     );
-}
+})
+
+export { UserWelcomeCard }

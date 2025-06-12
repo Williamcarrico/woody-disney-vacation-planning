@@ -650,27 +650,35 @@ export default function EnhancedPartyMessaging({
 
     // Real-time messages subscription with enhanced features
     const { data: messages, isLoading } = useQuery({
-        queryKey: ['enhancedVacationMessages', vacationId],
+        queryKey: ['enhancedVacationMessages', vacationId, user?.uid],
         queryFn: () => {
-            return new Promise<EnhancedMessage[]>((resolve) => {
+            return new Promise<EnhancedMessage[]>((resolve, reject) => {
+                if (!user) {
+                    reject(new Error('User not authenticated'))
+                    return
+                }
+
                 const messagesRef = collection(db, 'vacations', vacationId, 'messages')
                 const q = query(messagesRef, orderBy('timestamp', 'desc'), limit(50))
 
                 const unsubscribe = onSnapshot(q, (snapshot) => {
                     const messagesData = snapshot.docs.map(parseMessageDoc).reverse()
                     resolve(messagesData)
+                }, (error) => {
+                    console.error('Messages subscription error:', error)
+                    reject(error)
                 })
 
                 return () => unsubscribe()
             })
         },
-        enabled: !!vacationId,
+        enabled: !!vacationId && !!user,
         staleTime: Infinity,
     })
 
     // Typing indicators subscription
     useEffect(() => {
-        if (!vacationId) return
+        if (!vacationId || !user) return
 
         const typingRef = collection(db, 'vacations', vacationId, 'typing')
         const q = query(typingRef, where('timestamp', '>', new Date(Date.now() - 10000)))
@@ -682,9 +690,12 @@ export default function EnhancedPartyMessaging({
                     userName: doc.data().userName,
                     timestamp: doc.data().timestamp?.toDate() || new Date()
                 }))
-                .filter(typing => typing.userId !== user?.uid)
+                .filter(typing => typing.userId !== user.uid)
 
             setTypingUsers(typingData)
+        }, (error) => {
+            console.error('Typing indicators subscription error:', error)
+            setTypingUsers([])
         })
 
         return () => unsubscribe()

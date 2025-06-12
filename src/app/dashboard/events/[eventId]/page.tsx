@@ -8,15 +8,13 @@ import { isEpcotFestival, isHolidayEvent, isRunDisneyEvent } from '@/types/event
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ChevronLeft, Calendar, Ticket, MapPin, Music, Info, ExternalLink } from 'lucide-react'
+import { AsyncPageProps, extractParam } from '@/lib/utils/next-params'
 
-interface EventPageProps {
-    params: {
-        eventId: string
-    }
-}
+interface EventPageProps extends AsyncPageProps<{ eventId: string }> {}
 
 export async function generateMetadata({ params }: EventPageProps): Promise<Metadata> {
-    const event = annualEvents.find(event => event.id === params.eventId)
+    const eventId = await extractParam(params, 'eventId');
+    const event = annualEvents.find(event => event.id === eventId)
 
     if (!event) {
         return {
@@ -31,8 +29,9 @@ export async function generateMetadata({ params }: EventPageProps): Promise<Meta
     }
 }
 
-export default function EventPage({ params }: EventPageProps) {
-    const event = annualEvents.find(event => event.id === params.eventId)
+export default async function EventPage({ params }: EventPageProps) {
+    const eventId = await extractParam(params, 'eventId');
+    const event = annualEvents.find(event => event.id === eventId)
 
     if (!event) {
         notFound()

@@ -104,7 +104,7 @@ export async function GET(request: Request) {
 // POST /api/analytics/wait-times
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
+        const body = await request.json() as { action: string; [key: string]: unknown };
         const { action } = body;
 
         switch (action) {
@@ -161,7 +161,6 @@ async function handlePredictions(attractionId: string | null, searchParams: URLS
 
         // Optionally filter out factor details for lighter response
         if (!includeFactors && 'factors' in predictions) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { factors, ...predictionsWithoutFactors } = predictions;
             return NextResponse.json({
                 success: true,
@@ -455,7 +454,6 @@ async function handleBulkPredictions(body: { attractionIds: string[]; hoursAhead
                 const prediction = await getPredictionsForAttraction(attractionId, hoursAhead);
 
                 if (!includeFactors && prediction && 'factors' in prediction) {
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     const { factors, ...predictionWithoutFactors } = prediction;
                     return {
                         attractionId,
@@ -480,7 +478,7 @@ async function handleBulkPredictions(body: { attractionIds: string[]; hoursAhead
                     attractionId: attractionIds[index],
                     prediction: null,
                     success: false,
-                    error: result.reason?.message || 'Unknown error'
+                    error: (result.reason as Error)?.message || 'Unknown error'
                 };
             }
         });
