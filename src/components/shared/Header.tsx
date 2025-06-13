@@ -52,6 +52,10 @@ import {
 import { BorderBeam } from "@/components/magicui/border-beam"
 import { SparklesText } from "@/components/magicui/sparkles-text"
 import { RainbowButton } from "@/components/magicui/rainbow-button"
+import { AdvancedParticles } from "@/components/magicui/advanced-particles"
+import { GlassMorphism, NeuralNetworkBackground } from "@/components/magicui/glass-morphism"
+import { ContextAwareHover } from "@/components/magicui/intelligent-hover"
+import { DynamicBackground } from "@/components/magicui/dynamic-background"
 
 // Floating particles component
 const FloatingParticles = () => {
@@ -284,76 +288,102 @@ export default function Header() {
                         : "bg-gradient-to-b from-background/60 to-background/40 backdrop-blur-xl"
                 )}
             >
-                {/* Magical background effects */}
+                {/* Enhanced magical background effects */}
                 <div className="absolute inset-0 overflow-hidden">
+                    <DynamicBackground 
+                        variant="sparkles" 
+                        intensity="medium" 
+                        interactive={true}
+                        enableParallax={true}
+                        className="opacity-40"
+                    />
+                    <NeuralNetworkBackground className="opacity-20" />
                     <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 animate-gradient-x" />
-                    <FloatingParticles />
+                    <AdvancedParticles 
+                        count={15} 
+                        enableInteraction={true}
+                        emissionRate={0.05}
+                        className="opacity-50"
+                        colors={['#FFD700', '#FF69B4', '#87CEEB', '#DDA0DD', '#F0E68C', '#98FB98']}
+                    />
                 </div>
 
                 <div className="container relative mx-auto px-4">
                     <div className="flex h-20 items-center justify-between">
-                        {/* Logo with enhanced animations */}
-                        <Link href="/" className="flex items-center space-x-3 group relative">
-                            <motion.div
-                                whileHover={{ scale: 1.1, rotate: 360 }}
-                                transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                                className="relative"
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-primary via-secondary to-primary rounded-full blur-2xl opacity-50 group-hover:opacity-100 transition-all duration-500 animate-pulse" />
-                                <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-pink-400 rounded-full blur-xl opacity-0 group-hover:opacity-70 transition-all duration-500" />
-                                <Castle className="h-10 w-10 text-primary relative z-10 drop-shadow-lg" />
-                                <motion.div
-                                    className="absolute -top-1 -right-1"
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    transition={{ delay: 0.5, type: "spring" }}
+                        {/* Enhanced logo with immersive interactions */}
+                        <ContextAwareHover context="navigation" intensity="medium">
+                            <Link href="/" className="flex items-center space-x-3 group relative">
+                                <GlassMorphism 
+                                    className="p-3 rounded-2xl"
+                                    enableTilt={true}
+                                    enableGlow={true}
+                                    glowColor="rgba(255, 215, 0, 0.3)"
                                 >
-                                    <Sparkles className="h-4 w-4 text-yellow-400" />
-                                </motion.div>
-                            </motion.div>
-                            <div className="relative">
-                                <SparklesText
-                                    className="text-2xl font-bold font-luckiest hidden sm:block bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent"
-                                    sparklesCount={5}
-                                >
-                                    Woody&apos;s Planner
-                                </SparklesText>
-                                <motion.div
-                                    className="absolute -bottom-2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent"
-                                    initial={{ scaleX: 0 }}
-                                    animate={{ scaleX: 1 }}
-                                    transition={{ delay: 0.7, duration: 0.5 }}
-                                />
-                            </div>
-                        </Link>
+                                    <motion.div
+                                        whileHover={{ scale: 1.1, rotate: 360 }}
+                                        transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                                        className="relative"
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-r from-primary via-secondary to-primary rounded-full blur-2xl opacity-50 group-hover:opacity-100 transition-all duration-500 animate-pulse" />
+                                        <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-pink-400 rounded-full blur-xl opacity-0 group-hover:opacity-70 transition-all duration-500" />
+                                        <Castle className="h-10 w-10 text-primary relative z-10 drop-shadow-lg" />
+                                        <motion.div
+                                            className="absolute -top-1 -right-1"
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            transition={{ delay: 0.5, type: "spring" }}
+                                        >
+                                            <Sparkles className="h-4 w-4 text-yellow-400" />
+                                        </motion.div>
+                                    </motion.div>
+                                </GlassMorphism>
+                                <div className="relative">
+                                    <SparklesText
+                                        className="text-2xl font-bold font-luckiest hidden sm:block bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent"
+                                        sparklesCount={5}
+                                    >
+                                        Woody&apos;s Planner
+                                    </SparklesText>
+                                    <motion.div
+                                        className="absolute -bottom-2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent"
+                                        initial={{ scaleX: 0 }}
+                                        animate={{ scaleX: 1 }}
+                                        transition={{ delay: 0.7, duration: 0.5 }}
+                                    />
+                                </div>
+                            </Link>
+                        </ContextAwareHover>
 
                         {/* Desktop Navigation with enhanced styling */}
                         <NavigationMenu className="hidden lg:flex">
                             <NavigationMenuList className="space-x-2">
                                 {navigationItems.map((item, index) => (
                                     <NavigationMenuItem key={item.title}>
-                                        <NavigationMenuTrigger className="bg-transparent hover:bg-gradient-to-r hover:from-primary/10 hover:to-secondary/10 data-[state=open]:bg-gradient-to-r data-[state=open]:from-primary/20 data-[state=open]:to-secondary/20 px-4 py-2 rounded-xl transition-all duration-300 group">
-                                            <motion.div
-                                                className="flex items-center space-x-2"
-                                                initial={{ opacity: 0, y: -10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: index * 0.1 }}
-                                            >
-                                                <div className={cn("p-1.5 rounded-lg bg-gradient-to-br", item.gradient, "group-hover:shadow-lg transition-all duration-300")}>
-                                                    <item.icon className="h-4 w-4 text-white" />
-                                                </div>
-                                                <span className="font-medium">{item.title}</span>
-                                            </motion.div>
-                                        </NavigationMenuTrigger>
+                                        <ContextAwareHover context="navigation" intensity="subtle">
+                                            <NavigationMenuTrigger className="bg-transparent hover:bg-gradient-to-r hover:from-primary/10 hover:to-secondary/10 data-[state=open]:bg-gradient-to-r data-[state=open]:from-primary/20 data-[state=open]:to-secondary/20 px-4 py-2 rounded-xl transition-all duration-300 group">
+                                                <motion.div
+                                                    className="flex items-center space-x-2"
+                                                    initial={{ opacity: 0, y: -10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: index * 0.1 }}
+                                                >
+                                                    <div className={cn("p-1.5 rounded-lg bg-gradient-to-br", item.gradient, "group-hover:shadow-lg transition-all duration-300")}>
+                                                        <item.icon className="h-4 w-4 text-white" />
+                                                    </div>
+                                                    <span className="font-medium">{item.title}</span>
+                                                </motion.div>
+                                            </NavigationMenuTrigger>
+                                        </ContextAwareHover>
                                         <NavigationMenuContent>
-                                            <motion.div
-                                                initial={{ opacity: 0, scale: 0.95 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                transition={{ duration: 0.2 }}
-                                                className="relative"
-                                            >
-                                                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 rounded-lg" />
-                                                <div className="grid w-[450px] gap-3 p-6 md:w-[550px] md:grid-cols-2 lg:w-[700px] relative">
+                                            <GlassMorphism className="relative">
+                                                <motion.div
+                                                    initial={{ opacity: 0, scale: 0.95 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="relative"
+                                                >
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 rounded-lg" />
+                                                    <div className="grid w-[450px] gap-3 p-6 md:w-[550px] md:grid-cols-2 lg:w-[700px] relative">
                                                     <div className="row-span-3">
                                                         <NavigationMenuLink asChild>
                                                             <HoverCard>
@@ -422,7 +452,8 @@ export default function Header() {
                                                         </NavigationMenuLink>
                                                     ))}
                                                 </div>
-                                            </motion.div>
+                                                </motion.div>
+                                            </GlassMorphism>
                                         </NavigationMenuContent>
                                     </NavigationMenuItem>
                                 ))}
@@ -431,120 +462,129 @@ export default function Header() {
 
                         {/* Right Side Actions with enhanced effects */}
                         <div className="flex items-center space-x-3">
-                            {/* Enhanced Search */}
-                            <motion.div
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="relative hidden sm:block"
-                            >
-                                <motion.div
-                                    className={cn(
-                                        "absolute inset-0 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 blur-xl transition-all duration-500",
-                                        searchFocused ? "opacity-100 scale-110" : "opacity-0 scale-100"
-                                    )}
-                                />
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="relative overflow-hidden rounded-full hover:bg-gradient-to-r hover:from-primary/10 hover:to-secondary/10"
-                                    onFocus={() => setSearchFocused(true)}
-                                    onBlur={() => setSearchFocused(false)}
-                                >
-                                    <Search className="h-5 w-5" />
-                                    <span className="sr-only">Search</span>
-                                </Button>
-                            </motion.div>
-
-                            {/* Enhanced Notifications */}
-                            {user && (
+                            {/* Enhanced Search with intelligent hover */}
+                            <ContextAwareHover context="interactive" intensity="medium" className="hidden sm:block">
                                 <motion.div
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     className="relative"
                                 >
+                                    <motion.div
+                                        className={cn(
+                                            "absolute inset-0 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 blur-xl transition-all duration-500",
+                                            searchFocused ? "opacity-100 scale-110" : "opacity-0 scale-100"
+                                        )}
+                                    />
                                     <Button
                                         variant="ghost"
                                         size="icon"
                                         className="relative overflow-hidden rounded-full hover:bg-gradient-to-r hover:from-primary/10 hover:to-secondary/10"
+                                        onFocus={() => setSearchFocused(true)}
+                                        onBlur={() => setSearchFocused(false)}
                                     >
-                                        <Bell className="h-5 w-5" />
-                                        <motion.span
-                                            className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-gradient-to-r from-red-500 to-pink-500"
-                                            animate={{
-                                                scale: [1, 1.2, 1],
-                                                opacity: [1, 0.8, 1]
-                                            }}
-                                            transition={{
-                                                duration: 2,
-                                                repeat: Infinity,
-                                                ease: "easeInOut"
-                                            }}
-                                        />
-                                        <span className="sr-only">Notifications</span>
+                                        <Search className="h-5 w-5" />
+                                        <span className="sr-only">Search</span>
                                     </Button>
                                 </motion.div>
+                            </ContextAwareHover>
+
+                            {/* Enhanced Notifications with intelligent hover */}
+                            {user && (
+                                <ContextAwareHover context="interactive" intensity="medium">
+                                    <motion.div
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        className="relative"
+                                    >
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="relative overflow-hidden rounded-full hover:bg-gradient-to-r hover:from-primary/10 hover:to-secondary/10"
+                                        >
+                                            <Bell className="h-5 w-5" />
+                                            <motion.span
+                                                className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-gradient-to-r from-red-500 to-pink-500"
+                                                animate={{
+                                                    scale: [1, 1.2, 1],
+                                                    opacity: [1, 0.8, 1]
+                                                }}
+                                                transition={{
+                                                    duration: 2,
+                                                    repeat: Infinity,
+                                                    ease: "easeInOut"
+                                                }}
+                                            />
+                                            <span className="sr-only">Notifications</span>
+                                        </Button>
+                                    </motion.div>
+                                </ContextAwareHover>
                             )}
 
-                            {/* Enhanced Theme Toggle */}
-                            <motion.div
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                                    className="relative overflow-hidden rounded-full hover:bg-gradient-to-r hover:from-primary/10 hover:to-secondary/10"
+                            {/* Enhanced Theme Toggle with intelligent hover */}
+                            <ContextAwareHover context="interactive" intensity="medium">
+                                <motion.div
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
                                 >
-                                    <AnimatePresence mode="wait">
-                                        {theme === "dark" ? (
-                                            <motion.div
-                                                key="moon"
-                                                initial={{ rotate: -90, opacity: 0, scale: 0 }}
-                                                animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                                                exit={{ rotate: 90, opacity: 0, scale: 0 }}
-                                                transition={{ duration: 0.3, type: "spring" }}
-                                                className="absolute"
-                                            >
-                                                <Moon className="h-5 w-5" />
-                                            </motion.div>
-                                        ) : (
-                                            <motion.div
-                                                key="sun"
-                                                initial={{ rotate: 90, opacity: 0, scale: 0 }}
-                                                animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                                                exit={{ rotate: -90, opacity: 0, scale: 0 }}
-                                                transition={{ duration: 0.3, type: "spring" }}
-                                                className="absolute"
-                                            >
-                                                <Sun className="h-5 w-5" />
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                    <span className="sr-only">Toggle theme</span>
-                                </Button>
-                            </motion.div>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                                        className="relative overflow-hidden rounded-full hover:bg-gradient-to-r hover:from-primary/10 hover:to-secondary/10"
+                                    >
+                                        <AnimatePresence mode="wait">
+                                            {theme === "dark" ? (
+                                                <motion.div
+                                                    key="moon"
+                                                    initial={{ rotate: -90, opacity: 0, scale: 0 }}
+                                                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                                                    exit={{ rotate: 90, opacity: 0, scale: 0 }}
+                                                    transition={{ duration: 0.3, type: "spring" }}
+                                                    className="absolute"
+                                                >
+                                                    <Moon className="h-5 w-5" />
+                                                </motion.div>
+                                            ) : (
+                                                <motion.div
+                                                    key="sun"
+                                                    initial={{ rotate: 90, opacity: 0, scale: 0 }}
+                                                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                                                    exit={{ rotate: -90, opacity: 0, scale: 0 }}
+                                                    transition={{ duration: 0.3, type: "spring" }}
+                                                    className="absolute"
+                                                >
+                                                    <Sun className="h-5 w-5" />
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                        <span className="sr-only">Toggle theme</span>
+                                    </Button>
+                                </motion.div>
+                            </ContextAwareHover>
 
-                            {/* Enhanced User Menu */}
+                            {/* Enhanced User Menu with intelligent hover */}
                             {user ? (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="relative h-12 w-12 rounded-full p-0 hover:scale-105 transition-transform">
-                                            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-full blur-md" />
-                                            <Avatar className="h-11 w-11 ring-[2px] ring-primary/20 ring-offset-2 ring-offset-background">
-                                                <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User"} />
-                                                <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white font-bold">
-                                                    {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                        </Button>
+                                        <ContextAwareHover context="interactive" intensity="dramatic">
+                                            <Button variant="ghost" className="relative h-12 w-12 rounded-full p-0 hover:scale-105 transition-transform">
+                                                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-full blur-md" />
+                                                <Avatar className="h-11 w-11 ring-[2px] ring-primary/20 ring-offset-2 ring-offset-background">
+                                                    <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User"} />
+                                                    <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white font-bold">
+                                                        {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                            </Button>
+                                        </ContextAwareHover>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent className="w-64" align="end" forceMount>
-                                        <motion.div
-                                            initial={{ opacity: 0, y: -10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ duration: 0.2 }}
-                                        >
+                                        <GlassMorphism enableTilt={false} enableGlow={true}>
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ duration: 0.2 }}
+                                            >
                                             <DropdownMenuLabel className="font-normal">
                                                 <div className="flex items-center space-x-3">
                                                     <Avatar className="h-10 w-10">
@@ -594,24 +634,28 @@ export default function Header() {
                                                 Sign out
                                             </DropdownMenuItem>
                                         </motion.div>
+                                        </GlassMorphism>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             ) : (
-                                <Link href="/auth/signin">
-                                    <RainbowButton className="hidden sm:flex shadow-lg hover:shadow-2xl transition-all duration-300">
-                                        <Sparkles className="mr-2 h-4 w-4" />
-                                        Sign In
-                                    </RainbowButton>
-                                </Link>
+                                <ContextAwareHover context="action" intensity="dramatic">
+                                    <Link href="/auth/signin">
+                                        <RainbowButton className="hidden sm:flex shadow-lg hover:shadow-2xl transition-all duration-300">
+                                            <Sparkles className="mr-2 h-4 w-4" />
+                                            Sign In
+                                        </RainbowButton>
+                                    </Link>
+                                </ContextAwareHover>
                             )}
 
-                            {/* Mobile Menu Toggle */}
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="lg:hidden rounded-full hover:bg-gradient-to-r hover:from-primary/10 hover:to-secondary/10"
-                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            >
+                            {/* Mobile Menu Toggle with intelligent hover */}
+                            <ContextAwareHover context="interactive" intensity="medium" className="lg:hidden">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="rounded-full hover:bg-gradient-to-r hover:from-primary/10 hover:to-secondary/10"
+                                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                >
                                 <AnimatePresence mode="wait">
                                     {isMobileMenuOpen ? (
                                         <motion.div
@@ -634,7 +678,8 @@ export default function Header() {
                                     )}
                                 </AnimatePresence>
                                 <span className="sr-only">Toggle menu</span>
-                            </Button>
+                                </Button>
+                            </ContextAwareHover>
                         </div>
                     </div>
                 </div>
@@ -658,7 +703,7 @@ export default function Header() {
                         transition={{ duration: 0.3, type: "spring" }}
                         className="fixed inset-x-0 top-20 z-40 lg:hidden"
                     >
-                        <div className="bg-gradient-to-b from-background/98 to-background/95 backdrop-blur-2xl border-b border-border/30 shadow-2xl">
+                        <GlassMorphism className="bg-gradient-to-b from-background/98 to-background/95 backdrop-blur-2xl border-b border-border/30 shadow-2xl" enableTilt={false}>
                             <nav className="container mx-auto px-4 py-6">
                                 <div className="space-y-6">
                                     {navigationItems.map((item, index) => (
@@ -721,7 +766,7 @@ export default function Header() {
                                     )}
                                 </div>
                             </nav>
-                        </div>
+                        </GlassMorphism>
                     </motion.div>
                 )}
             </AnimatePresence>
