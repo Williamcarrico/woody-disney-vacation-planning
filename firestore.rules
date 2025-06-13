@@ -1,0 +1,291 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions for enhanced security
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isValidUser() {
+      return isAuthenticated() 
+        && request.auth.token.email_verified == true
+        && !('disabled' in request.auth.token && request.auth.token.disabled == true);
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() 
+        && request.auth.token.admin == true;
+    }
+    
+    function isUserOrAdmin(userId) {
+      return isOwner(userId) || isAdmin();
+    }
+    
+    function validateEmailDomain() {
+      // Only allow certain domains for enhanced security
+      return request.auth.token.email.matches('.*@(gmail|yahoo|outlook|hotmail|icloud|apple)\\.com$') 
+        || isAdmin();
+    }
+    
+    function isVacationMember(vacationId) {
+      return isAuthenticated() 
+        && (
+          // User is the vacation owner
+          get(/databases/$(database)/documents/vacations/$(vacationId)).data.userId == request.auth.uid
+          // OR user is in the collaborators list
+          || request.auth.uid in get(/databases/$(database)/documents/vacations/$(vacationId)).data.collaborators
+        );
+    }
+    
+    function isValidTimestamp(timestamp) {
+      return timestamp is timestamp 
+        && timestamp > timestamp.value(2020, 1, 1) 
+        && timestamp < timestamp.value(2030, 12, 31);
+    }
+    
+    function isValidDocumentSize() {
+      // Ensure document doesn't exceed 1MB
+      return request.writeFields.size() < 1000;
+    }
+    
+    function rateLimitCheck() {
+      // Simple rate limiting - max 10 writes per minute per user
+      return resource == null || 
+        resource.data.lastWriteTime == null ||
+        request.time > resource.data.lastWriteTime + duration.value(6, 's');
+    }
+    
+    // User profiles and settings
+    match /users/{userId} {
+      allow read: if isUserOrAdmin(userId);
+      allow create: if isValidUser() 
+        && isOwner(userId) 
+        && validateEmailDomain()
+        && isValidDocumentSize()
+        && rateLimitCheck();
+      allow update: if isUserOrAdmin(userId) 
+        && isValidDocumentSize()
+        && rateLimitCheck()
+        && isValidTimestamp(request.resource.data.updatedAt);
+      allow delete: if isUserOrAdmin(userId);
+      
+      // User subcollections
+      match /preferences/{docId} {
+        allow read, write: if isUserOrAdmin(userId) && isValidDocumentSize();
+      }
+      
+      match /achievements/{docId} {
+        allow read: if isUserOrAdmin(userId);
+        allow write: if isAdmin(); // Only admin can award achievements
+      }
+      
+      match /fcmTokens/{tokenId} {
+        allow read, write: if isUserOrAdmin(userId) && isValidDocumentSize();
+        allow delete: if isAuthenticated(); // Allow cleanup of tokens
+      }
+    }
+    
+    // Vacation planning data
+    match /vacations/{vacationId} {
+      allow read: if isVacationMember(vacationId) 
+        || (resource.data.isPublic == true && isAuthenticated());
+      allow create: if isValidUser() 
+        && request.resource.data.userId == request.auth.uid
+        && isValidDocumentSize()
+        && rateLimitCheck()
+        && isValidTimestamp(request.resource.data.createdAt);
+      allow update: if isVacationMember(vacationId) 
+        && isValidDocumentSize()
+        && rateLimitCheck()
+        && isValidTimestamp(request.resource.data.updatedAt)
+        // Prevent changing ownership
+        && request.resource.data.userId == resource.data.userId;
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+      
+      // Vacation subcollections
+      match /expenses/{expenseId} {
+        allow read, write: if isVacationMember(vacationId) && isValidDocumentSize();
+      }
+      
+      match /photos/{photoId} {
+        allow read: if isVacationMember(vacationId) 
+          || (get(/databases/$(database)/documents/vacations/$(vacationId)).data.isPublic == true);
+        allow write: if isVacationMember(vacationId) && isValidDocumentSize();
+      }
+    }
+    
+    // Itineraries and trip planning
+    match /itineraries/{itineraryId} {
+      allow read: if isAuthenticated() 
+        && (
+          isOwner(resource.data.userId) 
+          || isVacationMember(resource.data.vacationId)
+          || (resource.data.isPublic == true)
+        );
+      allow create: if isValidUser() 
+        && request.resource.data.userId == request.auth.uid
+        && isVacationMember(request.resource.data.vacationId)
+        && isValidDocumentSize()
+        && rateLimitCheck();
+      allow update: if isAuthenticated() 
+        && (
+          isOwner(resource.data.userId) 
+          || isVacationMember(resource.data.vacationId)
+        )
+        && isValidDocumentSize()
+        && rateLimitCheck()
+        // Prevent changing ownership
+        && request.resource.data.userId == resource.data.userId;
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+    
+    // Calendar events
+    match /calendarEvents/{eventId} {
+      allow read: if isAuthenticated() 
+        && (
+          isOwner(resource.data.userId)
+          || (
+            'vacationId' in resource.data 
+            && isVacationMember(resource.data.vacationId)
+          )
+        );
+      allow create: if isValidUser() 
+        && request.resource.data.userId == request.auth.uid
+        && isValidDocumentSize()
+        && rateLimitCheck()
+        && isValidTimestamp(request.resource.data.startDate);
+      allow update: if isOwner(resource.data.userId) 
+        && isValidDocumentSize()
+        && rateLimitCheck()
+        && isValidTimestamp(request.resource.data.updatedAt);
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+    
+    // Real-time messaging
+    match /messages/{messageId} {
+      allow read: if isAuthenticated() 
+        && isVacationMember(resource.data.vacationId);
+      allow create: if isValidUser() 
+        && request.resource.data.senderId == request.auth.uid
+        && isVacationMember(request.resource.data.vacationId)
+        && isValidDocumentSize()
+        && rateLimitCheck()
+        // Message content validation
+        && request.resource.data.content.size() > 0
+        && request.resource.data.content.size() < 1000;
+      allow update: if isOwner(resource.data.senderId) 
+        && request.resource.data.senderId == resource.data.senderId
+        && isValidDocumentSize();
+      allow delete: if isOwner(resource.data.senderId) || isAdmin();
+      
+      // Message reactions
+      match /reactions/{reactionId} {
+        allow read: if isAuthenticated() 
+          && isVacationMember(get(/databases/$(database)/documents/messages/$(messageId)).data.vacationId);
+        allow write: if isValidUser() 
+          && request.resource.data.userId == request.auth.uid
+          && isValidDocumentSize();
+      }
+    }
+    
+    // Location and geofencing
+    match /userLocations/{locationId} {
+      allow read: if isAuthenticated() 
+        && (
+          isOwner(resource.data.userId)
+          || (
+            'vacationId' in resource.data 
+            && isVacationMember(resource.data.vacationId)
+          )
+        );
+      allow create: if isValidUser() 
+        && request.resource.data.userId == request.auth.uid
+        && isValidDocumentSize()
+        && rateLimitCheck();
+      allow update: if isOwner(resource.data.userId) 
+        && isValidDocumentSize();
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+    
+    match /geofences/{geofenceId} {
+      allow read: if isAuthenticated();
+      allow create: if isValidUser() 
+        && request.resource.data.createdBy == request.auth.uid
+        && isValidDocumentSize()
+        && rateLimitCheck();
+      allow update: if isOwner(resource.data.createdBy) || isAdmin();
+      allow delete: if isOwner(resource.data.createdBy) || isAdmin();
+    }
+    
+    match /geofenceAlerts/{alertId} {
+      allow read: if isAuthenticated() 
+        && (
+          isOwner(resource.data.userId)
+          || (
+            'vacationId' in resource.data 
+            && isVacationMember(resource.data.vacationId)
+          )
+        );
+      allow create: if isValidUser() 
+        && request.resource.data.userId == request.auth.uid
+        && isValidDocumentSize();
+      allow update: if isOwner(resource.data.userId) && isValidDocumentSize();
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+    
+    // Static reference data (read-only for users, write for admin)
+    match /{collection}/{document} {
+      allow read: if collection in [
+        'attractions', 'restaurants', 'resorts', 'parks', 
+        'disneysprings', 'waitTimes', 'parkHours', 'events'
+      ] && isAuthenticated();
+      allow write: if collection in [
+        'attractions', 'restaurants', 'resorts', 'parks', 
+        'disneysprings', 'waitTimes', 'parkHours', 'events'
+      ] && isAdmin();
+    }
+    
+    // Analytics and logging (write-only for authenticated users)
+    match /analytics/{docId} {
+      allow create: if isValidUser() && isValidDocumentSize();
+      allow read: if isAdmin();
+    }
+    
+    match /errorLogs/{logId} {
+      allow create: if isAuthenticated() && isValidDocumentSize();
+      allow read: if isAdmin();
+    }
+    
+    match /performanceLogs/{logId} {
+      allow create: if isAuthenticated() && isValidDocumentSize();
+      allow read: if isAdmin();
+    }
+    
+    // System maintenance collections
+    match /maintenanceMode/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    match /featureFlags/{flagId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Backup and archiving
+    match /archived/{collection}/{document} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+    
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

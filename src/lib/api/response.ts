@@ -59,6 +59,7 @@ export function successResponse<T>(data: T, status = 200) {
  * @param message - Human-readable error message
  * @param code - Machine-readable error code
  * @param status - HTTP status code (defaults to 500)
+ * @param details - Optional additional error details
  * @returns NextResponse object with standardized format
  *
  * @example
@@ -78,13 +79,14 @@ export function successResponse<T>(data: T, status = 200) {
  * )
  * ```
  */
-export function errorResponse(message: string, code: string, status = 500) {
+export function errorResponse(message: string, code: string, status = 500, details?: unknown) {
     return NextResponse.json<ApiResponse<never>>(
         {
             success: false,
             error: {
                 message,
-                code
+                code,
+                ...(details && { details })
             }
         },
         { status }

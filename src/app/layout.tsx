@@ -1,129 +1,282 @@
-import React from "react";
-import type { Metadata } from "next";
-import { Inter, Cinzel, Poppins } from "next/font/google";
-import "./globals.css";
-import { cn } from "@/lib/utils";
-import { Particles } from "@/components/magicui/particles";
-import { GlobalStyles } from "@/components/global-styles";
+import type { Metadata, Viewport } from "next"
+import { Inter, Luckiest_Guy, Cabin_Sketch } from "next/font/google"
+import "./globals.css"
+import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/sonner"
+import { AuthProvider } from "@/contexts/AuthContext"
+import { cn } from "@/lib/utils"
+import dynamic from "next/dynamic"
+import { Suspense } from "react"
+import { ScrollProgress } from "@/components/magicui/scroll-progress"
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const cinzel = Cinzel({ subsets: ["latin"], variable: "--font-cinzel" });
-const poppins = Poppins({
-  subsets: ["latin"],
-  variable: "--font-poppins",
-  weight: ["300", "400", "500", "600", "700", "800", "900"]
-});
+// Dynamic imports for performance
+const Header = dynamic(() => import("@/components/shared/Header"), {
+    ssr: true,
+    loading: () => <HeaderSkeleton />
+})
+const Footer = dynamic(() => import("@/components/shared/Footer"), {
+    ssr: true,
+    loading: () => <FooterSkeleton />
+})
 
+// Font configurations
+const inter = Inter({
+    subsets: ["latin"],
+    variable: "--font-inter",
+    display: "swap",
+})
+
+const luckiestGuy = Luckiest_Guy({
+    weight: "400",
+    subsets: ["latin"],
+    variable: "--font-luckiest",
+    display: "swap",
+})
+
+const cabinSketch = Cabin_Sketch({
+    weight: ["400", "700"],
+    subsets: ["latin"],
+    variable: "--font-cabin-sketch",
+    display: "swap",
+})
+
+// Metadata configuration
 export const metadata: Metadata = {
-  title: "WaltWise - Revolutionary Disney World Vacation Planning",
-  description: "The most advanced Walt Disney World vacation planning tool. Optimize your magical vacation with intelligent planning, real-time updates, and seamless party communication.",
-  keywords: "Disney World, vacation planning, Walt Disney World, Disney trips, vacation optimizer, Disney planner",
-  authors: [{ name: "WaltWise Team" }],
-  creator: "WaltWise",
-  publisher: "WaltWise",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-  metadataBase: new URL('https://waltwise.com'),
-  openGraph: {
-    title: "WaltWise - Revolutionary Disney World Vacation Planning",
-    description: "The most advanced Walt Disney World vacation planning tool with intelligent optimization and real-time features.",
-    url: 'https://waltwise.com',
-    siteName: 'WaltWise',
-    images: [
-      {
-        url: '/images/disney/walt-wise-og.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'WaltWise - Disney World Vacation Planning',
-      },
-    ],
-    locale: 'en_US',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: "WaltWise - Revolutionary Disney World Vacation Planning",
-    description: "The most advanced Walt Disney World vacation planning tool with intelligent optimization and real-time features.",
-    images: ['/images/disney/walt-wise-twitter.jpg'],
-    creator: '@WaltWise',
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+    title: {
+        default: "Woody's Disney Vacation Planner | Magical Trip Planning",
+        template: "%s | Woody's Disney Vacation Planner",
     },
-  },
-  verification: {
-    google: 'your-google-verification-code',
-  },
-};
+    description: "Plan your perfect Disney vacation with AI-powered recommendations, real-time wait times, personalized itineraries, and magical experiences tailored just for you.",
+    keywords: [
+        "Disney vacation planner",
+        "Disney World trip planning",
+        "Disney itinerary",
+        "Disney wait times",
+        "Disney dining reservations",
+        "Magic Kingdom planner",
+        "EPCOT planner",
+        "Hollywood Studios planner",
+        "Animal Kingdom planner",
+        "AI Disney planning",
+        "Disney budget tracker",
+        "Disney group planning",
+    ],
+    authors: [{ name: "Woody's Disney Vacation Planner Team" }],
+    creator: "Woody's Disney Vacation Planner",
+    publisher: "Woody's Disney Vacation Planner",
+    formatDetection: {
+        email: false,
+        address: false,
+        telephone: false,
+    },
+    metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://woodysdisneyplanner.com"),
+    openGraph: {
+        title: "Woody's Disney Vacation Planner | Magical Trip Planning",
+        description: "Plan your perfect Disney vacation with AI-powered recommendations and real-time insights",
+        url: "/",
+        siteName: "Woody's Disney Vacation Planner",
+        images: [
+            {
+                url: "/og-image.png",
+                width: 1200,
+                height: 630,
+                alt: "Woody's Disney Vacation Planner - Your AI-Powered Disney Planning Companion",
+            },
+        ],
+        locale: "en_US",
+        type: "website",
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "Woody's Disney Vacation Planner",
+        description: "Plan your perfect Disney vacation with AI-powered recommendations",
+        images: ["/twitter-image.png"],
+        creator: "@woodysplanner",
+    },
+    robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+            index: true,
+            follow: true,
+            "max-video-preview": -1,
+            "max-image-preview": "large",
+            "max-snippet": -1,
+        },
+    },
+    manifest: "/manifest.json",
+    icons: {
+        icon: [
+            { url: "/favicon.ico" },
+            { url: "/icon-16x16.png", sizes: "16x16", type: "image/png" },
+            { url: "/icon-32x32.png", sizes: "32x32", type: "image/png" },
+            { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+            { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
+        ],
+        apple: [
+            { url: "/apple-icon.png" },
+            { url: "/apple-icon-180x180.png", sizes: "180x180", type: "image/png" },
+        ],
+        other: [
+            {
+                rel: "mask-icon",
+                url: "/safari-pinned-tab.svg",
+            },
+        ],
+    },
+}
+
+// Viewport configuration
+export const viewport: Viewport = {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+    themeColor: [
+        { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+        { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    ],
+}
+
+// Loading skeleton components
+function HeaderSkeleton() {
+    return (
+        <div className="h-16 bg-background/80 backdrop-blur-sm border-b border-border/50 animate-pulse" />
+    )
+}
+
+function FooterSkeleton() {
+    return (
+        <div className="h-64 bg-background/80 backdrop-blur-sm border-t border-border/50 animate-pulse" />
+    )
+}
+
+// Loading component
+function LoadingFallback() {
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+            <div className="relative">
+                <div className="h-24 w-24 animate-spin rounded-full border-4 border-t-primary" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="h-16 w-16 animate-pulse rounded-full bg-gradient-to-r from-primary to-secondary opacity-20" />
+                </div>
+            </div>
+        </div>
+    )
+}
 
 export default function RootLayout({
-  children,
+    children,
 }: {
-  children: React.ReactNode;
+    children: React.ReactNode
 }) {
-  return (
-    <html lang="en" className="scroll-smooth">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <meta name="color-scheme" content="light dark" />
-      </head>
-      <body
-        className={cn(
-          "min-h-screen bg-gradient-to-br from-blue-950 via-purple-900 to-blue-900 antialiased overflow-x-hidden",
-          inter.variable,
-          cinzel.variable,
-          poppins.variable,
-          "font-poppins"
-        )}
-      >
-        <div className="relative min-h-screen">
-          {/* Global Particle Background */}
-          <Particles
-            className="fixed inset-0 z-0 opacity-30"
-            quantity={100}
-            staticity={50}
-            color="#ffffff"
-            size={0.5}
-            ease={50}
-            refresh={false}
-          />
+    return (
+        <html
+            lang="en"
+            suppressHydrationWarning
+            className={cn(
+                inter.variable,
+                luckiestGuy.variable,
+                cabinSketch.variable,
+                "scroll-smooth"
+            )}
+        >
+            <head>
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+                <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+                <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+            </head>
+            <body
+                className={cn(
+                    "min-h-screen bg-background font-sans antialiased",
+                    "selection:bg-primary/20 selection:text-primary",
+                    "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-primary/20",
+                    "hover:scrollbar-thumb-primary/40"
+                )}
+            >
+                <ThemeProvider
+                    attribute="class"
+                    defaultTheme="system"
+                    enableSystem
+                    disableTransitionOnChange={false}
+                    storageKey="woody-disney-theme"
+                >
+                    <AuthProvider>
+                        {/* Scroll Progress Indicator */}
+                        <ScrollProgress className="fixed top-0 z-[100] h-1 bg-gradient-to-r from-primary via-secondary to-accent" />
 
-          {/* Magical Grid Overlay */}
-          <div className="fixed inset-0 z-10 opacity-20">
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.1)_50%,transparent_100%)] bg-[length:100px_100px] animate-[shimmer_3s_ease-in-out_infinite]" />
-          </div>
+                        {/* Background Effects */}
+                        <div className="fixed inset-0 -z-10 overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
+                            <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5 dark:opacity-10" />
+                            <div className="animate-gradient absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent blur-3xl" />
+                            <div className="absolute top-0 left-1/4 h-96 w-96 animate-pulse rounded-full bg-primary/10 blur-3xl" />
+                            <div className="absolute bottom-0 right-1/4 h-96 w-96 animate-pulse rounded-full bg-secondary/10 blur-3xl delay-1000" />
+                        </div>
 
-          {/* Main Content Container */}
-          <div className="relative z-20">
-            {children}
-          </div>
+                        {/* Main Layout */}
+                        <div className="relative flex min-h-screen flex-col">
+                            {/* Header */}
+                            <Suspense fallback={<HeaderSkeleton />}>
+                                <Header />
+                            </Suspense>
 
-          {/* Global Floating Elements */}
-          <div className="fixed top-10 right-10 z-30 opacity-60">
-            <div className="w-4 h-4 bg-yellow-400 rounded-full animate-pulse shadow-lg shadow-yellow-400/50" />
-          </div>
-          <div className="fixed top-32 right-32 z-30 opacity-40">
-            <div className="w-2 h-2 bg-pink-400 rounded-full animate-bounce shadow-lg shadow-pink-400/50" />
-          </div>
-          <div className="fixed top-64 right-16 z-30 opacity-50">
-            <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse shadow-lg shadow-blue-400/50 [animation-delay:1s]" />
-          </div>
-        </div>
+                            {/* Main Content */}
+                            <main className="flex-1 relative z-10">
+                                <Suspense fallback={<LoadingFallback />}>
+                                    {children}
+                                </Suspense>
+                            </main>
 
-        {/* Global Styles Component */}
-        <GlobalStyles />
-      </body>
-    </html>
-  );
+                            {/* Footer */}
+                            <Suspense fallback={<FooterSkeleton />}>
+                                <Footer />
+                            </Suspense>
+                        </div>
+
+                        {/* Global Components */}
+                        <Toaster
+                            position="bottom-right"
+                            toastOptions={{
+                                className: "bg-background border-border shadow-lg",
+                                duration: 4000,
+                            }}
+                        />
+
+                        {/* Accessibility Skip Links */}
+                        <a
+                            href="#main-content"
+                            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:outline-none focus:ring-2 focus:ring-offset-2"
+                        >
+                            Skip to main content
+                        </a>
+                    </AuthProvider>
+                </ThemeProvider>
+
+                {/* Performance Monitoring Script */}
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
+                            if (typeof window !== 'undefined' && 'performance' in window) {
+                                window.addEventListener('load', () => {
+                                    const perfData = window.performance.timing;
+                                    const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart;
+                                    console.log('Page Load Time:', pageLoadTime, 'ms');
+
+                                    // Send to analytics if needed
+                                    if (window.gtag) {
+                                        window.gtag('event', 'page_load_time', {
+                                            value: pageLoadTime,
+                                            page_location: window.location.href
+                                        });
+                                    }
+                                });
+                            }
+                        `,
+                    }}
+                />
+            </body>
+        </html>
+    )
 }

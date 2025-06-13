@@ -1,0 +1,45 @@
+mutation CreateVacationParty($name: String!) @auth(level: USER) {
+  vacationParty_insert(data: {name: $name, createdAt_expr: "request.time"})
+}
+
+query GetVacationParty($id: UUID!) @auth(level: USER) {
+  vacationParty(id: $id) {
+    id
+    name
+    createdAt
+  }
+}
+
+query ListVacationParties @auth(level: USER) {
+  vacationParties {
+    id
+    name
+    createdAt
+  }
+}
+
+mutation JoinVacationParty($vacationPartyId: UUID!) @auth(level: USER) {
+  vacationPartyUser_insert(data: {userId_expr: "auth.uid", vacationPartyId: $vacationPartyId, joinedAt_expr: "request.time"})
+}
+
+query ListParks @auth(level: PUBLIC) {
+  parks {
+    id
+    name
+    description
+    operatingHours
+  }
+}
+
+query ListRestaurantsInPark($parkId: UUID!) @auth(level: PUBLIC) {
+  restaurants(where: {parkId: {eq: $parkId}}) {
+    id
+    name
+    cuisine
+    priceRange
+  }
+}
+
+mutation CreateItinerary($name: String!, $startDate: Date!, $endDate: Date!) @auth(level: USER) {
+  itinerary_insert(data: {userId_expr: "auth.uid", name: $name, startDate: $startDate, endDate: $endDate})
+}

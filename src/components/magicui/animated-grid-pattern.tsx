@@ -21,6 +21,10 @@ export interface AnimatedGridPatternProps
     numSquares?: number;
     maxOpacity?: number;
     duration?: number;
+    /**
+     * Delay between animation repeats (seconds). Optional – present for API compatibility.
+     */
+    repeatDelay?: number;
 }
 
 export function AnimatedGridPattern({
@@ -33,6 +37,7 @@ export function AnimatedGridPattern({
     className,
     maxOpacity = 0.5,
     duration = 4,
+    repeatDelay,
     ...props
 }: AnimatedGridPatternProps) {
     const id = useId();

@@ -1,152 +1,413 @@
 /**
- * API request validation utilities
- * Provides standardized request validation with Zod schemas
+ * Centralized validation utilities for API routes
+ * 
+ * @module api/validation
+ * @category API Utilities
  */
 
 import { NextRequest } from 'next/server'
-import { ZodSchema } from 'zod'
-import { errorResponse } from './response'
-import { sanitizeInput } from '@/lib/utils/sanitize'
+import { z } from 'zod'
+import { createValidationError } from './error-handler'
 
 /**
- * Validates and sanitizes API request query parameters against a schema
+ * Request validation result
  */
-export async function validateQuery<T extends ZodSchema>(
+export type ValidationResult<T> =
+    | {
+        success: true
+        data: T
+    }
+    | {
+        success: false
+        error: z.ZodError
+    }
+
+/**
+ * Validation options
+ */
+export interface ValidationOptions {
+    /** Transform the data after validation */
+    transform?: boolean
+    /** Strip unknown keys */
+    strip?: boolean
+    /** Custom error message */
+    errorMessage?: string
+}
+
+/**
+ * Validate request body with Zod schema
+ * 
+ * @param request - The NextRequest object
+ * @param schema - Zod schema for validation
+ * @param options - Validation options
+ * @returns Validated data or throws APIError
+ */
+export async function validateRequestBody<T>(
     request: NextRequest,
-    schema: T
-) {
+    schema: z.ZodSchema<T>,
+    options: ValidationOptions = {}
+): Promise<T> {
+    const { transform = true, strip = true, errorMessage } = options
+
+    try {
+        // Check content type
+        const contentType = request.headers.get('content-type')
+        if (!contentType || !contentType.includes('application/json')) {
+            throw createValidationError(
+                errorMessage || 'Invalid content type. Expected application/json',
+                { expectedContentType: 'application/json', receivedContentType: contentType }
+            )
+        }
+
+        const body = await request.json()
+        
+        let processedSchema = schema
+        if (strip) {
+            processedSchema = schema.strip ? schema.strip() : schema
+        }
+
+        const result = transform 
+            ? processedSchema.parse(body)
+            : processedSchema.safeParse(body)
+
+        if (!transform && !result.success) {
+            throw createValidationError(
+                errorMessage || 'Request validation failed',
+                { issues: result.error.issues }
+            )
+        }
+
+        return transform ? result : result.data
+    } catch (error) {
+        if (error instanceof SyntaxError) {
+            throw createValidationError(
+                errorMessage || 'Invalid JSON in request body',
+                { parseError: error.message }
+            )
+        }
+        
+        if (error instanceof z.ZodError) {
+            throw createValidationError(
+                errorMessage || 'Request validation failed',
+                { issues: error.issues }
+            )
+        }
+
+        // Re-throw APIErrors
+        throw error
+    }
+}
+
+/**
+ * Validate query parameters with Zod schema
+ * 
+ * @param request - The NextRequest object
+ * @param schema - Zod schema for validation
+ * @param options - Validation options
+ * @returns Validated data or throws APIError
+ */
+export function validateQueryParams<T>(
+    request: NextRequest,
+    schema: z.ZodSchema<T>,
+    options: ValidationOptions = {}
+): T {
+    const { transform = true, strip = true, errorMessage } = options
+
     try {
         const searchParams = request.nextUrl.searchParams
+        
+        // Convert URLSearchParams to object
         const params: Record<string, string | string[]> = {}
-
-        // Convert URL search params to object
-        searchParams.forEach((value, key) => {
-            // Sanitize input to prevent injection attacks
-            const sanitizedValue = sanitizeInput(value)
-
-            // Handle array params (param[]=value1&param[]=value2)
-            if (key.endsWith('[]')) {
-                const arrayKey = key.slice(0, -2)
-                if (!params[arrayKey]) {
-                    params[arrayKey] = []
-                }
-                if (Array.isArray(params[arrayKey])) {
-                    const arrayParam = params[arrayKey] as string[]
-                    arrayParam.push(sanitizedValue)
+        
+        for (const [key, value] of searchParams.entries()) {
+            if (params[key]) {
+                // Handle multiple values for the same key
+                if (Array.isArray(params[key])) {
+                    (params[key] as string[]).push(value)
+                } else {
+                    params[key] = [params[key] as string, value]
                 }
             } else {
-                params[key] = sanitizedValue
+                params[key] = value
             }
+        }
+
+        let processedSchema = schema
+        if (strip) {
+            processedSchema = schema.strip ? schema.strip() : schema
+        }
+
+        const result = transform 
+            ? processedSchema.parse(params)
+            : processedSchema.safeParse(params)
+
+        if (!transform && !result.success) {
+            throw createValidationError(
+                errorMessage || 'Query parameter validation failed',
+                { issues: result.error.issues }
+            )
+        }
+
+        return transform ? result : result.data
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            throw createValidationError(
+                errorMessage || 'Query parameter validation failed',
+                { issues: error.issues }
+            )
+        }
+
+        // Re-throw APIErrors
+        throw error
+    }
+}
+
+/**
+ * Validate path parameters with Zod schema
+ * 
+ * @param params - The params object from route context
+ * @param schema - Zod schema for validation
+ * @param options - Validation options
+ * @returns Validated data or throws APIError
+ */
+export function validatePathParams<T>(
+    params: unknown,
+    schema: z.ZodSchema<T>,
+    options: ValidationOptions = {}
+): T {
+    const { transform = true, strip = true, errorMessage } = options
+
+    try {
+        let processedSchema = schema
+        if (strip) {
+            processedSchema = schema.strip ? schema.strip() : schema
+        }
+
+        const result = transform 
+            ? processedSchema.parse(params)
+            : processedSchema.safeParse(params)
+
+        if (!transform && !result.success) {
+            throw createValidationError(
+                errorMessage || 'Path parameter validation failed',
+                { issues: result.error.issues }
+            )
+        }
+
+        return transform ? result : result.data
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            throw createValidationError(
+                errorMessage || 'Path parameter validation failed',
+                { issues: error.issues }
+            )
+        }
+
+        // Re-throw APIErrors
+        throw error
+    }
+}
+
+/**
+ * Validate request headers with Zod schema
+ * 
+ * @param request - The NextRequest object
+ * @param schema - Zod schema for validation
+ * @param options - Validation options
+ * @returns Validated data or throws APIError
+ */
+export function validateHeaders<T>(
+    request: NextRequest,
+    schema: z.ZodSchema<T>,
+    options: ValidationOptions = {}
+): T {
+    const { transform = true, strip = true, errorMessage } = options
+
+    try {
+        // Convert Headers to object
+        const headers: Record<string, string> = {}
+        request.headers.forEach((value, key) => {
+            headers[key.toLowerCase()] = value
         })
 
-        // Parse through schema
-        const result = schema.safeParse(params)
-
-        if (!result.success) {
-            return {
-                success: false,
-                error: errorResponse(
-                    'Invalid query parameters',
-                    'VALIDATION_ERROR',
-                    400
-                ),
-                data: undefined
-            }
+        let processedSchema = schema
+        if (strip) {
+            processedSchema = schema.strip ? schema.strip() : schema
         }
 
-        return {
-            success: true,
-            error: undefined,
-            data: result.data
+        const result = transform 
+            ? processedSchema.parse(headers)
+            : processedSchema.safeParse(headers)
+
+        if (!transform && !result.success) {
+            throw createValidationError(
+                errorMessage || 'Header validation failed',
+                { issues: result.error.issues }
+            )
         }
+
+        return transform ? result : result.data
     } catch (error) {
-        console.error('Error validating query parameters:', error)
-        return {
-            success: false,
-            error: errorResponse(
-                'Failed to validate request',
-                'INTERNAL_SERVER_ERROR',
-                500
-            ),
-            data: undefined
+        if (error instanceof z.ZodError) {
+            throw createValidationError(
+                errorMessage || 'Header validation failed',
+                { issues: error.issues }
+            )
         }
+
+        // Re-throw APIErrors
+        throw error
     }
 }
 
 /**
- * Validates and sanitizes API request body against a schema
+ * Common validation schemas
  */
-export async function validateBody<T extends ZodSchema>(
-    request: NextRequest,
-    schema: T
-) {
-    try {
-        // Parse and sanitize body
-        const body = await request.json()
-        const sanitizedBody = sanitizeObject(body)
+export const CommonSchemas = {
+    /** Standard pagination parameters */
+    pagination: z.object({
+        page: z.string().optional().transform(val => val ? parseInt(val, 10) : 1),
+        limit: z.string().optional().transform(val => val ? Math.min(parseInt(val, 10), 100) : 20),
+        offset: z.string().optional().transform(val => val ? parseInt(val, 10) : 0)
+    }),
 
-        // Parse through schema
-        const result = schema.safeParse(sanitizedBody)
+    /** Standard sorting parameters */
+    sorting: z.object({
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(['asc', 'desc']).optional().default('asc')
+    }),
 
-        if (!result.success) {
-            return {
-                success: false,
-                error: errorResponse(
-                    'Invalid request body',
-                    'VALIDATION_ERROR',
-                    400
-                ),
-                data: undefined
-            }
-        }
+    /** Standard filtering parameters */
+    filters: z.object({
+        search: z.string().optional(),
+        category: z.string().optional(),
+        status: z.string().optional(),
+        startDate: z.string().datetime().optional(),
+        endDate: z.string().datetime().optional()
+    }),
 
-        return {
-            success: true,
-            error: undefined,
-            data: result.data
-        }
-    } catch (error) {
-        console.error('Error validating request body:', error)
-        return {
-            success: false,
-            error: errorResponse(
-                'Failed to validate request',
-                'INTERNAL_SERVER_ERROR',
-                500
-            ),
-            data: undefined
-        }
+    /** MongoDB ObjectId validation */
+    objectId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid ObjectId format'),
+
+    /** UUID validation */
+    uuid: z.string().uuid('Invalid UUID format'),
+
+    /** Email validation */
+    email: z.string().email('Invalid email format'),
+
+    /** URL validation */
+    url: z.string().url('Invalid URL format'),
+
+    /** Phone number validation (basic) */
+    phone: z.string().regex(/^\+?[\d\s\-\(\)]{10,}$/, 'Invalid phone number format'),
+
+    /** Geographic coordinates */
+    coordinates: z.object({
+        latitude: z.number().min(-90).max(90),
+        longitude: z.number().min(-180).max(180)
+    }),
+
+    /** Date range validation */
+    dateRange: z.object({
+        startDate: z.string().datetime(),
+        endDate: z.string().datetime()
+    }).refine(
+        data => new Date(data.startDate) <= new Date(data.endDate),
+        { message: 'Start date must be before or equal to end date' }
+    ),
+
+    /** Disney park specific validations */
+    disney: {
+        parkId: z.enum(['magic-kingdom', 'epcot', 'hollywood-studios', 'animal-kingdom']),
+        attractionId: z.string().min(1),
+        restaurantId: z.string().min(1),
+        resortId: z.string().min(1)
     }
 }
 
 /**
- * Type for sanitized objects - can be primitives, arrays, or nested objects
+ * Sanitize string input to prevent injection attacks
  */
-type SanitizedValue = string | number | boolean | null | SanitizedObject | SanitizedValue[]
-
-/**
- * Type for sanitized objects with string keys
- */
-interface SanitizedObject {
-    [key: string]: SanitizedValue
+export function sanitizeString(input: string): string {
+    return input
+        .trim()
+        .replace(/[<>\"'&]/g, '') // Remove potentially dangerous characters
+        .substring(0, 1000) // Limit length
 }
 
 /**
- * Recursively sanitizes an object's string values
+ * Sanitize object inputs recursively
  */
-function sanitizeObject(obj: unknown): SanitizedValue {
-    if (typeof obj !== 'object' || obj === null) {
-        return typeof obj === 'string' ? sanitizeInput(obj) : obj as SanitizedValue
+export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
+    const sanitized = { ...obj }
+    
+    for (const [key, value] of Object.entries(sanitized)) {
+        if (typeof value === 'string') {
+            sanitized[key] = sanitizeString(value)
+        } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+            sanitized[key] = sanitizeObject(value)
+        } else if (Array.isArray(value)) {
+            sanitized[key] = value.map(item => 
+                typeof item === 'string' ? sanitizeString(item) :
+                typeof item === 'object' ? sanitizeObject(item) : item
+            )
+        }
     }
-
-    if (Array.isArray(obj)) {
-        return obj.map(item => sanitizeObject(item))
-    }
-
-    const sanitized: SanitizedObject = {}
-    for (const [key, value] of Object.entries(obj)) {
-        sanitized[key] = sanitizeObject(value)
-    }
-
+    
     return sanitized
+}
+
+/**
+ * Validation middleware decorator
+ */
+export interface ValidationConfig<TBody = any, TQuery = any, TParams = any, THeaders = any> {
+    body?: z.ZodSchema<TBody>
+    query?: z.ZodSchema<TQuery>
+    params?: z.ZodSchema<TParams>
+    headers?: z.ZodSchema<THeaders>
+    options?: ValidationOptions
+}
+
+/**
+ * Middleware that validates request data
+ */
+export function withValidation<TBody = any, TQuery = any, TParams = any, THeaders = any>(
+    config: ValidationConfig<TBody, TQuery, TParams, THeaders>
+) {
+    return function (
+        target: any,
+        propertyName: string,
+        descriptor: PropertyDescriptor
+    ) {
+        const method = descriptor.value
+
+        descriptor.value = async function (request: NextRequest, context?: { params?: TParams }) {
+            const validatedData: any = {}
+
+            // Validate body if schema provided
+            if (config.body) {
+                validatedData.body = await validateRequestBody(request, config.body, config.options)
+            }
+
+            // Validate query parameters if schema provided
+            if (config.query) {
+                validatedData.query = validateQueryParams(request, config.query, config.options)
+            }
+
+            // Validate path parameters if schema provided
+            if (config.params && context?.params) {
+                validatedData.params = validatePathParams(context.params, config.params, config.options)
+            }
+
+            // Validate headers if schema provided
+            if (config.headers) {
+                validatedData.headers = validateHeaders(request, config.headers, config.options)
+            }
+
+            // Call original method with validated data
+            return method.call(this, request, { ...context, validated: validatedData })
+        }
+
+        return descriptor
+    }
 }

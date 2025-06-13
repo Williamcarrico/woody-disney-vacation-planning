@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
             priceRange: searchParams.get('priceRange') || undefined,
             characterDining: searchParams.get('characterDining') === 'true' || undefined,
             mobileOrder: searchParams.get('mobileOrder') === 'true' || undefined,
-            mealPeriod: searchParams.get('mealPeriod') as any || undefined
+            mealPeriod: searchParams.get('mealPeriod') as 'breakfast' | 'lunch' | 'dinner' | 'snacks' || undefined
         }
 
         // Remove undefined filters

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateCacheKey, CACHE_CONFIG } from '@/lib/api/weather-cache';
 
-const API_KEY = process.env.TOMORROW_IO_API_KEY || 'BUg7tFzAmctASd4DLGxkwDTSmuwWGHNS';
+const API_KEY = process.env.TOMORROW_IO_API_KEY;
 const BASE_URL = 'https://api.tomorrow.io/v4/weather';
 
 // Enhanced cache for forecast data
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Check if API key is available
-        if (!API_KEY || API_KEY === 'your-api-key-here') {
+        if (!API_KEY) {
             console.warn('Tomorrow.io API key not configured, returning mock forecast data');
             const mockData = {
                 timelines: {

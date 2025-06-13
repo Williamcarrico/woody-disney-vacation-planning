@@ -1,0 +1,470 @@
+{
+  "indexes": [
+    // User and vacation indexes
+    {
+      "collectionGroup": "vacations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "userId", "order": "ASCENDING"},
+        {"fieldPath": "isArchived", "order": "ASCENDING"},
+        {"fieldPath": "startDate", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "vacations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "userId", "order": "ASCENDING"},
+        {"fieldPath": "status", "order": "ASCENDING"},
+        {"fieldPath": "updatedAt", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "vacations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "isPublic", "order": "ASCENDING"},
+        {"fieldPath": "startDate", "order": "DESCENDING"},
+        {"fieldPath": "rating", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "vacations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "destination", "order": "ASCENDING"},
+        {"fieldPath": "startDate", "order": "ASCENDING"},
+        {"fieldPath": "partySize", "order": "ASCENDING"}
+      ]
+    },
+    
+    // Itinerary indexes
+    {
+      "collectionGroup": "itineraries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "vacationId", "order": "ASCENDING"},
+        {"fieldPath": "date", "order": "ASCENDING"},
+        {"fieldPath": "order", "order": "ASCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "itineraries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "userId", "order": "ASCENDING"},
+        {"fieldPath": "isPublic", "order": "ASCENDING"},
+        {"fieldPath": "updatedAt", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "itineraries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "parkId", "order": "ASCENDING"},
+        {"fieldPath": "date", "order": "ASCENDING"},
+        {"fieldPath": "isOptimized", "order": "DESCENDING"}
+      ]
+    },
+    
+    // Restaurant indexes
+    {
+      "collectionGroup": "restaurants",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "parkId", "order": "ASCENDING"},
+        {"fieldPath": "diningPlan", "order": "ASCENDING"},
+        {"fieldPath": "priceRange", "order": "ASCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "restaurants",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "location", "order": "ASCENDING"},
+        {"fieldPath": "cuisine", "order": "ASCENDING"},
+        {"fieldPath": "rating", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "restaurants",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "characterDining", "order": "ASCENDING"},
+        {"fieldPath": "rating", "order": "DESCENDING"},
+        {"fieldPath": "reviewCount", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "restaurants",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "reservationsRequired", "order": "ASCENDING"},
+        {"fieldPath": "reservationsAvailable", "order": "ASCENDING"},
+        {"fieldPath": "rating", "order": "DESCENDING"}
+      ]
+    },
+    
+    // Attraction indexes
+    {
+      "collectionGroup": "attractions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "parkId", "order": "ASCENDING"},
+        {"fieldPath": "type", "order": "ASCENDING"},
+        {"fieldPath": "thrillLevel", "order": "ASCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "attractions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "parkId", "order": "ASCENDING"},
+        {"fieldPath": "lightningLane", "order": "ASCENDING"},
+        {"fieldPath": "mustDo", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "attractions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "parkId", "order": "ASCENDING"},
+        {"fieldPath": "ageGroup", "order": "ASCENDING"},
+        {"fieldPath": "rating", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "attractions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "operatingStatus", "order": "ASCENDING"},
+        {"fieldPath": "parkId", "order": "ASCENDING"},
+        {"fieldPath": "updatedAt", "order": "DESCENDING"}
+      ]
+    },
+    
+    // Resort indexes
+    {
+      "collectionGroup": "resorts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "category", "order": "ASCENDING"},
+        {"fieldPath": "theme", "order": "ASCENDING"},
+        {"fieldPath": "priceRange", "order": "ASCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "resorts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "category", "order": "ASCENDING"},
+        {"fieldPath": "rating", "order": "DESCENDING"},
+        {"fieldPath": "reviewCount", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "resorts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "operatingStatus", "order": "ASCENDING"},
+        {"fieldPath": "category", "order": "ASCENDING"},
+        {"fieldPath": "priceRange", "order": "ASCENDING"}
+      ]
+    },
+    
+    // Calendar and event indexes
+    {
+      "collectionGroup": "calendarEvents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "userId", "order": "ASCENDING"},
+        {"fieldPath": "startDate", "order": "ASCENDING"},
+        {"fieldPath": "endDate", "order": "ASCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "calendarEvents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "vacationId", "order": "ASCENDING"},
+        {"fieldPath": "startDate", "order": "ASCENDING"},
+        {"fieldPath": "type", "order": "ASCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "calendarEvents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "userId", "order": "ASCENDING"},
+        {"fieldPath": "isRecurring", "order": "ASCENDING"},
+        {"fieldPath": "startDate", "order": "ASCENDING"}
+      ]
+    },
+    
+    // Geofencing and location indexes
+    {
+      "collectionGroup": "geofenceAlerts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "userId", "order": "ASCENDING"},
+        {"fieldPath": "alertType", "order": "ASCENDING"},
+        {"fieldPath": "triggeredAt", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "geofenceAlerts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "vacationId", "order": "ASCENDING"},
+        {"fieldPath": "acknowledged", "order": "ASCENDING"},
+        {"fieldPath": "triggeredAt", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "userLocations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "userId", "order": "ASCENDING"},
+        {"fieldPath": "timestamp", "order": "DESCENDING"},
+        {"fieldPath": "accuracy", "order": "ASCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "geofences",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "type", "order": "ASCENDING"},
+        {"fieldPath": "isActive", "order": "ASCENDING"},
+        {"fieldPath": "createdAt", "order": "DESCENDING"}
+      ]
+    },
+    
+    // Messaging indexes
+    {
+      "collectionGroup": "messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "vacationId", "order": "ASCENDING"},
+        {"fieldPath": "timestamp", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "vacationId", "order": "ASCENDING"},
+        {"fieldPath": "type", "order": "ASCENDING"},
+        {"fieldPath": "timestamp", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "senderId", "order": "ASCENDING"},
+        {"fieldPath": "timestamp", "order": "DESCENDING"}
+      ]
+    },
+    
+    // Wait times and operational data indexes
+    {
+      "collectionGroup": "waitTimes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "parkId", "order": "ASCENDING"},
+        {"fieldPath": "timestamp", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "waitTimes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "attractionId", "order": "ASCENDING"},
+        {"fieldPath": "timestamp", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "waitTimes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "parkId", "order": "ASCENDING"},
+        {"fieldPath": "operatingStatus", "order": "ASCENDING"},
+        {"fieldPath": "timestamp", "order": "DESCENDING"}
+      ]
+    },
+    
+    // Park hours and scheduling
+    {
+      "collectionGroup": "parkHours",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "parkId", "order": "ASCENDING"},
+        {"fieldPath": "date", "order": "ASCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "parkHours",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "date", "order": "ASCENDING"},
+        {"fieldPath": "parkId", "order": "ASCENDING"},
+        {"fieldPath": "openTime", "order": "ASCENDING"}
+      ]
+    },
+    
+    // Analytics and performance indexes
+    {
+      "collectionGroup": "analytics",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "userId", "order": "ASCENDING"},
+        {"fieldPath": "eventName", "order": "ASCENDING"},
+        {"fieldPath": "timestamp", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "analytics",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "eventCategory", "order": "ASCENDING"},
+        {"fieldPath": "timestamp", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "errorLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "level", "order": "ASCENDING"},
+        {"fieldPath": "timestamp", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "performanceLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "metricType", "order": "ASCENDING"},
+        {"fieldPath": "timestamp", "order": "DESCENDING"}
+      ]
+    },
+    
+    // User preferences and social features
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "emailVerified", "order": "ASCENDING"},
+        {"fieldPath": "lastActiveAt", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "profileCompletion", "order": "DESCENDING"},
+        {"fieldPath": "totalVisits", "order": "DESCENDING"}
+      ]
+    }
+  ],
+  "fieldOverrides": [
+    // Array-based search and filtering
+    {
+      "collectionGroup": "vacations",
+      "fieldPath": "searchKeywords",
+      "indexes": [
+        {"order": "ASCENDING", "queryScope": "COLLECTION"},
+        {"arrayConfig": "CONTAINS", "queryScope": "COLLECTION"}
+      ]
+    },
+    {
+      "collectionGroup": "vacations",
+      "fieldPath": "collaborators",
+      "indexes": [
+        {"arrayConfig": "CONTAINS", "queryScope": "COLLECTION"}
+      ]
+    },
+    {
+      "collectionGroup": "vacations",
+      "fieldPath": "tags",
+      "indexes": [
+        {"arrayConfig": "CONTAINS", "queryScope": "COLLECTION"}
+      ]
+    },
+    {
+      "collectionGroup": "attractions",
+      "fieldPath": "tags",
+      "indexes": [
+        {"arrayConfig": "CONTAINS", "queryScope": "COLLECTION"}
+      ]
+    },
+    {
+      "collectionGroup": "restaurants",
+      "fieldPath": "tags",
+      "indexes": [
+        {"arrayConfig": "CONTAINS", "queryScope": "COLLECTION"}
+      ]
+    },
+    {
+      "collectionGroup": "restaurants",
+      "fieldPath": "cuisine",
+      "indexes": [
+        {"arrayConfig": "CONTAINS", "queryScope": "COLLECTION"}
+      ]
+    },
+    {
+      "collectionGroup": "resorts",
+      "fieldPath": "amenities",
+      "indexes": [
+        {"arrayConfig": "CONTAINS", "queryScope": "COLLECTION"}
+      ]
+    },
+    {
+      "collectionGroup": "resorts",
+      "fieldPath": "transportation",
+      "indexes": [
+        {"arrayConfig": "CONTAINS", "queryScope": "COLLECTION"}
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "fieldPath": "favoriteParks",
+      "indexes": [
+        {"arrayConfig": "CONTAINS", "queryScope": "COLLECTION"}
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "fieldPath": "favoriteAttractions",
+      "indexes": [
+        {"arrayConfig": "CONTAINS", "queryScope": "COLLECTION"}
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "fieldPath": "achievements",
+      "indexes": [
+        {"arrayConfig": "CONTAINS", "queryScope": "COLLECTION"}
+      ]
+    },
+    {
+      "collectionGroup": "geofences",
+      "fieldPath": "alertTypes",
+      "indexes": [
+        {"arrayConfig": "CONTAINS", "queryScope": "COLLECTION"}
+      ]
+    },
+    {
+      "collectionGroup": "messages",
+      "fieldPath": "readBy",
+      "indexes": [
+        {"arrayConfig": "CONTAINS", "queryScope": "COLLECTION"}
+      ]
+    },
+    {
+      "collectionGroup": "messages",
+      "fieldPath": "deliveredTo",
+      "indexes": [
+        {"arrayConfig": "CONTAINS", "queryScope": "COLLECTION"}
+      ]
+    }
+  ]
+}
