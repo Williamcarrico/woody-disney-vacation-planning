@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Import dynamic hero gradient styles */
+@import "../styles/hero-gradient.css";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -294,6 +297,88 @@
   letter-spacing: 0.01em;
 }
 
+.cabin-sketch-regular {
+  font-family: "Cabin Sketch", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.cabin-sketch-bold {
+  font-family: "Cabin Sketch", sans-serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+/* Google Fonts for Disney Magic */
+.gloria-hallelujah-regular {
+  font-family: "Gloria Hallelujah", cursive;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.finger-paint-regular {
+  font-family: "Finger Paint", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.caveat-brush-regular {
+  font-family: "Caveat Brush", cursive;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.architects-daughter-regular {
+  font-family: "Architects Daughter", cursive;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* New whimsical Disney-themed fonts */
+.font-kranky {
+  font-family: var(--font-kranky), serif;
+}
+
+.font-londrina-shadow {
+  font-family: var(--font-londrina-shadow), sans-serif;
+}
+
+.font-rock-salt {
+  font-family: var(--font-rock-salt), cursive;
+}
+
+.font-crafty-girls {
+  font-family: var(--font-crafty-girls), cursive;
+}
+
+.font-schoolbell {
+  font-family: var(--font-schoolbell), cursive;
+}
+
+.font-sunshiney {
+  font-family: var(--font-sunshiney), cursive;
+}
+
+.font-just-me-again-down-here {
+  font-family: var(--font-just-me-again-down-here), cursive;
+}
+
+.font-bungee-outline {
+  font-family: var(--font-bungee-outline), sans-serif;
+}
+
+.font-calligraffitti {
+  font-family: var(--font-calligraffitti), cursive;
+}
+
+.font-coming-soon {
+  font-family: var(--font-coming-soon), cursive;
+}
+
+.font-life-savers {
+  font-family: var(--font-life-savers), serif;
+}
+
 /* Enhanced Theme Variables */
 :root {
   --radius: 0.625rem;
@@ -511,6 +596,61 @@
 }
 
 /* Enhanced Disney Theme Specific Styles */
+
+/* Disney Colors Hero Text Animation */
+.hero-text-disney-colors {
+  background: linear-gradient(
+    45deg,
+    #dc2626 0%,    /* Disney Red */
+    #fbbf24 25%,   /* Disney Yellow */
+    #2563eb 50%,   /* Disney Blue */
+    #dc2626 75%,   /* Disney Red */
+    #fbbf24 100%   /* Disney Yellow */
+  );
+  background-size: 400% 400%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: disney-shimmer 4s ease-in-out infinite;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes disney-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  25% {
+    background-position: 100% 50%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  75% {
+    background-position: 0% 100%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Dark mode variant for better contrast */
+.dark .hero-text-disney-colors {
+  background: linear-gradient(
+    45deg,
+    #ef4444 0%,    /* Brighter Disney Red for dark mode */
+    #fde047 25%,   /* Brighter Disney Yellow for dark mode */
+    #3b82f6 50%,   /* Brighter Disney Blue for dark mode */
+    #ef4444 75%,   /* Brighter Disney Red for dark mode */
+    #fde047 100%   /* Brighter Disney Yellow for dark mode */
+  );
+  background-size: 400% 400%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: disney-shimmer 4s ease-in-out infinite;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+}
+
 @keyframes float {
   0% {
     transform: translateY(0px);
@@ -891,6 +1031,11 @@
 
 .bg-gradient-orb-day-2 {
   background: radial-gradient(circle, rgba(251, 146, 60, 0.2), transparent);
+}
+
+/* Custom gradient for cursor effects */
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-stops));
 }
 
 /* Shine Border Component Styles */

@@ -1,775 +1,898 @@
-"use client"
+'use client'
 
-import { useState, useEffect, useRef } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import {
-    NavigationMenu,
-    NavigationMenuContent,
-    NavigationMenuItem,
-    NavigationMenuLink,
-    NavigationMenuList,
-    NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { useTheme } from "next-themes"
-import { useAuth } from "@/contexts/AuthContext"
-import {
-    Sun,
-    Moon,
-    Sparkles,
-    Menu,
-    X,
-    LogOut,
-    Settings,
-    Calendar,
-    Utensils,
-    Users,
-    DollarSign,
-    MessageSquare,
-    Home,
-    Compass,
-    Castle,
-    Rocket,
-    Star,
-    Bell,
-    Search,
-    ChevronRight,
-    Wand2,
-    Crown,
-    Gift} from "lucide-react"
-import { BorderBeam } from "@/components/magicui/border-beam"
-import { SparklesText } from "@/components/magicui/sparkles-text"
-import { RainbowButton } from "@/components/magicui/rainbow-button"
-import { AdvancedParticles } from "@/components/magicui/advanced-particles"
-import { GlassMorphism, NeuralNetworkBackground } from "@/components/magicui/glass-morphism"
-import { ContextAwareHover } from "@/components/magicui/intelligent-hover"
-import { DynamicBackground } from "@/components/magicui/dynamic-background"
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useTheme } from 'next-themes'
+import Link from 'next/link'
+import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion'
+import { 
+  Sun, 
+  Moon, 
+  ChevronDown,
+  User,
+  Settings,
+  LogOut,
+  Map,
+  CloudRain,
+  Sparkles,
+  DollarSign,
+  MessageSquare,
+  Info,
+  Lightbulb,
+  Activity,
+  X,
+  Menu as MenuIcon,
+  ArrowRight,
+  Zap,
+  Ticket,
+  Mic,
+  MicOff,
+  Castle,
+  Star,
+  Heart,
+  Wand2,
+  Search,
+  Bell,
+  Crown
+} from 'lucide-react'
 
-// Floating particles component
-const FloatingParticles = () => {
-    return (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {Array.from({ length: 6 }, (_, i) => (
-                <motion.div
-                    key={i}
-                    className="absolute w-1 h-1 bg-gradient-to-r from-yellow-400 to-pink-400 rounded-full"
-                    initial={{
-                        x: Math.random() * window.innerWidth,
-                        y: window.innerHeight + 50,
-                    }}
-                    animate={{
-                        y: -50,
-                        x: Math.random() * window.innerWidth,
-                    }}
-                    transition={{
-                        duration: Math.random() * 10 + 10,
-                        repeat: Infinity,
-                        ease: "linear",
-                        delay: Math.random() * 5,
-                    }}
-                    style={{
-                        filter: "blur(1px)",
-                        boxShadow: "0 0 10px rgba(255, 255, 0, 0.5)",
-                    }}
-                />
-            ))}
-        </div>
-    )
-}
+// Import Magic UI components
+import { AuroraBackground } from '@/components/magicui/aurora-background'
+import { IntelligentHover } from '@/components/magicui/intelligent-hover'
+import { MagicWandTrail, FloatingCastle, MagicalLoading } from '@/components/magicui/disney-themed-effects'
+import { BorderBeam } from '@/components/magicui/border-beam'
+import { MagicCard } from '@/components/magicui/magic-card'
+import { RainbowButton } from '@/components/magicui/rainbow-button'
+import { ShimmerButton } from '@/components/magicui/shimmer-button'
+import { GlowingStars } from '@/components/magicui/glowing-stars'
+import { CustomCursor } from '@/components/magicui/custom-cursor'
+import { AdvancedParticles } from '@/components/magicui/advanced-particles'
+import { TypingAnimation } from '@/components/magicui/typing-animation'
 
-// Enhanced navigation items with more Disney magic
+// Import UI components
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+
+// Navigation items with enhanced metadata
 const navigationItems = [
-    {
-        title: "Parks",
-        href: "/parks",
-        icon: Castle,
-        description: "Explore the magic of all Disney parks",
-        gradient: "from-blue-500 to-purple-600",
-        items: [
-            {
-                title: "Magic Kingdom",
-                href: "/parks/magic-kingdom",
-                icon: Castle,
-                color: "text-blue-500",
-                description: "Where dreams come true",
-                badge: "Most Popular"
-            },
-            {
-                title: "EPCOT",
-                href: "/parks/epcot",
-                icon: Rocket,
-                color: "text-purple-500",
-                description: "Journey around the world",
-                badge: "Food & Wine"
-            },
-            {
-                title: "Hollywood Studios",
-                href: "/parks/hollywood-studios",
-                icon: Star,
-                color: "text-red-500",
-                description: "Action and adventure await"
-            },
-            {
-                title: "Animal Kingdom",
-                href: "/parks/animal-kingdom",
-                icon: Compass,
-                color: "text-green-500",
-                description: "Explore nature's wonders"
-            },
-        ],
-    },
-    {
-        title: "Planning",
-        href: "/planning",
-        icon: Wand2,
-        description: "Create your perfect magical day",
-        gradient: "from-pink-500 to-rose-600",
-        items: [
-            {
-                title: "Itinerary Builder",
-                href: "/itinerary",
-                icon: Calendar,
-                color: "text-blue-500",
-                description: "Plan every magical moment",
-                badge: "AI Powered"
-            },
-            {
-                title: "Dining Reservations",
-                href: "/dining",
-                icon: Utensils,
-                color: "text-orange-500",
-                description: "Book magical dining experiences"
-            },
-            {
-                title: "Budget Tracker",
-                href: "/budget",
-                icon: DollarSign,
-                color: "text-green-500",
-                description: "Keep track of your expenses"
-            },
-            {
-                title: "Group Planning",
-                href: "/group",
-                icon: Users,
-                color: "text-purple-500",
-                description: "Coordinate with your party"
-            },
-        ],
-    },
-    {
-        title: "Explore",
-        href: "/explore",
-        icon: Compass,
-        description: "Discover hidden gems and attractions",
-        gradient: "from-orange-500 to-yellow-600",
-        items: [
-            {
-                title: "Attractions",
-                href: "/attractions",
-                icon: Rocket,
-                color: "text-blue-500",
-                description: "Find your next adventure",
-                badge: "New"
-            },
-            {
-                title: "Resorts",
-                href: "/resorts",
-                icon: Home,
-                color: "text-pink-500",
-                description: "Rest in magical comfort"
-            },
-            {
-                title: "Disney Springs",
-                href: "/disney-springs",
-                icon: Sparkles,
-                color: "text-purple-500",
-                description: "Shop, dine, and play"
-            },
-            {
-                title: "Events",
-                href: "/events",
-                icon: Gift,
-                color: "text-yellow-500",
-                description: "Special celebrations year-round"
-            },
-        ],
-    },
+  { 
+    name: 'About', 
+    href: '/about', 
+    icon: Info, 
+    description: 'Discover the magic behind WaltWise',
+    keywords: ['about', 'info', 'story', 'mission'],
+    category: 'discover',
+    gradient: 'from-blue-500 to-blue-600'
+  },
+  { 
+    name: 'Annual Passes', 
+    href: '/annual-passes', 
+    icon: Ticket, 
+    description: 'Find your perfect Disney pass',
+    keywords: ['passes', 'tickets', 'annual', 'pricing'],
+    category: 'planning',
+    gradient: 'from-red-500 to-red-600'
+  },
+  { 
+    name: 'Parks', 
+    href: '/dashboard/parks', 
+    icon: Castle, 
+    description: 'Explore magical kingdoms',
+    keywords: ['parks', 'attractions', 'rides', 'shows'],
+    category: 'discover',
+    gradient: 'from-red-500 to-red-600'
+  },
+  { 
+    name: 'Budget', 
+    href: '/budget', 
+    icon: DollarSign, 
+    description: 'Plan your magical budget',
+    keywords: ['budget', 'money', 'cost', 'planning'],
+    category: 'planning',
+    gradient: 'from-yellow-500 to-yellow-600'
+  },
+  { 
+    name: 'Maps', 
+    href: '/map', 
+    icon: Map, 
+    description: 'Navigate with enchanted maps',
+    keywords: ['map', 'navigation', 'directions', 'location'],
+    category: 'tools',
+    gradient: 'from-blue-500 to-blue-600'
+  },
+  { 
+    name: 'Weather', 
+    href: '/weather', 
+    icon: CloudRain, 
+    description: 'Magical weather forecasts',
+    keywords: ['weather', 'forecast', 'conditions', 'temperature'],
+    category: 'tools',
+    gradient: 'from-blue-500 to-blue-600'
+  },
+  { 
+    name: 'Tips & Tricks', 
+    href: '/tips-tricks', 
+    icon: Lightbulb, 
+    description: 'Unlock insider secrets',
+    keywords: ['tips', 'tricks', 'advice', 'secrets'],
+    category: 'discover',
+    gradient: 'from-yellow-500 to-yellow-600'
+  },
+  { 
+    name: 'Contact', 
+    href: '/contact', 
+    icon: MessageSquare, 
+    description: 'Connect with our magic makers',
+    keywords: ['contact', 'message', 'support', 'help'],
+    category: 'support',
+    gradient: 'from-blue-500 to-blue-600'
+  }
 ]
 
-// Interactive hover card component
-const HoverCard = ({ children, className }: { children: React.ReactNode; className?: string }) => {
-    const ref = useRef<HTMLDivElement>(null)
-    const x = useMotionValue(0)
-    const y = useMotionValue(0)
+// Quick access items
+const quickAccessItems = [
+  { name: 'Dashboard', href: '/dashboard', icon: Activity, color: 'from-red-500 to-blue-500' },
+  { name: 'Dining', href: '/dashboard/dining', icon: Heart, color: 'from-red-500 to-red-600' },
+  { name: 'Events', href: '/dashboard/events', icon: Star, color: 'from-yellow-500 to-yellow-600' },
+  { name: 'Itinerary', href: '/dashboard/itinerary', icon: Map, color: 'from-blue-500 to-blue-600' }
+]
 
-    const handleMouseMove = (e: React.MouseEvent) => {
-        if (!ref.current) return
-        const rect = ref.current.getBoundingClientRect()
-        x.set((e.clientX - rect.left) / rect.width - 0.5)
-        y.set((e.clientY - rect.top) / rect.height - 0.5)
-    }
+// Profile menu items
+const profileItems = [
+  { name: 'Your Profile', href: '/dashboard/settings', icon: User, description: 'Manage your magical profile' },
+  { name: 'Dashboard', href: '/dashboard', icon: Activity, description: 'Your personalized hub' },
+  { name: 'Settings', href: '/dashboard/settings', icon: Settings, description: 'Customize your experience' },
+  { name: 'Achievements', href: '/dashboard/achievements', icon: Crown, description: 'View your magical milestones' }
+]
 
-    return (
-        <motion.div
-            ref={ref}
-            onMouseMove={handleMouseMove}
-            className={cn("relative group", className)}
-            style={{
-                transformStyle: "preserve-3d",
-            }}
-        >
-            <motion.div
-                style={{
-                    rotateY: useTransform(x, [-0.5, 0.5], [-10, 10]),
-                    rotateX: useTransform(y, [-0.5, 0.5], [10, -10]),
-                }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            >
-                {children}
-            </motion.div>
-        </motion.div>
-    )
-}
+// Floating particles configuration
+const createParticles = () => Array.from({ length: 25 }, (_, i) => ({
+  id: i,
+  x: Math.random() * 100,
+  y: Math.random() * 100,
+  size: Math.random() * 3 + 1,
+  duration: Math.random() * 15 + 10,
+  delay: Math.random() * 5,
+  color: ['#dc2626', '#eab308', '#2563eb', '#dc2626', '#2563eb'][Math.floor(Math.random() * 5)]
+}))
 
 export default function Header() {
-    const [isScrolled, setIsScrolled] = useState(false)
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-    const [searchFocused, setSearchFocused] = useState(false)
-    const pathname = usePathname()
-    const { theme, setTheme } = useTheme()
-    const { user, logout } = useAuth()
-    const { scrollY } = useScroll()
+  const [mounted, setMounted] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [voiceEnabled, setVoiceEnabled] = useState(false)
+  const [showMagicTrail, setShowMagicTrail] = useState(false)
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [_particles] = useState(createParticles)
+  const [_isLoading, _setIsLoading] = useState(false)
+  
+  const { theme, setTheme } = useTheme()
+  const headerRef = useRef<HTMLElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  
+  // Mouse position tracking for interactive effects
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
+  const _smoothMouseX = useSpring(mouseX, { stiffness: 150, damping: 25 })
+  const _smoothMouseY = useSpring(mouseY, { stiffness: 150, damping: 25 })
+  
+  // Scroll-based transforms
+  const { scrollY } = useScroll()
+  const headerOpacity = useTransform(scrollY, [0, 100], [1, 0.95])
+  const headerBlur = useTransform(scrollY, [0, 100], [0, 8])
+  const parallaxY = useTransform(scrollY, [0, 300], [0, -30])
+  const logoScale = useTransform(scrollY, [0, 100], [1, 0.9])
+  
+  // Handle mouse movement for interactive effects
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    mouseX.set(e.clientX)
+    mouseY.set(e.clientY)
+  }, [mouseX, mouseY])
+  
+  useEffect(() => {
+    setMounted(true)
+    
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20)
+    }
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '/' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setSearchOpen(true)
+      }
+      if (e.key === 'Escape') {
+        setSearchOpen(false)
+        setMobileMenuOpen(false)
+      }
+    }
+    
+    window.addEventListener('scroll', handleScroll)
+    window.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('keydown', handleKeyDown)
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [handleMouseMove])
+  
+  // Focus search input when dialog opens
+  useEffect(() => {
+    if (searchOpen && searchInputRef.current) {
+      setTimeout(() => searchInputRef.current?.focus(), 100)
+    }
+  }, [searchOpen])
+  
+  // Filter navigation items based on search
+  const filteredNavItems = navigationItems.filter(item =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.keywords.some(keyword => keyword.toLowerCase().includes(searchQuery.toLowerCase()))
+  )
+  
+  // Toggle voice recognition
+  const toggleVoiceRecognition = () => {
+    setVoiceEnabled(!voiceEnabled)
+    // In a real implementation, integrate with Web Speech API
+  }
+  
+  // Handle search navigation
+  const handleSearchSelect = (_href: string) => {
+    setSearchOpen(false)
+    setSearchQuery('')
+    // Navigate to href - in Next.js this would be handled by Link component
+  }
+  
+  if (!mounted) return <MagicalLoading size="lg" className="fixed top-8 left-8 z-50" />
 
-    // Spring animations for smooth interactions
-    const headerY = useSpring(useTransform(scrollY, [0, 100], [0, -10]), {
-        stiffness: 300,
-        damping: 30,
-    })
-
-    const headerOpacity = useTransform(scrollY, [0, 50], [1, 0.98])
-
-    // Handle scroll effect
-    useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 10)
-        }
-        window.addEventListener("scroll", handleScroll)
-        return () => window.removeEventListener("scroll", handleScroll)
-    }, [])
-
-    // Close mobile menu on route change
-    useEffect(() => {
-        setIsMobileMenuOpen(false)
-    }, [pathname])
-
-    return (
-        <>
-            <motion.header
-                initial={{ y: -100 }}
-                animate={{ y: 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                style={{ y: headerY, opacity: headerOpacity }}
-                className={cn(
-                    "sticky top-0 z-50 w-full transition-all duration-500",
-                    isScrolled
-                        ? "bg-gradient-to-b from-background/95 via-background/90 to-background/80 backdrop-blur-2xl border-b border-border/30 shadow-2xl shadow-primary/5"
-                        : "bg-gradient-to-b from-background/60 to-background/40 backdrop-blur-xl"
-                )}
-            >
-                {/* Enhanced magical background effects */}
-                <div className="absolute inset-0 overflow-hidden">
-                    <DynamicBackground 
-                        variant="sparkles" 
-                        intensity="medium" 
-                        interactive={true}
-                        enableParallax={true}
-                        className="opacity-40"
-                    />
-                    <NeuralNetworkBackground className="opacity-20" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 animate-gradient-x" />
-                    <AdvancedParticles 
-                        count={15} 
-                        enableInteraction={true}
-                        emissionRate={0.05}
-                        className="opacity-50"
-                        colors={['#FFD700', '#FF69B4', '#87CEEB', '#DDA0DD', '#F0E68C', '#98FB98']}
-                    />
-                </div>
-
-                <div className="container relative mx-auto px-4">
-                    <div className="flex h-20 items-center justify-between">
-                        {/* Enhanced logo with immersive interactions */}
-                        <ContextAwareHover context="navigation" intensity="medium">
-                            <Link href="/" className="flex items-center space-x-3 group relative">
-                                <GlassMorphism 
-                                    className="p-3 rounded-2xl"
-                                    enableTilt={true}
-                                    enableGlow={true}
-                                    glowColor="rgba(255, 215, 0, 0.3)"
-                                >
-                                    <motion.div
-                                        whileHover={{ scale: 1.1, rotate: 360 }}
-                                        transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                                        className="relative"
-                                    >
-                                        <div className="absolute inset-0 bg-gradient-to-r from-primary via-secondary to-primary rounded-full blur-2xl opacity-50 group-hover:opacity-100 transition-all duration-500 animate-pulse" />
-                                        <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-pink-400 rounded-full blur-xl opacity-0 group-hover:opacity-70 transition-all duration-500" />
-                                        <Castle className="h-10 w-10 text-primary relative z-10 drop-shadow-lg" />
-                                        <motion.div
-                                            className="absolute -top-1 -right-1"
-                                            initial={{ scale: 0 }}
-                                            animate={{ scale: 1 }}
-                                            transition={{ delay: 0.5, type: "spring" }}
-                                        >
-                                            <Sparkles className="h-4 w-4 text-yellow-400" />
-                                        </motion.div>
-                                    </motion.div>
-                                </GlassMorphism>
-                                <div className="relative">
-                                    <SparklesText
-                                        className="text-2xl font-bold font-luckiest hidden sm:block bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent"
-                                        sparklesCount={5}
-                                    >
-                                        Woody&apos;s Planner
-                                    </SparklesText>
-                                    <motion.div
-                                        className="absolute -bottom-2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent"
-                                        initial={{ scaleX: 0 }}
-                                        animate={{ scaleX: 1 }}
-                                        transition={{ delay: 0.7, duration: 0.5 }}
-                                    />
-                                </div>
-                            </Link>
-                        </ContextAwareHover>
-
-                        {/* Desktop Navigation with enhanced styling */}
-                        <NavigationMenu className="hidden lg:flex">
-                            <NavigationMenuList className="space-x-2">
-                                {navigationItems.map((item, index) => (
-                                    <NavigationMenuItem key={item.title}>
-                                        <ContextAwareHover context="navigation" intensity="subtle">
-                                            <NavigationMenuTrigger className="bg-transparent hover:bg-gradient-to-r hover:from-primary/10 hover:to-secondary/10 data-[state=open]:bg-gradient-to-r data-[state=open]:from-primary/20 data-[state=open]:to-secondary/20 px-4 py-2 rounded-xl transition-all duration-300 group">
-                                                <motion.div
-                                                    className="flex items-center space-x-2"
-                                                    initial={{ opacity: 0, y: -10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ delay: index * 0.1 }}
-                                                >
-                                                    <div className={cn("p-1.5 rounded-lg bg-gradient-to-br", item.gradient, "group-hover:shadow-lg transition-all duration-300")}>
-                                                        <item.icon className="h-4 w-4 text-white" />
-                                                    </div>
-                                                    <span className="font-medium">{item.title}</span>
-                                                </motion.div>
-                                            </NavigationMenuTrigger>
-                                        </ContextAwareHover>
-                                        <NavigationMenuContent>
-                                            <GlassMorphism className="relative">
-                                                <motion.div
-                                                    initial={{ opacity: 0, scale: 0.95 }}
-                                                    animate={{ opacity: 1, scale: 1 }}
-                                                    transition={{ duration: 0.2 }}
-                                                    className="relative"
-                                                >
-                                                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 rounded-lg" />
-                                                    <div className="grid w-[450px] gap-3 p-6 md:w-[550px] md:grid-cols-2 lg:w-[700px] relative">
-                                                    <div className="row-span-3">
-                                                        <NavigationMenuLink asChild>
-                                                            <HoverCard>
-                                                                <Link
-                                                                    className="flex h-full w-full select-none flex-col justify-end rounded-xl bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md hover:shadow-2xl transition-all duration-300 group relative overflow-hidden"
-                                                                    href={item.href}
-                                                                >
-                                                                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                                                    <div className={cn("p-3 rounded-xl bg-gradient-to-br mb-4 w-fit", item.gradient, "shadow-lg group-hover:shadow-2xl transition-all duration-300 group-hover:scale-110")}>
-                                                                        <item.icon className="h-8 w-8 text-white" />
-                                                                    </div>
-                                                                    <div className="mb-2 text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                                                                        {item.title}
-                                                                    </div>
-                                                                    <p className="text-sm leading-relaxed text-muted-foreground">
-                                                                        {item.description}
-                                                                    </p>
-                                                                    <motion.div
-                                                                        className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100"
-                                                                        initial={{ x: -10 }}
-                                                                        whileHover={{ x: 0 }}
-                                                                    >
-                                                                        <ChevronRight className="h-5 w-5 text-primary" />
-                                                                    </motion.div>
-                                                                </Link>
-                                                            </HoverCard>
-                                                        </NavigationMenuLink>
-                                                    </div>
-                                                    {item.items?.map((subItem, subIndex) => (
-                                                        <NavigationMenuLink key={subItem.title} asChild>
-                                                            <motion.div
-                                                                initial={{ opacity: 0, x: -20 }}
-                                                                animate={{ opacity: 1, x: 0 }}
-                                                                transition={{ delay: subIndex * 0.05 }}
-                                                            >
-                                                                <Link
-                                                                    href={subItem.href}
-                                                                    className="block select-none space-y-1 rounded-lg p-3 leading-none no-underline outline-none transition-all duration-300 hover:bg-gradient-to-r hover:from-primary/5 hover:to-secondary/5 hover:scale-[1.02] focus:bg-accent focus:text-accent-foreground group relative overflow-hidden"
-                                                                >
-                                                                    <div className="absolute inset-0 bg-gradient-to-r from-primary/0 to-secondary/0 group-hover:from-primary/5 group-hover:to-secondary/5 transition-all duration-500" />
-                                                                    <div className="flex items-center space-x-3 relative">
-                                                                        <div className={cn("p-1.5 rounded-lg bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm group-hover:scale-110 transition-all duration-300", subItem.color)}>
-                                                                            <subItem.icon className={cn("h-4 w-4 transition-all duration-300", subItem.color)} />
-                                                                        </div>
-                                                                        <div className="flex-1">
-                                                                            <div className="flex items-center justify-between">
-                                                                                <div className="text-sm font-semibold leading-none group-hover:text-primary transition-colors">
-                                                                                    {subItem.title}
-                                                                                </div>
-                                                                                {subItem.badge && (
-                                                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 text-primary font-medium">
-                                                                                        {subItem.badge}
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                            {subItem.description && (
-                                                                                <p className="text-xs text-muted-foreground mt-1">
-                                                                                    {subItem.description}
-                                                                                </p>
-                                                                            )}
-                                                                        </div>
-                                                                        <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-all duration-300 text-primary" />
-                                                                    </div>
-                                                                </Link>
-                                                            </motion.div>
-                                                        </NavigationMenuLink>
-                                                    ))}
-                                                </div>
-                                                </motion.div>
-                                            </GlassMorphism>
-                                        </NavigationMenuContent>
-                                    </NavigationMenuItem>
-                                ))}
-                            </NavigationMenuList>
-                        </NavigationMenu>
-
-                        {/* Right Side Actions with enhanced effects */}
-                        <div className="flex items-center space-x-3">
-                            {/* Enhanced Search with intelligent hover */}
-                            <ContextAwareHover context="interactive" intensity="medium" className="hidden sm:block">
-                                <motion.div
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    className="relative"
-                                >
-                                    <motion.div
-                                        className={cn(
-                                            "absolute inset-0 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 blur-xl transition-all duration-500",
-                                            searchFocused ? "opacity-100 scale-110" : "opacity-0 scale-100"
-                                        )}
-                                    />
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="relative overflow-hidden rounded-full hover:bg-gradient-to-r hover:from-primary/10 hover:to-secondary/10"
-                                        onFocus={() => setSearchFocused(true)}
-                                        onBlur={() => setSearchFocused(false)}
-                                    >
-                                        <Search className="h-5 w-5" />
-                                        <span className="sr-only">Search</span>
-                                    </Button>
-                                </motion.div>
-                            </ContextAwareHover>
-
-                            {/* Enhanced Notifications with intelligent hover */}
-                            {user && (
-                                <ContextAwareHover context="interactive" intensity="medium">
-                                    <motion.div
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        className="relative"
-                                    >
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="relative overflow-hidden rounded-full hover:bg-gradient-to-r hover:from-primary/10 hover:to-secondary/10"
-                                        >
-                                            <Bell className="h-5 w-5" />
-                                            <motion.span
-                                                className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-gradient-to-r from-red-500 to-pink-500"
-                                                animate={{
-                                                    scale: [1, 1.2, 1],
-                                                    opacity: [1, 0.8, 1]
-                                                }}
-                                                transition={{
-                                                    duration: 2,
-                                                    repeat: Infinity,
-                                                    ease: "easeInOut"
-                                                }}
-                                            />
-                                            <span className="sr-only">Notifications</span>
-                                        </Button>
-                                    </motion.div>
-                                </ContextAwareHover>
-                            )}
-
-                            {/* Enhanced Theme Toggle with intelligent hover */}
-                            <ContextAwareHover context="interactive" intensity="medium">
-                                <motion.div
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                                        className="relative overflow-hidden rounded-full hover:bg-gradient-to-r hover:from-primary/10 hover:to-secondary/10"
-                                    >
-                                        <AnimatePresence mode="wait">
-                                            {theme === "dark" ? (
-                                                <motion.div
-                                                    key="moon"
-                                                    initial={{ rotate: -90, opacity: 0, scale: 0 }}
-                                                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                                                    exit={{ rotate: 90, opacity: 0, scale: 0 }}
-                                                    transition={{ duration: 0.3, type: "spring" }}
-                                                    className="absolute"
-                                                >
-                                                    <Moon className="h-5 w-5" />
-                                                </motion.div>
-                                            ) : (
-                                                <motion.div
-                                                    key="sun"
-                                                    initial={{ rotate: 90, opacity: 0, scale: 0 }}
-                                                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                                                    exit={{ rotate: -90, opacity: 0, scale: 0 }}
-                                                    transition={{ duration: 0.3, type: "spring" }}
-                                                    className="absolute"
-                                                >
-                                                    <Sun className="h-5 w-5" />
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                        <span className="sr-only">Toggle theme</span>
-                                    </Button>
-                                </motion.div>
-                            </ContextAwareHover>
-
-                            {/* Enhanced User Menu with intelligent hover */}
-                            {user ? (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <ContextAwareHover context="interactive" intensity="dramatic">
-                                            <Button variant="ghost" className="relative h-12 w-12 rounded-full p-0 hover:scale-105 transition-transform">
-                                                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-full blur-md" />
-                                                <Avatar className="h-11 w-11 ring-[2px] ring-primary/20 ring-offset-2 ring-offset-background">
-                                                    <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User"} />
-                                                    <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white font-bold">
-                                                        {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                            </Button>
-                                        </ContextAwareHover>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-64" align="end" forceMount>
-                                        <GlassMorphism enableTilt={false} enableGlow={true}>
-                                            <motion.div
-                                                initial={{ opacity: 0, y: -10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ duration: 0.2 }}
-                                            >
-                                            <DropdownMenuLabel className="font-normal">
-                                                <div className="flex items-center space-x-3">
-                                                    <Avatar className="h-10 w-10">
-                                                        <AvatarImage src={user.photoURL || undefined} />
-                                                        <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white">
-                                                            {user.displayName?.charAt(0) || "U"}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="flex flex-col space-y-1">
-                                                        <p className="text-sm font-semibold leading-none">{user.displayName || "Guest"}</p>
-                                                        <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-                                                    </div>
-                                                </div>
-                                            </DropdownMenuLabel>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem asChild>
-                                                <Link href="/dashboard" className="cursor-pointer group">
-                                                    <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500/10 to-purple-500/10 group-hover:from-blue-500/20 group-hover:to-purple-500/20 transition-all mr-2">
-                                                        <Crown className="h-4 w-4 text-primary" />
-                                                    </div>
-                                                    Dashboard
-                                                    <span className="ml-auto text-xs text-muted-foreground">Pro</span>
-                                                </Link>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem asChild>
-                                                <Link href="/settings" className="cursor-pointer group">
-                                                    <div className="p-1.5 rounded-lg bg-gradient-to-br from-gray-500/10 to-gray-600/10 group-hover:from-gray-500/20 group-hover:to-gray-600/20 transition-all mr-2">
-                                                        <Settings className="h-4 w-4" />
-                                                    </div>
-                                                    Settings
-                                                </Link>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem asChild>
-                                                <Link href="/messages" className="cursor-pointer group">
-                                                    <div className="p-1.5 rounded-lg bg-gradient-to-br from-green-500/10 to-teal-500/10 group-hover:from-green-500/20 group-hover:to-teal-500/20 transition-all mr-2">
-                                                        <MessageSquare className="h-4 w-4" />
-                                                    </div>
-                                                    Messages
-                                                    <span className="ml-auto text-xs bg-gradient-to-r from-primary/20 to-secondary/20 text-primary px-2 py-0.5 rounded-full font-semibold">3</span>
-                                                </Link>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem onClick={() => logout()} className="cursor-pointer text-red-600 group">
-                                                <div className="p-1.5 rounded-lg bg-red-500/10 group-hover:bg-red-500/20 transition-all mr-2">
-                                                    <LogOut className="h-4 w-4" />
-                                                </div>
-                                                Sign out
-                                            </DropdownMenuItem>
-                                        </motion.div>
-                                        </GlassMorphism>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            ) : (
-                                <ContextAwareHover context="action" intensity="dramatic">
-                                    <Link href="/auth/signin">
-                                        <RainbowButton className="hidden sm:flex shadow-lg hover:shadow-2xl transition-all duration-300">
-                                            <Sparkles className="mr-2 h-4 w-4" />
-                                            Sign In
-                                        </RainbowButton>
-                                    </Link>
-                                </ContextAwareHover>
-                            )}
-
-                            {/* Mobile Menu Toggle with intelligent hover */}
-                            <ContextAwareHover context="interactive" intensity="medium" className="lg:hidden">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="rounded-full hover:bg-gradient-to-r hover:from-primary/10 hover:to-secondary/10"
-                                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                >
-                                <AnimatePresence mode="wait">
-                                    {isMobileMenuOpen ? (
-                                        <motion.div
-                                            key="close"
-                                            initial={{ rotate: -90, opacity: 0 }}
-                                            animate={{ rotate: 0, opacity: 1 }}
-                                            exit={{ rotate: 90, opacity: 0 }}
-                                        >
-                                            <X className="h-6 w-6" />
-                                        </motion.div>
-                                    ) : (
-                                        <motion.div
-                                            key="menu"
-                                            initial={{ rotate: 90, opacity: 0 }}
-                                            animate={{ rotate: 0, opacity: 1 }}
-                                            exit={{ rotate: -90, opacity: 0 }}
-                                        >
-                                            <Menu className="h-6 w-6" />
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                                <span className="sr-only">Toggle menu</span>
-                                </Button>
-                            </ContextAwareHover>
-                        </div>
+  return (
+    <>
+      {/* Custom cursor */}
+      <CustomCursor />
+      
+      {/* Magic wand cursor trail */}
+      {showMagicTrail && <MagicWandTrail />}
+      
+      {/* Aurora background effect */}
+      <div className="fixed inset-0 -z-20 overflow-hidden pointer-events-none">
+        <AuroraBackground showRadialGradient={true} />
+        <GlowingStars starCount={40} className="opacity-60" />
+      </div>
+      
+      {/* Advanced particles system */}
+      <div className="fixed inset-0 -z-10 pointer-events-none">
+        <AdvancedParticles 
+          count={30}
+          colors={['#dc2626', '#eab308', '#2563eb', '#dc2626', '#2563eb']}
+          enableInteraction={true}
+          mouseInfluence={200}
+          emissionRate={0.05}
+          particleLife={12000}
+        />
+      </div>
+      
+      <motion.header 
+        ref={headerRef}
+        style={{ 
+          opacity: headerOpacity, 
+          y: parallaxY,
+          backdropFilter: `blur(${headerBlur}px)`
+        }}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+          isScrolled 
+            ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50' 
+            : 'bg-transparent'
+        }`}
+      >
+        <BorderBeam 
+          size={60}
+          duration={8}
+          colorFrom="#dc2626"
+          colorTo="#2563eb"
+          className="opacity-50"
+        />
+        
+        <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-20 items-center justify-between">
+            {/* Logo with floating castle and magical effects */}
+            <div className="flex items-center space-x-4">
+              <Link href="/" className="group relative">
+                <IntelligentHover
+                  magnetStrength={0.3}
+                  hoverDepth={20}
+                  enableRipple={true}
+                  enableGradientFollow={true}
+                >
+                  <motion.div
+                    style={{ scale: logoScale }}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center space-x-3"
+                  >
+                    <div className="relative">
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-red-600 via-yellow-500 to-blue-600 rounded-xl blur-lg opacity-75"
+                        animate={{
+                          opacity: [0.5, 0.9, 0.5],
+                          scale: [1, 1.2, 1],
+                          rotate: [0, 5, -5, 0]
+                        }}
+                        transition={{
+                          duration: 4,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      />
+                      <MagicCard 
+                        className="relative bg-gradient-to-r from-red-600 via-yellow-500 to-blue-600 text-white rounded-xl p-3 group-hover:shadow-2xl transition-all duration-300"
+                        gradientColor="#ffffff"
+                        gradientOpacity={0.2}
+                      >
+                        <FloatingCastle size={28} className="text-white" />
+                      </MagicCard>
+                      
+                      {/* Orbiting sparkles */}
+                      {Array.from({ length: 3 }, (_, i) => (
+                        <motion.div
+                          key={i}
+                          className="absolute"
+                          style={{
+                            left: '50%',
+                            top: '50%',
+                            transformOrigin: '0 0'
+                          }}
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 8 + i * 2,
+                            repeat: Infinity,
+                            ease: "linear"
+                          }}
+                        >
+                          <Star 
+                            className="w-2 h-2 text-yellow-400 fill-current"
+                            style={{
+                              transform: `translate(${25 + i * 8}px, -1px)`
+                            }}
+                          />
+                        </motion.div>
+                      ))}
                     </div>
-                </div>
+                    
+                    <div className="hidden sm:block">
+                      <motion.h1 
+                        className="text-2xl cabin-sketch-bold"
+                        whileHover={{ scale: 1.05 }}
+                      >
+                        <div className="relative">
+                          <TypingAnimation
+                            text="WaltWise"
+                            duration={150}
+                            className="bg-gradient-to-r from-red-600 via-yellow-500 to-blue-600 bg-clip-text text-transparent"
+                          />
+                        </div>
+                      </motion.h1>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 font-mono h-5">
+                        <TypingAnimation
+                          text="Plan Magical Moments ✨"
+                          duration={100}
+                          className="text-xs"
+                        />
+                      </div>
+                    </div>
+                  </motion.div>
+                </IntelligentHover>
+              </Link>
+            </div>
 
-                {/* Animated Border with gradient */}
-                <BorderBeam
-                    size={300}
-                    duration={15}
-                    delay={9}
-                    className="opacity-30"
-                />
-            </motion.header>
+            {/* Desktop Navigation with enhanced dropdown */}
+            <div className="hidden lg:flex lg:items-center lg:space-x-6">
+              {/* Explore Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    className="group relative px-4 py-2 text-sm font-medium hover:bg-transparent"
+                    onMouseEnter={() => setHoveredItem('explore')}
+                    onMouseLeave={() => setHoveredItem(null)}
+                  >
+                    <span className="flex items-center space-x-1">
+                      <Sparkles className="h-4 w-4" />
+                      <span>Explore</span>
+                      <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
+                    </span>
+                    <motion.span 
+                      className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-red-600 to-blue-600"
+                      initial={{ width: 0 }}
+                      animate={{ width: hoveredItem === 'explore' ? '100%' : 0 }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-96 p-2" align="start">
+                  <div className="grid grid-cols-2 gap-1">
+                    {navigationItems.map((item, _index) => (
+                      <DropdownMenuItem key={item.name} asChild>
+                        <Link
+                          href={item.href}
+                          className="group flex items-start space-x-3 rounded-xl p-3 transition-all duration-200 hover:bg-gradient-to-r hover:from-red-50/50 hover:to-blue-50/50 dark:hover:from-red-900/20 dark:hover:to-blue-900/20"
+                        >
+                          <motion.div 
+                            className={`mt-0.5 rounded-lg p-2 bg-gradient-to-r ${item.gradient} text-white`}
+                            whileHover={{ rotate: [0, -10, 10, 0], scale: 1.1 }}
+                            transition={{ duration: 0.5 }}
+                          >
+                            <item.icon className="h-4 w-4" />
+                          </motion.div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              {item.name}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                              {item.description}
+                            </p>
+                          </div>
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-            {/* Enhanced Mobile Menu */}
-            <AnimatePresence>
-                {isMobileMenuOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3, type: "spring" }}
-                        className="fixed inset-x-0 top-20 z-40 lg:hidden"
+              {/* Quick Access Links */}
+              {quickAccessItems.map((item, _index) => (
+                <motion.div
+                  key={item.name}
+                  animate={{ y: [0, -2, 0] }}
+                  transition={{ 
+                    duration: 3, 
+                    repeat: Infinity, 
+                    ease: "easeInOut",
+                    delay: _index * 0.5 
+                  }}
+                >
+                  <IntelligentHover magnetStrength={0.1} hoverDepth={8}>
+                    <Link 
+                      href={item.href} 
+                      className="relative group px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                      onMouseEnter={() => setHoveredItem(item.name)}
+                      onMouseLeave={() => setHoveredItem(null)}
                     >
-                        <GlassMorphism className="bg-gradient-to-b from-background/98 to-background/95 backdrop-blur-2xl border-b border-border/30 shadow-2xl" enableTilt={false}>
-                            <nav className="container mx-auto px-4 py-6">
-                                <div className="space-y-6">
-                                    {navigationItems.map((item, index) => (
-                                        <motion.div
-                                            key={item.title}
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: index * 0.1 }}
-                                            className="space-y-3"
-                                        >
-                                            <Link
-                                                href={item.href}
-                                                className="flex items-center space-x-3 text-lg font-semibold hover:text-primary transition-colors group"
-                                                onClick={() => setIsMobileMenuOpen(false)}
-                                            >
-                                                <div className={cn("p-2 rounded-lg bg-gradient-to-br", item.gradient, "group-hover:shadow-lg transition-all duration-300")}>
-                                                    <item.icon className="h-5 w-5 text-white" />
-                                                </div>
-                                                <span>{item.title}</span>
-                                                <ChevronRight className="h-5 w-5 ml-auto opacity-50 group-hover:opacity-100 transition-opacity" />
-                                            </Link>
-                                            <div className="ml-12 space-y-2">
-                                                {item.items?.map((subItem) => (
-                                                    <Link
-                                                        key={subItem.title}
-                                                        href={subItem.href}
-                                                        className="block py-2 text-sm text-muted-foreground hover:text-primary transition-colors group"
-                                                        onClick={() => setIsMobileMenuOpen(false)}
-                                                    >
-                                                        <div className="flex items-center justify-between">
-                                                            <span>{subItem.title}</span>
-                                                            {subItem.badge && (
-                                                                <span className="text-xs px-2 py-0.5 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 text-primary">
-                                                                    {subItem.badge}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                    {!user && (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: navigationItems.length * 0.1 }}
-                                        >
-                                            <Link
-                                                href="/auth/signin"
-                                                className="block"
-                                                onClick={() => setIsMobileMenuOpen(false)}
-                                            >
-                                                <Button className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg">
-                                                    <Sparkles className="mr-2 h-4 w-4" />
-                                                    Sign In to the Magic
-                                                </Button>
-                                            </Link>
-                                        </motion.div>
-                                    )}
-                                </div>
-                            </nav>
-                        </GlassMorphism>
+                      <span className="flex items-center space-x-1">
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.name}</span>
+                      </span>
+                      <motion.span 
+                        className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r ${item.color}`}
+                        initial={{ width: 0 }}
+                        animate={{ width: hoveredItem === item.name ? '100%' : 0 }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    </Link>
+                  </IntelligentHover>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Right Side Actions */}
+            <div className="flex items-center space-x-3">
+              {/* Search Button */}
+              <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+                <DialogTrigger asChild>
+                  <IntelligentHover magnetStrength={0.1} hoverDepth={8}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="relative group"
+                      aria-label="Search"
+                    >
+                      <Search className="h-5 w-5" />
+                      <motion.div
+                        className="absolute inset-0 rounded-lg bg-gradient-to-r from-purple-600 to-pink-500 opacity-0 group-hover:opacity-20 transition-opacity"
+                        whileHover={{ scale: 1.1 }}
+                      />
+                    </Button>
+                  </IntelligentHover>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center space-x-2">
+                      <Search className="h-5 w-5 text-red-600" />
+                      <span>Search WaltWise</span>
+                    </DialogTitle>
+                    <DialogDescription>
+                      Find pages, features, and magical content
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <Input
+                      ref={searchInputRef}
+                      placeholder="Type to search... (⌘/)"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="text-lg"
+                    />
+                    <div className="max-h-64 overflow-y-auto space-y-1">
+                      {filteredNavItems.map((item) => (
+                        <Button
+                          key={item.name}
+                          variant="ghost"
+                          className="w-full justify-start text-left h-auto p-3"
+                          onClick={() => handleSearchSelect(item.href)}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className={`p-2 rounded-lg bg-gradient-to-r ${item.gradient} text-white`}>
+                              <item.icon className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{item.name}</p>
+                              <p className="text-sm text-gray-500">{item.description}</p>
+                            </div>
+                          </div>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Voice Recognition Toggle */}
+              <IntelligentHover magnetStrength={0.1} hoverDepth={10}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleVoiceRecognition}
+                  className={`relative group transition-all ${
+                    voiceEnabled 
+                      ? 'bg-gradient-to-r from-red-600 to-blue-600 text-white hover:from-red-700 hover:to-blue-700' 
+                      : ''
+                  }`}
+                  aria-label="Toggle voice recognition"
+                >
+                  <AnimatePresence mode="wait">
+                    {voiceEnabled ? (
+                      <motion.div
+                        key="mic-on"
+                        initial={{ scale: 0, rotate: 180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        exit={{ scale: 0, rotate: -180 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Mic className="h-5 w-5" />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="mic-off"
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        exit={{ scale: 0, rotate: 180 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <MicOff className="h-5 w-5" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  
+                  {voiceEnabled && (
+                    <motion.div
+                      className="absolute inset-0 rounded-lg"
+                      animate={{
+                        boxShadow: [
+                          '0 0 0 0 rgba(220, 38, 38, 0.7)',
+                          '0 0 0 10px rgba(220, 38, 38, 0)',
+                          '0 0 0 0 rgba(220, 38, 38, 0)',
+                        ]
+                      }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                      }}
+                    />
+                  )}
+                </Button>
+              </IntelligentHover>
+
+              {/* Magic Mode Toggle */}
+              <IntelligentHover magnetStrength={0.15} hoverDepth={12}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowMagicTrail(!showMagicTrail)}
+                  className="relative group sparkle-zone"
+                  aria-label="Toggle magic mode"
+                >
+                  <motion.div
+                    animate={{ rotate: showMagicTrail ? 360 : 0 }}
+                    transition={{ duration: 0.8 }}
+                  >
+                    <Wand2 className="h-5 w-5" />
+                  </motion.div>
+                  <motion.div
+                    className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100"
+                    style={{
+                      background: 'radial-gradient(circle, rgba(255, 215, 0, 0.3), transparent)'
+                    }}
+                  />
+                </Button>
+              </IntelligentHover>
+
+              {/* Theme Toggle with enhanced animation */}
+              <IntelligentHover magnetStrength={0.15} hoverDepth={12}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                  className="relative group overflow-hidden"
+                  aria-label="Toggle theme"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-blue-600 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity blur-xl" />
+                  <div className="relative">
+                    <AnimatePresence mode="wait">
+                      {theme === 'dark' ? (
+                        <motion.div
+                          key="moon"
+                          initial={{ rotate: -90, opacity: 0, scale: 0 }}
+                          animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                          exit={{ rotate: 90, opacity: 0, scale: 0 }}
+                          transition={{ duration: 0.4, type: "spring" }}
+                        >
+                          <Moon className="h-5 w-5" />
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="sun"
+                          initial={{ rotate: 90, opacity: 0, scale: 0 }}
+                          animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                          exit={{ rotate: -90, opacity: 0, scale: 0 }}
+                          transition={{ duration: 0.4, type: "spring" }}
+                        >
+                          <Sun className="h-5 w-5" />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </Button>
+              </IntelligentHover>
+
+              {/* Notifications */}
+              <IntelligentHover magnetStrength={0.1} hoverDepth={8}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative group"
+                  aria-label="Notifications"
+                >
+                  <Bell className="h-5 w-5" />
+                  <motion.div
+                    className="absolute -top-1 -right-1 h-3 w-3 bg-gradient-to-r from-red-500 to-red-600 rounded-full"
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                </Button>
+              </IntelligentHover>
+
+              {/* Enhanced CTA Button */}
+              <div className="hidden lg:block">
+                <IntelligentHover magnetStrength={0.2} hoverDepth={15} enableRipple={true}>
+                  <RainbowButton className="relative group px-6 py-2.5 text-sm font-medium shadow-lg transition-all duration-300">
+                    <span className="relative z-10 flex items-center space-x-2">
+                      <Zap className="h-4 w-4" />
+                      <span>Get Started</span>
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </span>
+                  </RainbowButton>
+                </IntelligentHover>
+              </div>
+
+              {/* Enhanced Profile Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="relative h-10 w-10 rounded-full bg-gradient-to-r from-red-600 to-blue-600 p-0.5"
+                  >
+                    <motion.div 
+                      className="h-full w-full rounded-full bg-white dark:bg-gray-900 flex items-center justify-center"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <User className="h-5 w-5 text-gray-700 dark:text-gray-300" />
                     </motion.div>
-                )}
-            </AnimatePresence>
-        </>
-    )
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-64" align="end">
+                  <DropdownMenuLabel>
+                    <div className="flex items-center space-x-3">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-r from-red-600 to-blue-600 flex items-center justify-center">
+                        <User className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Disney Dreamer</p>
+                        <p className="text-sm text-gray-500">guest@waltwise.com</p>
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  
+                  {profileItems.map((item) => (
+                    <DropdownMenuItem key={item.name} asChild>
+                      <Link href={item.href} className="flex items-center space-x-3 cursor-pointer">
+                        <item.icon className="h-4 w-4" />
+                        <div>
+                          <p className="font-medium">{item.name}</p>
+                          <p className="text-xs text-gray-500">{item.description}</p>
+                        </div>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                  
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="flex items-center space-x-3 cursor-pointer text-red-600">
+                    <LogOut className="h-4 w-4" />
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Mobile menu button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label="Toggle mobile menu"
+              >
+                <AnimatePresence mode="wait">
+                  {mobileMenuOpen ? (
+                    <motion.div
+                      key="close"
+                      initial={{ rotate: -90, opacity: 0 }}
+                      animate={{ rotate: 0, opacity: 1 }}
+                      exit={{ rotate: 90, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <X className="h-6 w-6" />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="menu"
+                      initial={{ rotate: 90, opacity: 0 }}
+                      animate={{ rotate: 0, opacity: 1 }}
+                      exit={{ rotate: -90, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <MenuIcon className="h-6 w-6" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Button>
+            </div>
+          </div>
+        </nav>
+
+        {/* Enhanced Mobile menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="lg:hidden overflow-hidden border-t border-gray-200/50 dark:border-gray-800/50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl"
+            >
+              <div className="space-y-2 px-4 py-6">
+                {navigationItems.map((item, index) => (
+                  <motion.div
+                    key={item.name}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <Link
+                      href={item.href}
+                      className="flex items-center space-x-3 rounded-xl px-3 py-3 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-red-50 hover:to-blue-50 dark:hover:from-red-900/20 dark:hover:to-blue-900/20 transition-all"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <div className={`p-2 rounded-lg bg-gradient-to-r ${item.gradient} text-white`}>
+                        <item.icon className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{item.name}</p>
+                        <p className="text-xs text-gray-500">{item.description}</p>
+                      </div>
+                    </Link>
+                  </motion.div>
+                ))}
+                
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: navigationItems.length * 0.05 }}
+                  className="pt-4 border-t border-gray-200 dark:border-gray-800"
+                >
+                  <ShimmerButton
+                    className="w-full"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className="flex items-center justify-center space-x-2">
+                      <Zap className="h-5 w-5" />
+                      <span>Get Started</span>
+                    </span>
+                  </ShimmerButton>
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.header>
+
+      {/* Add enhanced custom styles */}
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+        
+        .sparkle-zone {
+          position: relative;
+        }
+        
+        .sparkle-zone::before {
+          content: '';
+          position: absolute;
+          top: -2px;
+          left: -2px;
+          right: -2px;
+          bottom: -2px;
+          background: linear-gradient(45deg, #dc2626, #eab308, #2563eb, #dc2626);
+          border-radius: 12px;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+          z-index: -1;
+          animation: sparkle-border 3s ease-in-out infinite;
+        }
+        
+        .sparkle-zone:hover::before {
+          opacity: 0.7;
+        }
+        
+        @keyframes sparkle-border {
+          0%, 100% { transform: rotate(0deg) scale(1); }
+          50% { transform: rotate(180deg) scale(1.1); }
+        }
+        
+        @keyframes magical-glow {
+          0%, 100% {
+            box-shadow: 0 0 5px rgba(220, 38, 38, 0.5),
+                        0 0 10px rgba(220, 38, 38, 0.3),
+                        0 0 15px rgba(220, 38, 38, 0.2);
+          }
+          50% {
+            box-shadow: 0 0 10px rgba(37, 99, 235, 0.6),
+                        0 0 20px rgba(37, 99, 235, 0.4),
+                        0 0 30px rgba(37, 99, 235, 0.3);
+          }
+        }
+        
+        .animate-magical-glow {
+          animation: magical-glow 2s ease-in-out infinite;
+        }
+      `}</style>
+    </>
+  )
 }

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next"
-import { Inter, Luckiest_Guy, Cabin_Sketch } from "next/font/google"
+import { Inter, Luckiest_Guy, Fredoka, Comfortaa, Pacifico, Bangers, Chewy } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import dynamic from "next/dynamic"
 import { Suspense } from "react"
 import { ScrollProgress } from "@/components/magicui/scroll-progress"
+import { PerformanceMonitor } from "@/components/shared/PerformanceMonitor"
 
 // Dynamic imports for performance
 const Header = dynamic(() => import("@/components/shared/Header"), {
@@ -26,6 +27,7 @@ const inter = Inter({
     display: "swap",
 })
 
+// Core font configurations - optimized for performance
 const luckiestGuy = Luckiest_Guy({
     weight: "400",
     subsets: ["latin"],
@@ -33,10 +35,38 @@ const luckiestGuy = Luckiest_Guy({
     display: "swap",
 })
 
-const cabinSketch = Cabin_Sketch({
-    weight: ["400", "700"],
+const fredoka = Fredoka({
+    weight: ["400", "500", "600"],
     subsets: ["latin"],
-    variable: "--font-cabin-sketch",
+    variable: "--font-fredoka",
+    display: "swap",
+})
+
+const bangers = Bangers({
+    weight: "400",
+    subsets: ["latin"],
+    variable: "--font-bangers",
+    display: "swap",
+})
+
+const chewy = Chewy({
+    weight: "400",
+    subsets: ["latin"],
+    variable: "--font-chewy",
+    display: "swap",
+})
+
+const comfortaa = Comfortaa({
+    weight: ["400", "500", "600"],
+    subsets: ["latin"],
+    variable: "--font-comfortaa",
+    display: "swap",
+})
+
+const pacifico = Pacifico({
+    weight: "400",
+    subsets: ["latin"],
+    variable: "--font-pacifico",
     display: "swap",
 })
 
@@ -108,19 +138,17 @@ export const metadata: Metadata = {
     icons: {
         icon: [
             { url: "/favicon.ico" },
-            { url: "/icon-16x16.png", sizes: "16x16", type: "image/png" },
-            { url: "/icon-32x32.png", sizes: "32x32", type: "image/png" },
-            { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
-            { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
+            { url: "/favicon.svg", type: "image/svg+xml" },
+            { url: "/icons/icon-192x192.svg", sizes: "192x192", type: "image/svg+xml" },
+            { url: "/icons/icon-512x512.svg", sizes: "512x512", type: "image/svg+xml" },
         ],
         apple: [
-            { url: "/apple-icon.png" },
-            { url: "/apple-icon-180x180.png", sizes: "180x180", type: "image/png" },
+            { url: "/icons/icon-192x192.svg", sizes: "192x192", type: "image/svg+xml" },
         ],
         other: [
             {
                 rel: "mask-icon",
-                url: "/safari-pinned-tab.svg",
+                url: "/favicon.svg",
             },
         ],
     },
@@ -177,7 +205,11 @@ export default function RootLayout({
             className={cn(
                 inter.variable,
                 luckiestGuy.variable,
-                cabinSketch.variable,
+                fredoka.variable,
+                bangers.variable,
+                chewy.variable,
+                comfortaa.variable,
+                pacifico.variable,
                 "scroll-smooth"
             )}
         >
@@ -244,6 +276,9 @@ export default function RootLayout({
                             }}
                         />
 
+                        {/* Performance Monitoring */}
+                        <PerformanceMonitor />
+
                         {/* Accessibility Skip Links */}
                         <a
                             href="#main-content"
@@ -254,28 +289,7 @@ export default function RootLayout({
                     </AuthProvider>
                 </ThemeProvider>
 
-                {/* Performance Monitoring Script */}
-                <script
-                    dangerouslySetInnerHTML={{
-                        __html: `
-                            if (typeof window !== 'undefined' && 'performance' in window) {
-                                window.addEventListener('load', () => {
-                                    const perfData = window.performance.timing;
-                                    const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart;
-                                    console.log('Page Load Time:', pageLoadTime, 'ms');
 
-                                    // Send to analytics if needed
-                                    if (window.gtag) {
-                                        window.gtag('event', 'page_load_time', {
-                                            value: pageLoadTime,
-                                            page_location: window.location.href
-                                        });
-                                    }
-                                });
-                            }
-                        `,
-                    }}
-                />
             </body>
         </html>
     )

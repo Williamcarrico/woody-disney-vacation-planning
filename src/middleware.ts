@@ -314,20 +314,21 @@ function checkSessionRotation(request: NextRequest): { isValid: boolean, needsRo
  */
 const generateCsp = () => {
     const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
-    // Create CSP string
+    // Create CSP string - improved security with reduced unsafe directives
     const csp = [
         "default-src 'self'",
-        `script-src 'self' 'nonce-${nonce}' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://www.googletagmanager.com https://cdn.jsdelivr.net https://firebasestorage.googleapis.com`,
-        `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://maps.googleapis.com`,
-        `img-src 'self' data: https://maps.gstatic.com https://*.googleapis.com https://*.ggpht.com *.google.com *.googleusercontent.com`,
+        `script-src 'self' 'nonce-${nonce}' https://maps.googleapis.com https://www.googletagmanager.com https://cdn.jsdelivr.net https://firebasestorage.googleapis.com`,
+        `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com https://maps.googleapis.com`,
+        `img-src 'self' data: blob: https://maps.gstatic.com https://*.googleapis.com https://*.ggpht.com *.google.com *.googleusercontent.com`,
         `font-src 'self' https://fonts.gstatic.com`,
         `frame-src 'self' *.google.com`,
-        `connect-src 'self' https://maps.googleapis.com https://*.googleapis.com *.google.com https://*.google-analytics.com https://www.googletagmanager.com https://*.gstatic.com data: blob: https://firebasestorage.googleapis.com`,
+        `connect-src 'self' https://maps.googleapis.com https://*.googleapis.com *.google.com https://*.google-analytics.com https://www.googletagmanager.com https://*.gstatic.com data: blob: https://firebasestorage.googleapis.com https://api.tomorrow.io`,
         `worker-src 'self' blob:`,
         `form-action 'self'`,
         `frame-ancestors 'self'`,
-        `base-uri 'self'`
-    ].join(';')
+        `base-uri 'self'`,
+        `media-src 'self' data: blob:`
+    ].join('; ')
 
     return { csp, nonce }
 }
@@ -470,14 +471,22 @@ export async function middleware(request: NextRequest) {
     const response = NextResponse.next()
     const { pathname } = request.nextUrl
 
-    // Generate CSP and nonce
-    const { csp, nonce } = generateCsp()
+    // Skip CSP for server actions (they use special internal requests)
+    const isServerAction = request.headers.get('content-type')?.includes('multipart/form-data') ||
+                          request.headers.get('next-action') ||
+                          pathname.startsWith('/_next/static/chunks/') ||
+                          (request.method === 'POST' && request.headers.get('next-router-state-tree'))
 
-    // Set CSP header
-    // Note: 'unsafe-inline' for styles is often needed but try to restrict if possible
-    // 'unsafe-eval' for scripts is also a security risk, review its necessity
-    response.headers.set('Content-Security-Policy', csp)
-    response.headers.set('X-Nonce', nonce) // Pass nonce to be used in _document.tsx or page components
+    if (!isServerAction) {
+        // Generate CSP and nonce
+        const { csp, nonce } = generateCsp()
+
+        // Set CSP header
+        // Note: 'unsafe-inline' for styles is often needed but try to restrict if possible
+        // 'unsafe-eval' for scripts is also a security risk, review its necessity
+        response.headers.set('Content-Security-Policy', csp)
+        response.headers.set('X-Nonce', nonce) // Pass nonce to be used in _document.tsx or page components
+    }
 
     // Skip token rotation for API routes that would cause infinite loops
     if (pathname.startsWith('/api/auth/session')) {

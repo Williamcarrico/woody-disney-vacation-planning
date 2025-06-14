@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { parksService } from '@/lib/firebase/parks-service'
 
 interface RouteParams {
-    params: {
+    params: Promise<{
         parkId: string
-    }
+    }>
 }
 
 /**
@@ -13,7 +13,7 @@ interface RouteParams {
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
     try {
-        const { parkId } = params
+        const { parkId } = await params
 
         if (!parkId) {
             return NextResponse.json(

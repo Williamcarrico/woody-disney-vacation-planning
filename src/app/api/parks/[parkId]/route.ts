@@ -1,12 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import * as themeParksAPI from '@/lib/services/themeparks-api';
 import { parksService } from '@/lib/firebase/parks-service';
+import { createValidationMiddleware, CommonSchemas } from '@/lib/api/validation';
+import { createNotFoundError } from '@/lib/api/error-handler';
+import { successResponse } from '@/lib/api/response';
+import { z } from 'zod';
 
 interface RouteParams {
-    params: {
+    params: Promise<{
         parkId: string;
-    };
+    }>;
 }
+
+// Validation schemas
+const ParksQuerySchema = z.object({
+    entity: z.enum(['details', 'attractions', 'live', 'schedule', 'showtimes']).optional().default('details'),
+    year: CommonSchemas.dateTime.year,
+    month: CommonSchemas.dateTime.month
+});
+
+const ParkIdSchema = z.object({
+    parkId: CommonSchemas.disney.parkId
+});
+
+// Create validation middleware
+const validateParkRequest = createValidationMiddleware({
+    pathParams: ParkIdSchema,
+    queryParams: ParksQuerySchema
+});
 
 /**
  * GET /api/parks/[parkId]
@@ -18,117 +39,27 @@ interface RouteParams {
  * - year: YYYY (for schedule)
  * - month: MM (for schedule)
  */
-export async function GET(request: NextRequest, { params }: RouteParams) {
-    try {
-        const { parkId } = params;
-        const searchParams = request.nextUrl.searchParams;
-        const entity = searchParams.get('entity') || 'details';
+export const GET = validateParkRequest(async (request: NextRequest, { params, query }) => {
+    // Handle different entity types
+    switch (query!.entity) {
+        case 'live':
+            const liveData = await themeParksAPI.getParkLiveDataBySlug(params!.parkId);
+            return successResponse(liveData);
 
-        if (!parkId) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: 'Park ID is required'
-                },
-                { status: 400 }
-            );
-        }
+        case 'attractions':
+            const attractions = await themeParksAPI.getParkAttractionsBySlug(params!.parkId);
+            return successResponse(attractions);
 
-        // Handle different entity types
-        switch (entity) {
-            case 'live':
-                try {
-                    const liveData = await themeParksAPI.getParkLiveDataBySlug(parkId);
-                    return NextResponse.json({
-                        success: true,
-                        data: liveData
-                    });
-                } catch (error) {
-                    console.error('Error fetching live data:', error);
-                    return NextResponse.json(
-                        {
-                            success: false,
-                            error: 'Failed to fetch live data'
-                        },
-                        { status: 500 }
-                    );
-                }
+        case 'schedule':
+            const schedule = await themeParksAPI.getParkScheduleBySlug(params!.parkId, query!.year, query!.month);
+            return successResponse(schedule);
 
-            case 'attractions':
-                try {
-                    const attractions = await themeParksAPI.getParkAttractionsBySlug(parkId);
-                    return NextResponse.json({
-                        success: true,
-                        data: attractions
-                    });
-                } catch (error) {
-                    console.error('Error fetching attractions:', error);
-                    return NextResponse.json(
-                        {
-                            success: false,
-                            error: 'Failed to fetch attractions'
-                        },
-                        { status: 500 }
-                    );
-                }
-
-            case 'schedule':
-                try {
-                    const year = searchParams.get('year') ? parseInt(searchParams.get('year')!) : undefined;
-                    const month = searchParams.get('month') ? parseInt(searchParams.get('month')!) : undefined;
-                    const schedule = await themeParksAPI.getParkScheduleBySlug(parkId, year, month);
-                    return NextResponse.json({
-                        success: true,
-                        data: schedule
-                    });
-                } catch (error) {
-                    console.error('Error fetching schedule:', error);
-                    return NextResponse.json(
-                        {
-                            success: false,
-                            error: 'Failed to fetch schedule'
-                        },
-                        { status: 500 }
-                    );
-                }
-
-            case 'details':
-            default:
-                try {
-                    const park = await parksService.getParkById(parkId);
-                    if (!park) {
-                        return NextResponse.json(
-                            {
-                                success: false,
-                                error: 'Park not found'
-                            },
-                            { status: 404 }
-                        );
-                    }
-
-                    return NextResponse.json({
-                        success: true,
-                        data: park
-                    });
-                } catch (error) {
-                    console.error('Error fetching park details:', error);
-                    return NextResponse.json(
-                        {
-                            success: false,
-                            error: 'Failed to fetch park details'
-                        },
-                        { status: 500 }
-                    );
-                }
-        }
-    } catch (error) {
-        console.error('Error in park API:', error);
-        return NextResponse.json(
-            {
-                success: false,
-                error: 'Internal server error'
-            },
-            { status: 500 }
-        );
+        case 'details':
+        default:
+            const park = await parksService.getParkById(params!.parkId);
+            if (!park) {
+                throw createNotFoundError('Park');
+            }
+            return successResponse(park);
     }
-}
+})

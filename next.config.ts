@@ -24,12 +24,10 @@ const nextConfig: NextConfig = {
     'google-logging-utils'
   ],
 
-  // Allow builds to complete even with TypeScript errors
+  // TypeScript configuration - strict mode enabled
   typescript: {
-    // !! WARNING !!
-    // This allows production builds to complete even with TypeScript errors
-    // Only use this temporarily until all type issues are fixed
-    ignoreBuildErrors: true,
+    // Enable strict type checking for better code quality
+    ignoreBuildErrors: false,
   },
 
   experimental: {
@@ -87,13 +85,38 @@ const nextConfig: NextConfig = {
       ];
     }
 
-    // Configure Socket.io for client-side
+    // Configure Socket.io and Three.js for client-side
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
         net: false,
         tls: false,
+      };
+    }
+
+    // Three.js specific optimizations
+    config.module.rules.push({
+      test: /\.(glsl|vs|fs|vert|frag)$/,
+      use: ['raw-loader', 'glslify-loader'],
+    });
+
+    // Optimize Three.js bundle splitting
+    if (!isServer) {
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          ...config.optimization.splitChunks,
+          cacheGroups: {
+            ...config.optimization.splitChunks?.cacheGroups,
+            three: {
+              test: /[\\/]node_modules[\\/](three|@react-three)[\\/]/,
+              name: 'three',
+              chunks: 'all',
+              priority: 10,
+            },
+          },
+        },
       };
     }
 

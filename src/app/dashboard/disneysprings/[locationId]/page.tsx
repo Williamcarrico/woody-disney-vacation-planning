@@ -12,13 +12,21 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { MapPin, Clock, Phone, Tag, ArrowLeft, Share2, Heart, Calendar, Star, Utensils, ShoppingBag, Ticket, Users, Award, Car } from "lucide-react"
 
 interface DisneySpringsDetailPageProps {
-    params: {
+    params: Promise<{
         locationId: string
-    }
+    }>
 }
 
 export default function DisneySpringsDetailPage({ params }: DisneySpringsDetailPageProps) {
-    const { location, loading, error } = useDisneySpringsLocation(params.locationId)
+    const [locationId, setLocationId] = useState<string | null>(null)
+
+    useEffect(() => {
+        params.then((resolvedParams) => {
+            setLocationId(resolvedParams.locationId)
+        })
+    }, [params])
+
+    const { location, loading, error } = useDisneySpringsLocation(locationId || '')
 
     // Loading state
     if (loading) {

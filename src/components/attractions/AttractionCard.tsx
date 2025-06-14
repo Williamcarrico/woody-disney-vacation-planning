@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, memo, useMemo, useCallback } from "react"
 import Image from "next/image"
 import { Attraction } from "@/types/attraction"
 import { Badge } from "@/components/ui/badge"
@@ -20,7 +20,7 @@ interface AttractionCardProps {
     readonly className?: string
 }
 
-export default function AttractionCard({
+const AttractionCard = memo(function AttractionCard({
     attraction,
     isOperating = true,
     waitTime,
@@ -31,8 +31,8 @@ export default function AttractionCard({
 }: AttractionCardProps) {
     const [expanded, setExpanded] = useState(showDetails)
 
-    // Format human-readable ride categories
-    const formatRideCategories = () => {
+    // Memoize expensive calculations
+    const rideCategories = useMemo(() => {
         if (!attraction.rideCategory || attraction.rideCategory.length === 0) return null
 
         // Only show at most 2 categories in the card
@@ -52,16 +52,22 @@ export default function AttractionCard({
                 )}
             </div>
         )
-    }
+    }, [attraction.rideCategory])
 
-    // Function to display wait time with appropriate styling
-    const getWaitTimeDisplay = () => {
+    // Memoize wait time color class
+    const waitTimeColorClass = useMemo(() => {
+        if (!waitTime) return ""
+        if (waitTime <= 10) return "text-green-600 dark:text-green-400"
+        if (waitTime <= 30) return "text-blue-600 dark:text-blue-400"
+        if (waitTime <= 60) return "text-amber-600 dark:text-amber-400"
+        return "text-red-600 dark:text-red-400"
+    }, [waitTime])
+
+    // Memoize wait time display
+    const waitTimeDisplay = useMemo(() => {
         if (!isOperating || waitTime === undefined) return null
 
-        const waitClass = cn(
-            "font-medium",
-            getWaitTimeColorClass(waitTime)
-        )
+        const waitClass = cn("font-medium", waitTimeColorClass)
 
         return (
             <div className="flex flex-col items-end">
@@ -71,18 +77,10 @@ export default function AttractionCard({
                 </span>
             </div>
         )
-    }
+    }, [isOperating, waitTime, waitTimeColorClass])
 
-    // Get color class based on wait time
-    const getWaitTimeColorClass = (time: number): string => {
-        if (time <= 10) return "text-green-600 dark:text-green-400"
-        if (time <= 30) return "text-blue-600 dark:text-blue-400"
-        if (time <= 60) return "text-amber-600 dark:text-amber-400"
-        return "text-red-600 dark:text-red-400"
-    }
-
-    // Get the status badge
-    const getStatusBadge = () => {
+    // Memoize status badge
+    const statusBadge = useMemo(() => {
         if (isOperating) {
             return (
                 <Badge variant="outline" className="text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
@@ -96,20 +94,20 @@ export default function AttractionCard({
                 </Badge>
             )
         }
-    }
+    }, [isOperating])
 
-    // Height requirement display
-    const getHeightRequirement = () => {
+    // Memoize height requirement display
+    const heightRequirement = useMemo(() => {
         if (!attraction.heightRequirement) return null
         return (
             <Badge variant="outline" className="text-xs">
                 Height: {attraction.heightRequirement.minHeight || `${attraction.heightRequirement.min} ${attraction.heightRequirement.unit}`}
             </Badge>
         )
-    }
+    }, [attraction.heightRequirement])
 
-    // Wheelchair accessibility display
-    const getAccessibilityBadge = () => {
+    // Memoize accessibility badge
+    const accessibilityBadge = useMemo(() => {
         const { wheelchairAccessible } = attraction.accessibilityInfo
 
         return (
@@ -118,10 +116,10 @@ export default function AttractionCard({
                 {wheelchairAccessible.split(' ')[0]}
             </Badge>
         )
-    }
+    }, [attraction.accessibilityInfo.wheelchairAccessible])
 
-    // Duration display
-    const getDurationBadge = () => {
+    // Memoize duration badge
+    const durationBadge = useMemo(() => {
         if (!attraction.duration) return null
 
         return (
@@ -130,7 +128,20 @@ export default function AttractionCard({
                 {attraction.duration} min
             </Badge>
         )
-    }
+    }, [attraction.duration])
+
+    // Memoize callback functions to prevent unnecessary re-renders
+    const handleExpandToggle = useCallback(() => {
+        setExpanded(!expanded)
+    }, [expanded])
+
+    const handleSelect = useCallback(() => {
+        onSelect?.()
+    }, [onSelect])
+
+    const handleAddToItinerary = useCallback(() => {
+        onAddToItinerary?.()
+    }, [onAddToItinerary])
 
     return (
         <Card
@@ -159,12 +170,12 @@ export default function AttractionCard({
                     <div className="space-y-1">
                         <CardTitle className="text-lg line-clamp-1 pr-2">{attraction.name}</CardTitle>
                         <div className="flex flex-wrap gap-2 mt-1">
-                            {getStatusBadge()}
-                            {getHeightRequirement()}
-                            {getAccessibilityBadge()}
+                            {statusBadge}
+                            {heightRequirement}
+                            {accessibilityBadge}
                         </div>
                     </div>
-                    {isOperating && getWaitTimeDisplay()}
+                    {isOperating && waitTimeDisplay}
                 </div>
             </CardHeader>
 
@@ -174,7 +185,7 @@ export default function AttractionCard({
                         {attraction.shortDescription || attraction.description}
                     </div>
 
-                    {formatRideCategories()}
+                    {rideCategories}
 
                     <div className="flex flex-wrap gap-1 mt-3">
                         {attraction.tags.slice(0, 4).map(tag => (
@@ -203,7 +214,7 @@ export default function AttractionCard({
                         </div>
                     )}
 
-                    {getDurationBadge()}
+                    {durationBadge}
                 </CardContent>
             )}
 
@@ -211,7 +222,7 @@ export default function AttractionCard({
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setExpanded(!expanded)}
+                    onClick={handleExpandToggle}
                     className="text-xs"
                 >
                     {expanded ? (
@@ -234,7 +245,7 @@ export default function AttractionCard({
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={onSelect}
+                                    onClick={handleSelect}
                                 >
                                     <Info className="h-4 w-4" />
                                 </Button>
@@ -251,7 +262,7 @@ export default function AttractionCard({
                                 <Button
                                     variant="default"
                                     size="sm"
-                                    onClick={onAddToItinerary}
+                                    onClick={handleAddToItinerary}
                                     disabled={!isOperating}
                                 >
                                     <Plus className="h-4 w-4 mr-1" />
@@ -267,4 +278,15 @@ export default function AttractionCard({
             </CardFooter>
         </Card>
     )
-}
+}, (prevProps, nextProps) => {
+    // Custom comparison for optimal re-rendering
+    return (
+        prevProps.attraction.id === nextProps.attraction.id &&
+        prevProps.waitTime === nextProps.waitTime &&
+        prevProps.isOperating === nextProps.isOperating &&
+        prevProps.showDetails === nextProps.showDetails &&
+        prevProps.className === nextProps.className
+    )
+})
+
+export default AttractionCard

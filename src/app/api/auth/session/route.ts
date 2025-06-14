@@ -1,105 +1,91 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSessionCookie, revokeSessionCookie, rotateSessionToken } from '@/lib/firebase/auth-session-server'
+import { withErrorHandler, createValidationError, APIError } from '@/lib/api/error-handler'
+import { successResponse } from '@/lib/api/response'
+import { z } from 'zod'
+
+// Validation schemas
+const CreateSessionSchema = z.object({
+    idToken: z.string().min(1, 'ID token is required'),
+    rememberMe: z.boolean().optional().default(false)
+})
 
 // Create a session (after successful login)
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandler(async (request: NextRequest) => {
+    console.log('Session API route called')
+    
+    let requestBody
     try {
-        console.log('Session API route called');
-        const { idToken, rememberMe } = await request.json() as { idToken?: string; rememberMe?: boolean }
-
-        if (!idToken) {
-            console.error('idToken missing in request');
-            return NextResponse.json(
-                { error: 'idToken is required' },
-                { status: 400 }
-            )
-        }
-
-        console.log('Creating session cookie with Firebase Admin');
-        const result = await createSessionCookie(idToken, rememberMe)
-
-        if ('error' in result) {
-            console.error('Error from createSessionCookie:', result.error);
-            return NextResponse.json(
-                { error: result.error },
-                { status: 401 }
-            )
-        }
-
-        console.log('Session created successfully');
-        return NextResponse.json({ success: true })
+        requestBody = await request.json()
     } catch (error) {
-        console.error('Session creation error details:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error('Session creation error:', errorMessage);
-        return NextResponse.json(
-            { error: `Internal server error: ${errorMessage}` },
-            { status: 500 }
-        )
+        throw createValidationError('Invalid JSON in request body')
     }
-}
+
+    const validatedData = CreateSessionSchema.parse(requestBody)
+    const { idToken, rememberMe } = validatedData
+
+    console.log('Creating session cookie with Firebase Admin')
+    const result = await createSessionCookie(idToken, rememberMe)
+
+    if ('error' in result) {
+        console.error('Error from createSessionCookie:', result.error)
+        throw new APIError(result.error, 'AUTHENTICATION_FAILED', 401)
+    }
+
+    console.log('Session created successfully')
+    return successResponse({ success: true })
+})
+
+const RotateTokenSchema = z.object({
+    uid: z.string().min(1, 'User ID is required'),
+    rememberMe: z.boolean().optional().default(false)
+})
 
 // Rotate a session token (for enhanced security)
-export async function PATCH(request: NextRequest) {
+export const PATCH = withErrorHandler(async (request: NextRequest) => {
+    let requestBody
     try {
-        const { uid, rememberMe } = await request.json() as { uid?: string; rememberMe?: boolean }
-
-        if (!uid) {
-            return NextResponse.json(
-                { error: 'User ID is required' },
-                { status: 400 }
-            )
-        }
-
-        const result = await rotateSessionToken(uid, rememberMe)
-
-        if ('error' in result) {
-            return NextResponse.json(
-                { error: result.error },
-                { status: 500 }
-            )
-        }
-
-        return NextResponse.json({
-            success: true,
-            customToken: result.customToken
-        })
+        requestBody = await request.json()
     } catch (error) {
-        console.error('Token rotation error:', error)
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        )
+        throw createValidationError('Invalid JSON in request body')
     }
-}
+
+    const validatedRotateData = RotateTokenSchema.parse(requestBody)
+    const { uid, rememberMe } = validatedRotateData
+
+    const result = await rotateSessionToken(uid, rememberMe)
+
+    if ('error' in result) {
+        throw new APIError(result.error, 'TOKEN_ROTATION_FAILED', 500)
+    }
+
+    return successResponse({
+        success: true,
+        customToken: result.customToken
+    })
+})
+
+const DeleteSessionSchema = z.object({
+    uid: z.string().min(1, 'User ID is required')
+})
 
 // End a session (logout)
-export async function DELETE(request: NextRequest) {
+export const DELETE = withErrorHandler(async (request: NextRequest) => {
+    let requestBody
     try {
-        const { uid } = await request.json() as { uid?: string }
-
-        if (!uid) {
-            return NextResponse.json(
-                { error: 'User ID is required' },
-                { status: 400 }
-            )
-        }
-
-        const result = await revokeSessionCookie(uid)
-
-        if ('error' in result) {
-            return NextResponse.json(
-                { error: result.error },
-                { status: 500 }
-            )
-        }
-
-        return NextResponse.json({ success: true })
+        requestBody = await request.json()
     } catch (error) {
-        console.error('Session deletion error:', error)
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        )
+        throw createValidationError('Invalid JSON in request body')
     }
-}
+
+    const validatedDeleteData = DeleteSessionSchema.parse(requestBody)
+    const { uid } = validatedDeleteData
+
+    const result = await revokeSessionCookie(uid)
+
+    if ('error' in result) {
+        throw new APIError(result.error, 'SESSION_REVOCATION_FAILED', 500)
+    }
+
+    return successResponse({ success: true })
+})
