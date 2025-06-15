@@ -2,7 +2,7 @@
  * React hooks for fetching and managing Disney park data
  */
 
-import type { DisneyPark, ParkFilters, AttractionFilters, DiningFilters } from '@/types/parks'
+import type { DisneyPark, ParkFilters, AttractionFilters, DiningFilters } from '@/types/parks.model'
 import { createQueryHook, createApiFetcher } from '@/lib/api/query-factory'
 
 interface AttractionWithParkInfo {

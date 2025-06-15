@@ -5,7 +5,7 @@ import { successResponse } from '@/lib/api/response'
 import { withErrorHandler } from '@/lib/api/error-handler'
 import { validateQueryParams, CommonSchemas } from '@/lib/api/validation'
 import { RateLimiters } from '@/lib/api/distributed-rate-limiter'
-import type { AttractionFilters } from '@/types/parks'
+import type { AttractionFilters } from '@/types/parks.model'
 
 // Validation schema for query parameters
 const AttractionsQuerySchema = z.object({

@@ -1,4 +1,4 @@
-import { DisneyPark } from '@/types/parks'
+import { DisneyPark } from '@/types/parks.model'
 import { Timestamp } from 'firebase/firestore'
 
 export const animalKingdomData: DisneyPark = {

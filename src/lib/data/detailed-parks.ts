@@ -1,4 +1,4 @@
-import { DisneyPark } from '@/types/parks'
+import { DisneyPark } from '@/types/parks.model'
 import { animalKingdomData } from '@/lib/firebase/data/animal-kingdom-data'
 
 export const magicKingdom: DisneyPark = {

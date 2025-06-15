@@ -24,7 +24,7 @@ import {
 } from 'firebase/firestore'
 import { firestore } from './firebase.config'
 import { COLLECTIONS, type FirebasePark, timestampToFirebase } from './collections'
-import type { DisneyPark, ParkFilters, AttractionFilters, DiningFilters } from '@/types/parks'
+import type { DisneyPark, ParkFilters, AttractionFilters, DiningFilters } from '@/types/parks.model'
 
 export class ParksService {
     private static instance: ParksService

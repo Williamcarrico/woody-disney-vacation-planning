@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { parksService } from '@/lib/firebase/parks-service'
-import type { DiningFilters } from '@/types/parks'
+import type { DiningFilters } from '@/types/parks.model'
 
 /**
  * GET /api/dining
