@@ -870,6 +870,9 @@ const getTipsForCategory = (category: string): Array<TipType> => {
     // TypeScript now knows category is a valid key after the type predicate
     const categoryData = tipsData[category];
 
+    // Additional null check to ensure categoryData exists
+    if (!categoryData) return [];
+
     // Cast the data to ensure it conforms to TipType interface
     return categoryData.map(item => {
         const difficulty = item.difficulty;
@@ -931,7 +934,12 @@ export default function TipsAndTricksPage() {
     useEffect(() => {
         const categories = Object.keys(tipsData);
         const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-        const tips = tipsData[randomCategory as keyof typeof tipsData];
+
+        if (!randomCategory || !isValidCategory(randomCategory)) return;
+
+        const tips = tipsData[randomCategory];
+        if (!tips || tips.length === 0) return;
+
         const randomTip = Math.floor(Math.random() * tips.length);
         setTipOfTheDay({ category: randomCategory, index: randomTip });
     }, []);
@@ -1020,14 +1028,19 @@ export default function TipsAndTricksPage() {
     // Get all saved tips data
     const getSavedTipsData = useMemo(() => {
         return savedTips.map(tipId => {
-            const [category, indexStr] = tipId.split('-');
+            const parts = tipId.split('-');
+            const category = parts[0];
+            const indexStr = parts[1];
+
+            if (!category || !indexStr) return null;
+
             const index = parseInt(indexStr, 10);
+            if (isNaN(index)) return null;
 
             // Type guard to check if category is a valid key
-            if (!(category in tipsData)) return null;
+            if (!isValidCategory(category)) return null;
 
-            const categoryKey = category as keyof typeof tipsData;
-            const tipData = tipsData[categoryKey]?.[index];
+            const tipData = tipsData[category]?.[index];
 
             if (!tipData) return null;
 
@@ -1049,13 +1062,18 @@ export default function TipsAndTricksPage() {
     // Get recently viewed tips data
     const getRecentlyViewedData = useMemo(() => {
         return recentlyViewed.map(tipId => {
-            const [category, indexStr] = tipId.split('-');
+            const parts = tipId.split('-');
+            const category = parts[0];
+            const indexStr = parts[1];
+
+            if (!category || !indexStr) return null;
+
             const index = parseInt(indexStr, 10);
+            if (isNaN(index)) return null;
 
-            if (!(category in tipsData)) return null;
+            if (!isValidCategory(category)) return null;
 
-            const categoryKey = category as keyof typeof tipsData;
-            const tipData = tipsData[categoryKey]?.[index];
+            const tipData = tipsData[category]?.[index];
 
             if (!tipData) return null;
 
@@ -1284,13 +1302,13 @@ export default function TipsAndTricksPage() {
                                 TIP OF THE DAY
                             </div>
                             <div className="p-6 pt-8">
-                                {tipOfTheDay && tipsData[tipOfTheDay.category] && (
+                                {tipOfTheDay && tipsData[tipOfTheDay.category]?.[tipOfTheDay.index] && (
                                     <>
                                         <h3 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 mb-2">
-                                            {tipsData[tipOfTheDay.category][tipOfTheDay.index].title}
+                                            {tipsData[tipOfTheDay.category]?.[tipOfTheDay.index]?.title}
                                         </h3>
                                         <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-2">
-                                            {tipsData[tipOfTheDay.category][tipOfTheDay.index].description}
+                                            {tipsData[tipOfTheDay.category]?.[tipOfTheDay.index]?.description}
                                         </p>
                                         <div className="flex justify-between items-center">
                                             <Badge variant="outline" className="bg-indigo-50 dark:bg-indigo-900/30">
@@ -1441,9 +1459,9 @@ export default function TipsAndTricksPage() {
                             >
                                 <MapPin size={16} />
                                 {parkFilter
-                                    ? `Park: ${parkFilter in parks
+                                    ? `Park: ${parkFilter && parkFilter in parks
                                         ? parks[parkFilter as keyof typeof parks]
-                                        : parkFilter}`
+                                        : parkFilter || 'Unknown'}`
                                     : "Park"}
                                 {parkFilter && (
                                     <Badge variant="outline" className="ml-1 px-1" onClick={(e) => {
