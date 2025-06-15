@@ -7,7 +7,6 @@
  */
 
 import { z, ZodError, ZodSchema } from 'zod'
-import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios'
 
 // Validation result types
 export interface ValidationResult<T> {
@@ -287,90 +286,161 @@ export function validateThirdPartyResponse<T>(
 }
 
 /**
- * Creates an Axios instance with response validation
+ * Fetch options interface
  */
-export function createValidatedAxiosInstance(
+export interface ValidatedFetchOptions extends RequestInit {
+    timeout?: number
+    retries?: number
+    retryDelay?: number
+}
+
+/**
+ * Creates a validated fetch wrapper with automatic retries and validation
+ */
+export function createValidatedFetch(
     baseURL: string,
-    defaultHeaders?: Record<string, string>
-): AxiosInstance & {
-    getValidated: <T>(url: string, schema: ZodSchema<T>, fallback?: () => T) => Promise<T>
-    postValidated: <T>(url: string, data: any, schema: ZodSchema<T>, fallback?: () => T) => Promise<T>
+    defaultOptions?: ValidatedFetchOptions
+): {
+    getValidated: <T>(path: string, schema: ZodSchema<T>, fallback?: () => T, options?: ValidatedFetchOptions) => Promise<T>
+    postValidated: <T>(path: string, data: any, schema: ZodSchema<T>, fallback?: () => T, options?: ValidatedFetchOptions) => Promise<T>
 } {
-    const instance = axios.create({
-        baseURL,
-        headers: defaultHeaders,
-        timeout: 30000, // 30 second timeout
-    })
-
-    // Add response interceptor for logging
-    instance.interceptors.response.use(
-        (response) => response,
-        (error: AxiosError) => {
-            console.error(`API request failed: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, {
-                status: error.response?.status,
-                data: error.response?.data,
+    const fetchWithTimeout = async (url: string, options: ValidatedFetchOptions = {}): Promise<Response> => {
+        const { timeout = 30000, ...fetchOptions } = options
+        
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), timeout)
+        
+        try {
+            const response = await fetch(url, {
+                ...fetchOptions,
+                signal: controller.signal
             })
-            return Promise.reject(error)
-        }
-    )
-
-    // Add validated methods
-    const validatedInstance = instance as any
-
-    validatedInstance.getValidated = async <T>(
-        url: string,
-        schema: ZodSchema<T>,
-        fallback?: () => T
-    ): Promise<T> => {
-        try {
-            const response = await instance.get(url)
-            const validation = validateThirdPartyResponse(response.data, schema, fallback)
-
-            if (validation.success) {
-                return validation.data
-            } else if (validation.fallbackUsed && validation.fallbackData) {
-                console.warn(`Using fallback data for ${url}`)
-                return validation.fallbackData as T
-            } else {
-                throw new Error(`Validation failed for ${url}: ${validation.error.message}`)
-            }
+            clearTimeout(timeoutId)
+            return response
         } catch (error) {
-            if (fallback) {
-                console.warn(`Request failed, using fallback for ${url}`)
-                return fallback()
-            }
+            clearTimeout(timeoutId)
             throw error
         }
     }
 
-    validatedInstance.postValidated = async <T>(
-        url: string,
-        data: any,
-        schema: ZodSchema<T>,
-        fallback?: () => T
-    ): Promise<T> => {
-        try {
-            const response = await instance.post(url, data)
-            const validation = validateThirdPartyResponse(response.data, schema, fallback)
-
-            if (validation.success) {
-                return validation.data
-            } else if (validation.fallbackUsed && validation.fallbackData) {
-                console.warn(`Using fallback data for ${url}`)
-                return validation.fallbackData as T
-            } else {
-                throw new Error(`Validation failed for ${url}: ${validation.error.message}`)
+    const fetchWithRetries = async (
+        url: string, 
+        options: ValidatedFetchOptions = {}
+    ): Promise<Response> => {
+        const { retries = 3, retryDelay = 1000, ...fetchOptions } = options
+        
+        let lastError: Error | null = null
+        
+        for (let i = 0; i <= retries; i++) {
+            try {
+                const response = await fetchWithTimeout(url, fetchOptions)
+                
+                if (!response.ok && i < retries) {
+                    // Retry on server errors
+                    if (response.status >= 500) {
+                        await new Promise(resolve => setTimeout(resolve, retryDelay * (i + 1)))
+                        continue
+                    }
+                }
+                
+                return response
+            } catch (error) {
+                lastError = error as Error
+                if (i < retries) {
+                    await new Promise(resolve => setTimeout(resolve, retryDelay * (i + 1)))
+                }
             }
-        } catch (error) {
-            if (fallback) {
-                console.warn(`Request failed, using fallback for ${url}`)
-                return fallback()
-            }
-            throw error
         }
+        
+        throw lastError || new Error('Failed to fetch after retries')
     }
 
-    return validatedInstance
+    return {
+        async getValidated<T>(
+            path: string,
+            schema: ZodSchema<T>,
+            fallback?: () => T,
+            options?: ValidatedFetchOptions
+        ): Promise<T> {
+            const url = `${baseURL}${path}`
+            
+            try {
+                const response = await fetchWithRetries(url, {
+                    ...defaultOptions,
+                    ...options,
+                    method: 'GET',
+                })
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`)
+                }
+                
+                const data = await response.json()
+                const validation = validateThirdPartyResponse(data, schema, fallback)
+
+                if (validation.success) {
+                    return validation.data
+                } else if (validation.fallbackUsed && validation.fallbackData) {
+                    console.warn(`Using fallback data for ${url}`)
+                    return validation.fallbackData as T
+                } else {
+                    throw new Error(`Validation failed for ${url}: ${validation.error.message}`)
+                }
+            } catch (error) {
+                if (fallback) {
+                    console.warn(`Request failed, using fallback for ${url}:`, error)
+                    return fallback()
+                }
+                throw error
+            }
+        },
+
+        async postValidated<T>(
+            path: string,
+            data: any,
+            schema: ZodSchema<T>,
+            fallback?: () => T,
+            options?: ValidatedFetchOptions
+        ): Promise<T> {
+            const url = `${baseURL}${path}`
+            
+            try {
+                const response = await fetchWithRetries(url, {
+                    ...defaultOptions,
+                    ...options,
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...defaultOptions?.headers,
+                        ...options?.headers,
+                    },
+                    body: JSON.stringify(data),
+                })
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`)
+                }
+                
+                const responseData = await response.json()
+                const validation = validateThirdPartyResponse(responseData, schema, fallback)
+
+                if (validation.success) {
+                    return validation.data
+                } else if (validation.fallbackUsed && validation.fallbackData) {
+                    console.warn(`Using fallback data for ${url}`)
+                    return validation.fallbackData as T
+                } else {
+                    throw new Error(`Validation failed for ${url}: ${validation.error.message}`)
+                }
+            } catch (error) {
+                if (fallback) {
+                    console.warn(`Request failed, using fallback for ${url}:`, error)
+                    return fallback()
+                }
+                throw error
+            }
+        }
+    }
 }
 
 /**
