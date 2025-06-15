@@ -44,6 +44,54 @@ import { useQuery } from '@tanstack/react-query';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+// Type definitions
+interface ApiResponse {
+    success: boolean;
+    data: LocationData[];
+    error?: string;
+}
+
+interface FailedLocationUpdate {
+    location: { lat: number; lng: number };
+    timestamp: number;
+    userId: string;
+}
+
+// Type guard for API response
+function isApiResponse(data: unknown): data is ApiResponse {
+    return (
+        typeof data === 'object' &&
+        data !== null &&
+        'success' in data &&
+        typeof (data as ApiResponse).success === 'boolean' &&
+        'data' in data &&
+        Array.isArray((data as ApiResponse).data)
+    );
+}
+
+// Type guard for failed location updates
+function isFailedLocationUpdateArray(data: unknown): data is FailedLocationUpdate[] {
+    if (!Array.isArray(data)) return false;
+    
+    return data.every(item => {
+        if (typeof item !== 'object' || item === null) return false;
+        
+        const obj = item as Record<string, unknown>;
+        
+        return (
+            'location' in obj &&
+            'timestamp' in obj &&
+            'userId' in obj &&
+            typeof obj.location === 'object' &&
+            obj.location !== null &&
+            typeof (obj.location as Record<string, unknown>).lat === 'number' &&
+            typeof (obj.location as Record<string, unknown>).lng === 'number' &&
+            typeof obj.timestamp === 'number' &&
+            typeof obj.userId === 'string'
+        );
+    });
+}
+
 // Mock user data - in a real app, this would come from auth
 const MOCK_USER = {
     id: 'user-123',
@@ -93,12 +141,22 @@ export default function MapPageWrapper() {
     const [locationUpdateCount, setLocationUpdateCount] = useState(0);
 
     // Fetch attractions data
-    const { data: attractionsData, isLoading, error } = useQuery({
+    const { data: attractionsData, isLoading, error } = useQuery<LocationData[]>({
         queryKey: ['attractions', selectedPark],
-        queryFn: async () => {
+        queryFn: async (): Promise<LocationData[]> => {
             const response = await fetch('/api/maps');
             if (!response.ok) throw new Error('Failed to fetch attractions');
-            return response.json();
+            
+            const data: unknown = await response.json();
+            
+            // Handle different response formats
+            if (isApiResponse(data)) {
+                return data.data;
+            } else if (Array.isArray(data)) {
+                return data as LocationData[];
+            } else {
+                throw new Error('Invalid API response format');
+            }
         }
     });
 
@@ -199,8 +257,8 @@ export default function MapPageWrapper() {
                 ...attraction,
                 // Add some random wait times for demonstration
                 waitTime: Math.floor(Math.random() * 120),
-                status: Math.random() > 0.1 ? 'OPERATING' :
-                    (Math.random() > 0.5 ? 'DOWN' : 'CLOSED'),
+                status: Math.random() > 0.1 ? 'OPERATING' as const :
+                    (Math.random() > 0.5 ? 'DOWN' as const : 'CLOSED' as const),
             }));
 
             setAttractions(enhancedAttractions);
@@ -460,9 +518,18 @@ export default function MapPageWrapper() {
 
             // Store failed update for retry when online
             if (!navigator.onLine) {
-                const failedUpdates = JSON.parse(localStorage.getItem('failed_location_updates') || '[]');
-                failedUpdates.push({ location, timestamp: now, userId: MOCK_USER.id });
-                localStorage.setItem('failed_location_updates', JSON.stringify(failedUpdates.slice(-10))); // Keep last 10
+                try {
+                    const stored = localStorage.getItem('failed_location_updates') || '[]';
+                    const parsed: unknown = JSON.parse(stored);
+                    const failedUpdates: FailedLocationUpdate[] = isFailedLocationUpdateArray(parsed) ? parsed : [];
+                    
+                    const newUpdate: FailedLocationUpdate = { location, timestamp: now, userId: MOCK_USER.id };
+                    failedUpdates.push(newUpdate);
+                    
+                    localStorage.setItem('failed_location_updates', JSON.stringify(failedUpdates.slice(-10))); // Keep last 10
+                } catch (storageError) {
+                    console.error('Failed to store location update for retry:', storageError);
+                }
             }
         }
     }, [geofences, groupMembers, maxGroupSeparationDistance, toast, batteryLevel, isLowPowerMode, locationUpdateCount, calculateDistance, handleGeofenceEntryEvent, handleGeofenceExitEvent, handleSeparationAlert]);
@@ -470,25 +537,32 @@ export default function MapPageWrapper() {
     // Effect to handle offline/online state and retry failed updates
     useEffect(() => {
         const handleOnline = async () => {
-            const failedUpdates = JSON.parse(localStorage.getItem('failed_location_updates') || '[]');
+            try {
+                const stored = localStorage.getItem('failed_location_updates') || '[]';
+                const parsed: unknown = JSON.parse(stored);
+                const failedUpdates: FailedLocationUpdate[] = isFailedLocationUpdateArray(parsed) ? parsed : [];
 
-            if (failedUpdates.length > 0) {
-                console.log('Retrying failed location updates:', failedUpdates.length);
+                if (failedUpdates.length > 0) {
+                    console.log('Retrying failed location updates:', failedUpdates.length);
 
-                for (const update of failedUpdates) {
-                    try {
-                        await handleLocationUpdate(update.location);
-                    } catch (error) {
-                        console.error('Failed to retry location update:', error);
+                    for (const update of failedUpdates) {
+                        try {
+                            await handleLocationUpdate(update.location);
+                        } catch (error) {
+                            console.error('Failed to retry location update:', error);
+                        }
                     }
+
+                    localStorage.removeItem('failed_location_updates');
+
+                    toast({
+                        title: 'Connection Restored',
+                        description: 'Your location has been updated.',
+                    });
                 }
-
-                localStorage.removeItem('failed_location_updates');
-
-                toast({
-                    title: 'Connection Restored',
-                    description: 'Your location has been updated.',
-                });
+            } catch (storageError) {
+                console.error('Failed to parse stored location updates:', storageError);
+                localStorage.removeItem('failed_location_updates'); // Clear corrupted data
             }
         };
 
