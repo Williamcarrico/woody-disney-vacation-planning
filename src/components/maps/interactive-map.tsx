@@ -14,7 +14,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Search, Clock, Users } from 'lucide-react';
 import Image from 'next/image';
-import { MapSkeleton } from './skeletons/map-skeleton';
+import { MapSkeleton } from './MapLoadingStates';
 import { Badge } from '../ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { toast } from '../ui/use-toast';

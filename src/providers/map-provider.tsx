@@ -2,6 +2,8 @@
 
 import { ReactNode, useState, useCallback, useMemo, useEffect, memo } from 'react';
 import { APIProvider } from '@vis.gl/react-google-maps';
+import { MapErrorBoundary } from '@/components/maps/MapErrorBoundary';
+import { MapLoading, MapErrorState } from '@/components/maps/MapLoadingStates';
 
 interface MapProviderProps {
     readonly children: ReactNode;
@@ -250,17 +252,11 @@ function MapProviderComponent(props: Readonly<MapProviderProps>) {
         }
 
         return (
-            <div className="flex items-center justify-center p-8">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading Google Maps...</p>
-                    {loadingState.retryCount > 0 && (
-                        <p className="text-sm text-gray-500 mt-2">
-                            Retry attempt {loadingState.retryCount}/{retryAttempts}
-                        </p>
-                    )}
-                </div>
-            </div>
+            <MapLoading 
+                message="Loading Google Maps..."
+                showProgress={loadingState.retryCount > 0}
+                progress={(loadingState.retryCount / retryAttempts) * 100}
+            />
         );
     }
 
@@ -291,6 +287,26 @@ function MapProviderComponent(props: Readonly<MapProviderProps>) {
     );
 }
 
+// Wrapped component with error boundary
+function MapProviderWithErrorBoundary(props: Readonly<MapProviderProps>) {
+    return (
+        <MapErrorBoundary
+            onError={(error) => {
+                console.error('Map provider error:', error);
+                props.onLoadError?.(error);
+            }}
+            fallback={
+                <MapErrorState
+                    error="Failed to initialize map provider"
+                    onRetry={() => window.location.reload()}
+                />
+            }
+        >
+            <MapProviderComponent {...props} />
+        </MapErrorBoundary>
+    );
+}
+
 // Memoized export for performance optimization
-export const MapProvider = memo(MapProviderComponent);
+export const MapProvider = memo(MapProviderWithErrorBoundary);
 export default MapProvider;
