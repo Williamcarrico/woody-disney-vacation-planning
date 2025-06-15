@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { createSessionCookie, revokeSessionCookie, rotateSessionToken } from '@/lib/firebase/auth-session-server'
 import { withErrorHandler, createValidationError, APIError } from '@/lib/api/error-handler'
 import { successResponse } from '@/lib/api/response'
@@ -14,10 +14,10 @@ const CreateSessionSchema = z.object({
 export const POST = withErrorHandler(async (request: NextRequest) => {
     console.log('Session API route called')
     
-    let requestBody
+    let requestBody: unknown
     try {
         requestBody = await request.json()
-    } catch (error) {
+    } catch (_error) {
         throw createValidationError('Invalid JSON in request body')
     }
 
@@ -43,10 +43,10 @@ const RotateTokenSchema = z.object({
 
 // Rotate a session token (for enhanced security)
 export const PATCH = withErrorHandler(async (request: NextRequest) => {
-    let requestBody
+    let requestBody: unknown
     try {
         requestBody = await request.json()
-    } catch (error) {
+    } catch (_error) {
         throw createValidationError('Invalid JSON in request body')
     }
 
@@ -71,10 +71,10 @@ const DeleteSessionSchema = z.object({
 
 // End a session (logout)
 export const DELETE = withErrorHandler(async (request: NextRequest) => {
-    let requestBody
+    let requestBody: unknown
     try {
         requestBody = await request.json()
-    } catch (error) {
+    } catch (_error) {
         throw createValidationError('Invalid JSON in request body')
     }
 
