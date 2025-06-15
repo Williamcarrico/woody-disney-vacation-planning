@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useReducer, useCallback } from 'react'
 import { io, Socket } from 'socket.io-client'
 import { useAuth } from '@/contexts/AuthContext'
 import type {
@@ -11,14 +11,91 @@ import type {
     UseSocketOptions
 } from '@/types/messaging'
 
+// =============================================================================
+// STATE MANAGEMENT WITH REDUCER
+// =============================================================================
+
+interface SocketState {
+    isConnected: boolean
+    isAuthenticated: boolean
+    connectionError: string | null
+    reconnectAttempts: number
+}
+
+type SocketAction = 
+    | { type: 'CONNECTED' }
+    | { type: 'DISCONNECTED' }
+    | { type: 'AUTHENTICATED' }
+    | { type: 'AUTH_ERROR'; payload: string }
+    | { type: 'CONNECTION_ERROR'; payload: string }
+    | { type: 'RECONNECT_ATTEMPT' }
+    | { type: 'RECONNECT_SUCCESS' }
+    | { type: 'RESET_ATTEMPTS' }
+
+const initialState: SocketState = {
+    isConnected: false,
+    isAuthenticated: false,
+    connectionError: null,
+    reconnectAttempts: 0
+}
+
+function socketReducer(state: SocketState, action: SocketAction): SocketState {
+    switch (action.type) {
+        case 'CONNECTED':
+            return {
+                ...state,
+                isConnected: true,
+                connectionError: null,
+                reconnectAttempts: 0
+            }
+        case 'DISCONNECTED':
+            return {
+                ...state,
+                isConnected: false,
+                isAuthenticated: false
+            }
+        case 'AUTHENTICATED':
+            return {
+                ...state,
+                isAuthenticated: true
+            }
+        case 'AUTH_ERROR':
+            return {
+                ...state,
+                isAuthenticated: false,
+                connectionError: action.payload
+            }
+        case 'CONNECTION_ERROR':
+            return {
+                ...state,
+                connectionError: action.payload,
+                reconnectAttempts: state.reconnectAttempts + 1
+            }
+        case 'RECONNECT_ATTEMPT':
+            return {
+                ...state,
+                reconnectAttempts: state.reconnectAttempts + 1
+            }
+        case 'RECONNECT_SUCCESS':
+            return {
+                ...state,
+                reconnectAttempts: 0
+            }
+        case 'RESET_ATTEMPTS':
+            return {
+                ...state,
+                reconnectAttempts: 0
+            }
+        default:
+            return state
+    }
+}
+
 export function useSocket(options: UseSocketOptions) {
     const { vacationId, onMessage, onLocationUpdate, onUserTyping, onUserJoined, onUserLeft, onReaction } = options
     const { user } = useAuth()
     const socketRef = useRef<Socket | null>(null)
-    const [isConnected, setIsConnected] = useState(false)
-    const [isAuthenticated, setIsAuthenticated] = useState(false)
-    const [connectionError, setConnectionError] = useState<string | null>(null)
-    const [reconnectAttempts, setReconnectAttempts] = useState(0)
+    const [state, dispatch] = useReducer(socketReducer, initialState)
 
     // Initialize socket connection
     useEffect(() => {
@@ -41,9 +118,7 @@ export function useSocket(options: UseSocketOptions) {
         // Connection event handlers
         socket.on('connect', () => {
             console.log('Socket connected:', socket.id)
-            setIsConnected(true)
-            setConnectionError(null)
-            setReconnectAttempts(0)
+            dispatch({ type: 'CONNECTED' })
 
             // Authenticate with the server
             socket.emit('authenticate', {
@@ -55,36 +130,33 @@ export function useSocket(options: UseSocketOptions) {
 
         socket.on('disconnect', (reason) => {
             console.log('Socket disconnected:', reason)
-            setIsConnected(false)
-            setIsAuthenticated(false)
+            dispatch({ type: 'DISCONNECTED' })
         })
 
         socket.on('connect_error', (error) => {
             console.error('Socket connection error:', error)
-            setConnectionError(error.message)
-            setReconnectAttempts(prev => prev + 1)
+            dispatch({ type: 'CONNECTION_ERROR', payload: error.message })
         })
 
         socket.on('reconnect', (attemptNumber) => {
             console.log('Socket reconnected after', attemptNumber, 'attempts')
-            setReconnectAttempts(0)
+            dispatch({ type: 'RECONNECT_SUCCESS' })
         })
 
         socket.on('reconnect_error', (error) => {
             console.error('Socket reconnection error:', error)
-            setReconnectAttempts(prev => prev + 1)
+            dispatch({ type: 'RECONNECT_ATTEMPT' })
         })
 
         // Authentication event handlers
         socket.on('authenticated', (data) => {
             console.log('Socket authenticated:', data)
-            setIsAuthenticated(true)
+            dispatch({ type: 'AUTHENTICATED' })
         })
 
         socket.on('auth_error', (error) => {
             console.error('Socket authentication error:', error)
-            setConnectionError(error.message)
-            setIsAuthenticated(false)
+            dispatch({ type: 'AUTH_ERROR', payload: error.message })
         })
 
         // Message event handlers
@@ -141,14 +213,13 @@ export function useSocket(options: UseSocketOptions) {
             console.log('Cleaning up socket connection')
             socket.disconnect()
             socketRef.current = null
-            setIsConnected(false)
-            setIsAuthenticated(false)
+            dispatch({ type: 'DISCONNECTED' })
         }
     }, [user, vacationId, onMessage, onLocationUpdate, onUserTyping, onUserJoined, onUserLeft, onReaction])
 
     // Send message function
     const sendMessage = useCallback((content: string, type: SocketMessage['type'] = 'text', replyTo?: string, attachments?: MessageAttachment[]) => {
-        if (!socketRef.current || !isAuthenticated) {
+        if (!socketRef.current || !state.isAuthenticated) {
             console.warn('Socket not connected or not authenticated')
             return false
         }
@@ -162,11 +233,11 @@ export function useSocket(options: UseSocketOptions) {
         })
 
         return true
-    }, [vacationId, isAuthenticated])
+    }, [vacationId, state.isAuthenticated])
 
     // Send reaction function
     const sendReaction = useCallback((messageId: string, reaction: string) => {
-        if (!socketRef.current || !isAuthenticated) {
+        if (!socketRef.current || !state.isAuthenticated) {
             console.warn('Socket not connected or not authenticated')
             return false
         }
@@ -178,11 +249,11 @@ export function useSocket(options: UseSocketOptions) {
         })
 
         return true
-    }, [vacationId, isAuthenticated])
+    }, [vacationId, state.isAuthenticated])
 
     // Share location function
     const shareLocation = useCallback((latitude: number, longitude: number, accuracy?: number, message?: string, isEmergency = false) => {
-        if (!socketRef.current || !isAuthenticated) {
+        if (!socketRef.current || !state.isAuthenticated) {
             console.warn('Socket not connected or not authenticated')
             return false
         }
@@ -197,11 +268,11 @@ export function useSocket(options: UseSocketOptions) {
         })
 
         return true
-    }, [vacationId, isAuthenticated])
+    }, [vacationId, state.isAuthenticated])
 
     // Send voice message function
     const sendVoiceMessage = useCallback((audioBlob: Blob, duration: number) => {
-        if (!socketRef.current || !isAuthenticated) {
+        if (!socketRef.current || !state.isAuthenticated) {
             console.warn('Socket not connected or not authenticated')
             return false
         }
@@ -215,20 +286,20 @@ export function useSocket(options: UseSocketOptions) {
         })
 
         return true
-    }, [vacationId, isAuthenticated])
+    }, [vacationId, state.isAuthenticated])
 
     // Typing indicator functions
     const startTyping = useCallback(() => {
-        if (!socketRef.current || !isAuthenticated) return
+        if (!socketRef.current || !state.isAuthenticated) return
 
         socketRef.current.emit('typing_start', { vacationId })
-    }, [vacationId, isAuthenticated])
+    }, [vacationId, state.isAuthenticated])
 
     const stopTyping = useCallback(() => {
-        if (!socketRef.current || !isAuthenticated) return
+        if (!socketRef.current || !state.isAuthenticated) return
 
         socketRef.current.emit('typing_stop', { vacationId })
-    }, [vacationId, isAuthenticated])
+    }, [vacationId, state.isAuthenticated])
 
     // Reconnect function
     const reconnect = useCallback(() => {
@@ -238,10 +309,7 @@ export function useSocket(options: UseSocketOptions) {
     }, [])
 
     return {
-        isConnected,
-        isAuthenticated,
-        connectionError,
-        reconnectAttempts,
+        ...state,
         sendMessage,
         sendReaction,
         shareLocation,
