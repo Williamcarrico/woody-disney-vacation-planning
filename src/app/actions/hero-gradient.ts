@@ -53,10 +53,10 @@ export const getHeroGradientData = unstable_cache(
     try {
       // Fetch data in parallel for better performance
       const [parksResponse, weatherResponse] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/unified/parks?includeWaitTimes=true&includeSchedule=false`, {
+        fetch(`${process.env['NEXT_PUBLIC_SITE_URL'] || 'http://localhost:3000'}/api/unified/parks?includeWaitTimes=true&includeSchedule=false`, {
           next: { revalidate: 300 }, // 5 minutes
         }),
-        fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/weather/realtime?location=Orlando,FL`, {
+        fetch(`${process.env['NEXT_PUBLIC_SITE_URL'] || 'http://localhost:3000'}/api/weather/realtime?location=Orlando,FL`, {
           next: { revalidate: 300 }, // 5 minutes
         }),
       ])

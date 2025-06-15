@@ -9,7 +9,7 @@ import type { AttractionFilters } from '@/types/parks.model'
 
 // Validation schema for query parameters
 const AttractionsQuerySchema = z.object({
-    parkId: CommonSchemas.disney.parkId.optional(),
+    parkId: z.string().optional(),
     landId: z.string().optional(),
     type: z.enum(['ride', 'show', 'character-meet', 'dining', 'shopping']).optional(),
     thrillLevel: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1).max(5)).optional(),
@@ -18,8 +18,10 @@ const AttractionsQuerySchema = z.object({
     mustDo: z.enum(['true', 'false']).transform(val => val === 'true').optional(),
     ageGroup: z.enum(['all-ages', 'kids', 'teens', 'adults']).optional(),
     search: z.string().max(100).optional(),
-    ...CommonSchemas.pagination.shape,
-    ...CommonSchemas.sorting.shape
+    page: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1)).default('1'),
+    limit: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1).max(100)).default('20'),
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).default('asc')
 })
 
 /**
