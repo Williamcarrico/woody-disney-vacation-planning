@@ -22,7 +22,11 @@
     "build:default-images": "node scripts/convert-default-images.js",
     "setup:restaurant-db": "node scripts/setup-restaurant-db.js",
     "migrate:types": "node -r ts-node/register scripts/migrate-types.ts",
-    "migrate:types:dry-run": "node -r ts-node/register scripts/migrate-types.ts --dry-run"
+    "migrate:types:dry-run": "node -r ts-node/register scripts/migrate-types.ts --dry-run",
+    "optimize": "node -r ts-node/register scripts/optimization-helpers.ts",
+    "optimize:analyze": "node -r ts-node/register scripts/optimization-helpers.ts analyze",
+    "optimize:clean": "node -r ts-node/register scripts/optimization-helpers.ts clean-ds",
+    "optimize:calculate": "node -r ts-node/register scripts/optimization-helpers.ts calculate"
   },
   "dependencies": {
     "@date-fns/tz": "^1.2.0",
