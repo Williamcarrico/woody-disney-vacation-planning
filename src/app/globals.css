@@ -601,11 +601,11 @@
 .hero-text-disney-colors {
   background: linear-gradient(
     45deg,
-    #dc2626 0%,    /* Disney Red */
-    #fbbf24 25%,   /* Disney Yellow */
-    #2563eb 50%,   /* Disney Blue */
-    #dc2626 75%,   /* Disney Red */
-    #fbbf24 100%   /* Disney Yellow */
+    #dc2626 0%,
+    /* Disney Red */ #fbbf24 25%,
+    /* Disney Yellow */ #2563eb 50%,
+    /* Disney Blue */ #dc2626 75%,
+    /* Disney Red */ #fbbf24 100% /* Disney Yellow */
   );
   background-size: 400% 400%;
   background-clip: text;
@@ -637,11 +637,12 @@
 .dark .hero-text-disney-colors {
   background: linear-gradient(
     45deg,
-    #ef4444 0%,    /* Brighter Disney Red for dark mode */
-    #fde047 25%,   /* Brighter Disney Yellow for dark mode */
-    #3b82f6 50%,   /* Brighter Disney Blue for dark mode */
-    #ef4444 75%,   /* Brighter Disney Red for dark mode */
-    #fde047 100%   /* Brighter Disney Yellow for dark mode */
+    #ef4444 0%,
+    /* Brighter Disney Red for dark mode */ #fde047 25%,
+    /* Brighter Disney Yellow for dark mode */ #3b82f6 50%,
+    /* Brighter Disney Blue for dark mode */ #ef4444 75%,
+    /* Brighter Disney Red for dark mode */ #fde047 100%
+      /* Brighter Disney Yellow for dark mode */
   );
   background-size: 400% 400%;
   background-clip: text;
@@ -1259,6 +1260,88 @@
   color: var(--theme-inverse-surface-foreground);
 }
 
+/* Hero Section Specific Styles */
+.hero-live-gradient-overlay {
+  filter: blur(0.5px);
+  opacity: 0.6;
+}
+
+.hero-title-live-gradient {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Floating Orb Styles */
+.floating-orb-red {
+  background: radial-gradient(circle at 30% 30%, #ff6b6b, #ff1744, #d50000);
+  box-shadow: 0 0 60px rgba(255, 107, 107, 0.4),
+    inset 0 0 30px rgba(255, 255, 255, 0.2);
+  left: 15%;
+  top: 20%;
+}
+
+.floating-orb-blue {
+  background: radial-gradient(circle at 40% 20%, #4fc3f7, #2196f3, #0d47a1);
+  box-shadow: 0 0 80px rgba(79, 195, 247, 0.5),
+    inset 0 0 40px rgba(255, 255, 255, 0.3);
+  right: 10%;
+  top: 15%;
+}
+
+.floating-orb-yellow {
+  background: radial-gradient(circle at 25% 35%, #ffeb3b, #ffc107, #ff8f00);
+  box-shadow: 0 0 50px rgba(255, 235, 59, 0.6),
+    inset 0 0 25px rgba(255, 255, 255, 0.4);
+  left: 70%;
+  top: 60%;
+}
+
+.floating-orb-green {
+  background: radial-gradient(circle at 35% 25%, #66bb6a, #4caf50, #1b5e20);
+  box-shadow: 0 0 70px rgba(102, 187, 106, 0.4),
+    inset 0 0 35px rgba(255, 255, 255, 0.25);
+  left: 25%;
+  bottom: 25%;
+}
+
+.floating-orb-pink {
+  background: radial-gradient(circle at 45% 15%, #f8bbd9, #e91e63, #ad1457);
+  box-shadow: 0 0 65px rgba(248, 187, 217, 0.5),
+    inset 0 0 32px rgba(255, 255, 255, 0.35);
+  right: 30%;
+  bottom: 35%;
+}
+
+.floating-orb-orange {
+  background: radial-gradient(circle at 20% 40%, #ffb74d, #ff9800, #e65100);
+  box-shadow: 0 0 55px rgba(255, 183, 77, 0.6),
+    inset 0 0 28px rgba(255, 255, 255, 0.3);
+  left: 80%;
+  top: 45%;
+}
+
+.floating-orb-purple {
+  background: radial-gradient(circle at 50% 10%, #ba68c8, #9c27b0, #4a148c);
+  box-shadow: 0 0 75px rgba(186, 104, 200, 0.4),
+    inset 0 0 38px rgba(255, 255, 255, 0.25);
+  right: 60%;
+  top: 70%;
+}
+
+/* Park Switcher Orbit Styles */
+.park-orbit-position {
+  left: calc(50% + var(--orbit-x) - 2rem);
+  top: calc(50% + var(--orbit-y) - 2rem);
+}
+
+/* Floating Elements Random Positioning */
+.floating-element-random {
+  left: var(--random-left);
+  top: var(--random-top);
+}
+
 /* Enhanced accessibility utilities */
 .high-contrast-mode {
   --border: oklch(0 0 0);
@@ -1346,4 +1429,34 @@
     background: white !important;
     border: 1px solid black !important;
   }
+}
+
+/* Add these classes for dynamic hero gradients and positioning */
+.hero-live-gradient-bg {
+  background: linear-gradient(
+    135deg,
+    var(--gradient-primary),
+    var(--gradient-secondary),
+    var(--gradient-accent)
+  );
+}
+
+.hero-title-live-gradient-bg {
+  background: linear-gradient(
+    45deg,
+    var(--gradient-primary),
+    var(--gradient-secondary),
+    var(--gradient-accent)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.park-orbit-element {
+  transform: translate(var(--orbit-x), var(--orbit-y));
+}
+
+.floating-element-positioned {
+  left: var(--random-left);
+  top: var(--random-top);
 }

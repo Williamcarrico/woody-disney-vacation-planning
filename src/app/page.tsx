@@ -7,10 +7,10 @@ import { Switch } from '@/components/ui/switch'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import { 
-  Sparkles, 
-  Calendar, 
-  Users, 
+import {
+  Sparkles,
+  Calendar,
+  Users,
   Star,
   Wand2,
   Castle,
@@ -45,9 +45,9 @@ class ThreeJSErrorBoundary extends Component<
     }
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Three.js Error Boundary caught an error:', error, errorInfo)
-    
+
     // Log error details for debugging
     if (process.env.NODE_ENV === 'development') {
       console.group('🎆 Fireworks Error Details')
@@ -62,7 +62,7 @@ class ThreeJSErrorBoundary extends Component<
     this.setState({ hasError: false, error: null })
   }
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       return (
         this.props.fallback || (
@@ -107,33 +107,33 @@ const InteractiveMapPreview = lazy(() => import('@/components/maps/InteractiveMa
 
 // Park data for switcher
 const PARKS = [
-  { 
-    id: 'mk', 
-    name: 'Magic Kingdom', 
-    icon: '🏰', 
+  {
+    id: 'mk',
+    name: 'Magic Kingdom',
+    icon: '🏰',
     gradient: 'from-blue-400 via-purple-500 to-pink-500',
-    occupancy: 75 
+    occupancy: 75
   },
-  { 
-    id: 'epcot', 
-    name: 'EPCOT', 
-    icon: '🌍', 
+  {
+    id: 'epcot',
+    name: 'EPCOT',
+    icon: '🌍',
     gradient: 'from-green-400 via-blue-500 to-purple-500',
-    occupancy: 60 
+    occupancy: 60
   },
-  { 
-    id: 'hs', 
-    name: 'Hollywood Studios', 
-    icon: '🎬', 
+  {
+    id: 'hs',
+    name: 'Hollywood Studios',
+    icon: '🎬',
     gradient: 'from-yellow-400 via-red-500 to-pink-500',
-    occupancy: 85 
+    occupancy: 85
   },
-  { 
-    id: 'ak', 
-    name: 'Animal Kingdom', 
-    icon: '🦁', 
+  {
+    id: 'ak',
+    name: 'Animal Kingdom',
+    icon: '🦁',
     gradient: 'from-orange-400 via-yellow-500 to-green-500',
-    occupancy: 70 
+    occupancy: 70
   }
 ]
 
@@ -147,28 +147,25 @@ const HeroSection: React.FC = memo(() => {
   const gradientStyles = useGradientStyles()
 
   return (
-    <section className="relative min-h-screen overflow-hidden bg-gradient-to-br from-green-50 via-blue-50 via-indigo-50 via-purple-50 via-pink-50 to-yellow-50 dark:from-green-900 dark:via-blue-900 dark:via-purple-900 dark:via-indigo-900 dark:via-pink-900 dark:to-yellow-900">
+    <section className="relative min-h-screen overflow-hidden bg-gradient-to-br from-green-50 via-purple-50 to-yellow-50 dark:from-green-900 dark:via-purple-900 dark:to-yellow-900">
       {/* Live Dynamic Background Gradient */}
-      <div 
-        className="absolute inset-0 hero-live-gradient" 
+      <div
+        className={cn(
+          "absolute inset-0 hero-live-gradient",
+          gradientStyles && "hero-live-gradient-overlay hero-live-gradient-bg"
+        )}
         style={gradientStyles ? {
-          background: `linear-gradient(135deg, ${gradientStyles.primary}, ${gradientStyles.secondary}, ${gradientStyles.accent})`,
-          filter: 'blur(0.5px)',
-          opacity: 0.6
-        } : undefined}
+          '--gradient-primary': gradientStyles.primary,
+          '--gradient-secondary': gradientStyles.secondary,
+          '--gradient-accent': gradientStyles.accent,
+        } as React.CSSProperties : undefined}
       />
-      
+
       {/* Enhanced Floating Orbs with Live Colors */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Red Orb - Passion & Adventure */}
-        <motion.div 
-          className="absolute w-24 h-24 rounded-full opacity-20 blur-sm"
-          style={{
-            background: 'radial-gradient(circle at 30% 30%, #ff6b6b, #ff1744, #d50000)',
-            boxShadow: '0 0 60px rgba(255, 107, 107, 0.4), inset 0 0 30px rgba(255, 255, 255, 0.2)',
-            left: '15%',
-            top: '20%'
-          }}
+        <motion.div
+          className="absolute w-24 h-24 rounded-full opacity-20 blur-sm floating-orb-red"
           animate={{
             x: [0, 30, -20, 0],
             y: [0, -40, 20, 0],
@@ -183,14 +180,8 @@ const HeroSection: React.FC = memo(() => {
         />
 
         {/* Blue Orb - Dreams & Magic */}
-        <motion.div 
-          className="absolute w-32 h-32 rounded-full opacity-25 blur-sm"
-          style={{
-            background: 'radial-gradient(circle at 40% 20%, #4fc3f7, #2196f3, #0d47a1)',
-            boxShadow: '0 0 80px rgba(79, 195, 247, 0.5), inset 0 0 40px rgba(255, 255, 255, 0.3)',
-            right: '10%',
-            top: '15%'
-          }}
+        <motion.div
+          className="absolute w-32 h-32 rounded-full opacity-25 blur-sm floating-orb-blue"
           animate={{
             x: [0, -25, 35, 0],
             y: [0, 50, -30, 0],
@@ -206,14 +197,8 @@ const HeroSection: React.FC = memo(() => {
         />
 
         {/* Yellow Orb - Joy & Happiness */}
-        <motion.div 
-          className="absolute w-20 h-20 rounded-full opacity-30 blur-sm"
-          style={{
-            background: 'radial-gradient(circle at 25% 35%, #ffeb3b, #ffc107, #ff8f00)',
-            boxShadow: '0 0 50px rgba(255, 235, 59, 0.6), inset 0 0 25px rgba(255, 255, 255, 0.4)',
-            left: '70%',
-            top: '60%'
-          }}
+        <motion.div
+          className="absolute w-20 h-20 rounded-full opacity-30 blur-sm floating-orb-yellow"
           animate={{
             x: [0, -40, 15, 0],
             y: [0, -20, 45, 0],
@@ -229,14 +214,8 @@ const HeroSection: React.FC = memo(() => {
         />
 
         {/* Green Orb - Nature & Growth */}
-        <motion.div 
-          className="absolute w-28 h-28 rounded-full opacity-22 blur-sm"
-          style={{
-            background: 'radial-gradient(circle at 35% 25%, #66bb6a, #4caf50, #1b5e20)',
-            boxShadow: '0 0 70px rgba(102, 187, 106, 0.4), inset 0 0 35px rgba(255, 255, 255, 0.25)',
-            left: '25%',
-            bottom: '25%'
-          }}
+        <motion.div
+          className="absolute w-28 h-28 rounded-full opacity-22 blur-sm floating-orb-green"
           animate={{
             x: [0, 20, -35, 0],
             y: [0, -60, 25, 0],
@@ -252,14 +231,8 @@ const HeroSection: React.FC = memo(() => {
         />
 
         {/* Pink Orb - Love & Wonder */}
-        <motion.div 
-          className="absolute w-26 h-26 rounded-full opacity-28 blur-sm"
-          style={{
-            background: 'radial-gradient(circle at 45% 15%, #f8bbd9, #e91e63, #ad1457)',
-            boxShadow: '0 0 65px rgba(248, 187, 217, 0.5), inset 0 0 32px rgba(255, 255, 255, 0.35)',
-            right: '30%',
-            bottom: '35%'
-          }}
+        <motion.div
+          className="absolute w-26 h-26 rounded-full opacity-28 blur-sm floating-orb-pink"
           animate={{
             x: [0, -30, 25, 0],
             y: [0, 35, -45, 0],
@@ -275,14 +248,8 @@ const HeroSection: React.FC = memo(() => {
         />
 
         {/* Orange Orb - Energy & Excitement */}
-        <motion.div 
-          className="absolute w-22 h-22 rounded-full opacity-26 blur-sm"
-          style={{
-            background: 'radial-gradient(circle at 20% 40%, #ffb74d, #ff9800, #e65100)',
-            boxShadow: '0 0 55px rgba(255, 183, 77, 0.6), inset 0 0 28px rgba(255, 255, 255, 0.3)',
-            left: '80%',
-            top: '45%'
-          }}
+        <motion.div
+          className="absolute w-22 h-22 rounded-full opacity-26 blur-sm floating-orb-orange"
           animate={{
             x: [0, -20, 40, 0],
             y: [0, -50, 15, 0],
@@ -298,14 +265,8 @@ const HeroSection: React.FC = memo(() => {
         />
 
         {/* Purple Orb - Mystery & Magic */}
-        <motion.div 
-          className="absolute w-30 h-30 rounded-full opacity-24 blur-sm"
-          style={{
-            background: 'radial-gradient(circle at 50% 10%, #ba68c8, #9c27b0, #4a148c)',
-            boxShadow: '0 0 75px rgba(186, 104, 200, 0.4), inset 0 0 38px rgba(255, 255, 255, 0.25)',
-            right: '60%',
-            top: '70%'
-          }}
+        <motion.div
+          className="absolute w-30 h-30 rounded-full opacity-24 blur-sm floating-orb-purple"
           animate={{
             x: [0, 45, -15, 0],
             y: [0, -25, 40, 0],
@@ -320,7 +281,7 @@ const HeroSection: React.FC = memo(() => {
           }}
         />
       </div>
-      
+
       {/* Live Data Indicator */}
       {gradientData && (
         <motion.div
@@ -341,7 +302,7 @@ const HeroSection: React.FC = memo(() => {
       )}
 
       {/* Main Hero Content */}
-      <motion.div 
+      <motion.div
         style={{ y, opacity }}
         className="relative z-10 flex min-h-screen items-center justify-center px-4 text-center"
       >
@@ -353,15 +314,16 @@ const HeroSection: React.FC = memo(() => {
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="space-y-4"
           >
-            <h1 
-              className="text-6xl md:text-8xl font-extrabold cabin-sketch-bold hero-text-disney-colors"
+            <h1
+              className={cn(
+                "text-6xl md:text-8xl font-extrabold cabin-sketch-bold hero-text-disney-colors",
+                gradientStyles && "hero-title-live-gradient hero-title-live-gradient-bg"
+              )}
               style={gradientStyles ? {
-                background: `linear-gradient(45deg, ${gradientStyles.primary}, ${gradientStyles.secondary}, ${gradientStyles.accent})`,
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                color: 'transparent',
-                textShadow: '2px 2px 4px rgba(0,0,0,0.1)'
-              } : undefined}
+                '--gradient-primary': gradientStyles.primary,
+                '--gradient-secondary': gradientStyles.secondary,
+                '--gradient-accent': gradientStyles.accent,
+              } as React.CSSProperties : undefined}
             >
               WaltWise
             </h1>
@@ -371,10 +333,10 @@ const HeroSection: React.FC = memo(() => {
           </motion.div>
 
           {/* Park Switcher Orbit */}
-          <ParkSwitcherOrbit 
-            parks={PARKS} 
-            activePark={activePark} 
-            setActivePark={setActivePark} 
+          <ParkSwitcherOrbit
+            parks={PARKS}
+            activePark={activePark}
+            setActivePark={setActivePark}
           />
 
           {/* Hero CTA */}
@@ -384,8 +346,8 @@ const HeroSection: React.FC = memo(() => {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="group relative overflow-hidden bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-2xl px-8 py-6 text-lg font-semibold transform hover:scale-105 transition-all duration-300"
             >
               <span className="relative z-10 flex items-center gap-2">
@@ -394,10 +356,10 @@ const HeroSection: React.FC = memo(() => {
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-pink-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </Button>
-            
-            <Button 
-              variant="outline" 
-              size="lg" 
+
+            <Button
+              variant="outline"
+              size="lg"
               className="rounded-2xl px-8 py-6 text-lg font-semibold border-2 hover:bg-white/10 backdrop-blur-sm"
             >
               <Globe className="h-5 w-5 mr-2" />
@@ -446,14 +408,14 @@ const ParkSwitcherOrbit: React.FC<{
           <motion.button
             key={park.id}
             className={cn(
-              "absolute w-16 h-16 rounded-full flex items-center justify-center text-2xl shadow-lg transition-all duration-300 transform hover:scale-110",
+              "absolute w-16 h-16 rounded-full flex items-center justify-center text-2xl shadow-lg transition-all duration-300 transform hover:scale-110 park-orbit-element",
               `bg-gradient-to-r ${park.gradient}`,
-              activePark === park.id ? "ring-4 ring-white ring-opacity-50 scale-110" : ""
+              activePark === park.id ? "ring-[4px] ring-white scale-110" : ""
             )}
             style={{
-              left: `calc(50% + ${x}px - 2rem)`,
-              top: `calc(50% + ${y}px - 2rem)`,
-            }}
+              '--orbit-x': `${x}px`,
+              '--orbit-y': `${y}px`,
+            } as any}
             onClick={() => setActivePark(park.id)}
             animate={{
               rotate: [0, 360],
@@ -513,7 +475,7 @@ const FloatingElements: React.FC = memo(() => {
       {Array.from({ length: 20 }, (_, i) => (
         <motion.div
           key={i}
-          className="absolute text-yellow-400 opacity-30"
+          className="absolute text-yellow-400 opacity-30 floating-element-positioned"
           initial={{
             x: Math.random() * dimensions.width,
             y: Math.random() * dimensions.height,
@@ -530,9 +492,9 @@ const FloatingElements: React.FC = memo(() => {
             ease: "easeInOut"
           }}
           style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }}
+            '--random-left': `${Math.random() * 100}%`,
+            '--random-top': `${Math.random() * 100}%`,
+          } as any}
         >
           <Sparkles className="h-4 w-4" />
         </motion.div>
@@ -544,9 +506,9 @@ const FloatingElements: React.FC = memo(() => {
 FloatingElements.displayName = 'FloatingElements'
 
 // Fireworks Mode Component
-const FireworksMode: React.FC<{ 
-  isActive: boolean 
-  onToggle: (active: boolean) => void 
+const FireworksMode: React.FC<{
+  isActive: boolean
+  onToggle: (active: boolean) => void
 }> = memo(({ isActive, onToggle }) => {
   const [clickPositions, setClickPositions] = useState<Array<{ x: number; y: number; id: number }>>([])
   const [webGLSupported, setWebGLSupported] = useState<boolean | null>(null)
@@ -573,12 +535,12 @@ const FireworksMode: React.FC<{
     if (isActive) {
       const supported = checkWebGLSupport()
       setWebGLSupported(supported)
-      
+
       // Delay loading indicator for better UX
       const timer = setTimeout(() => {
         setIsLoading(false)
       }, 800)
-      
+
       return () => clearTimeout(timer)
     } else {
       setIsLoading(true)
@@ -593,42 +555,42 @@ const FireworksMode: React.FC<{
   // Enhanced click handler that works with Three.js Canvas
   const handleCanvasClick = useCallback((event: React.MouseEvent) => {
     if (!isActive || !webGLSupported) return
-    
+
     event.preventDefault()
     event.stopPropagation()
-    
+
     // Handle double-click exit (backup method)
     setClickCount(prev => prev + 1)
     if (doubleClickTimer.current) {
       clearTimeout(doubleClickTimer.current)
     }
-    
+
     doubleClickTimer.current = setTimeout(() => {
       if (clickCount >= 1) {
         // Single click - create firework
         const rect = canvasRef.current?.getBoundingClientRect()
         if (!rect) return
-        
+
         // Convert screen coordinates to normalized device coordinates (NDC)
         const x = ((event.clientX - rect.left) / rect.width) * 2 - 1
         const y = -((event.clientY - rect.top) / rect.height) * 2 + 1
-        
+
         const newFirework = {
           x,
           y,
           id: Date.now() + Math.random()
         }
-        
+
         // Add haptic feedback for mobile devices
         if (navigator.vibrate) {
           navigator.vibrate(50)
         }
-        
+
         setClickPositions(prev => [...prev.slice(-3), newFirework]) // Keep only last 3 for performance
       }
       setClickCount(0)
     }, 300)
-    
+
     // Double-click detection for backup exit
     if (clickCount === 1) {
       console.log('🚪 Double-click detected! Exiting fireworks (backup method)...')
@@ -646,21 +608,21 @@ const FireworksMode: React.FC<{
   // Handle keyboard events for accessibility
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (!isActive || !webGLSupported) return
-    
+
     if (event.code === 'Space' || event.code === 'Enter') {
       event.preventDefault()
-      
+
       // Create firework at random position
       const newFirework = {
         x: (Math.random() - 0.5) * 1.5, // Random position within reasonable bounds
         y: (Math.random() - 0.5) * 1.5,
         id: Date.now() + Math.random()
       }
-      
+
       if (navigator.vibrate) {
         navigator.vibrate(50)
       }
-      
+
       setClickPositions(prev => [...prev.slice(-3), newFirework])
     } else if (event.code === 'Escape') {
       onToggle(false)
@@ -678,11 +640,11 @@ const FireworksMode: React.FC<{
   // Clear old click positions periodically for performance
   useEffect(() => {
     if (!isActive) return
-    
+
     const cleanup = setInterval(() => {
       setClickPositions(prev => prev.slice(-2))
     }, 5000)
-    
+
     return () => clearInterval(cleanup)
   }, [isActive])
 
@@ -721,9 +683,9 @@ const FireworksMode: React.FC<{
           >
             Close
           </Button>
-                      <p className="text-xs opacity-50 architects-daughter-regular">
-              Try using Chrome, Firefox, or Safari for the best experience.
-            </p>
+          <p className="text-xs opacity-50 architects-daughter-regular">
+            Try using Chrome, Firefox, or Safari for the best experience.
+          </p>
         </div>
       </div>
     </div>
@@ -740,8 +702,10 @@ const FireworksMode: React.FC<{
           className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm cursor-crosshair"
           onClick={(e) => {
             // Only handle click if it's not on the exit button or its children
-            if (e.target !== e.currentTarget && 
-                !(e.target as Element).closest('[data-exit-button]')) {
+            const target = e.target
+            if (target !== e.currentTarget &&
+              target instanceof Element &&
+              !target.closest('[data-exit-button]')) {
               handleCanvasClick(e)
             }
           }}
@@ -771,7 +735,7 @@ const FireworksMode: React.FC<{
           {/* Main Fireworks Content */}
           {!isLoading && webGLSupported && (
             <>
-              <Suspense 
+              <Suspense
                 fallback={
                   <div className="absolute inset-0 bg-black flex items-center justify-center">
                     <div className="text-white text-center space-y-4">
@@ -782,7 +746,7 @@ const FireworksMode: React.FC<{
                 }
               >
                 <ThreeJSErrorBoundary>
-                  <ThreeJSWrapper 
+                  <ThreeJSWrapper
                     clickPositions={clickPositions}
                     onRetry={() => {
                       console.log('Retrying Three.js load...')
@@ -790,55 +754,55 @@ const FireworksMode: React.FC<{
                   />
                 </ThreeJSErrorBoundary>
               </Suspense>
-              
+
               {/* Enhanced Exit Button with proper pointer events */}
               <div className="absolute top-4 right-4 z-[60] pointer-events-auto" data-exit-button>
-                                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-red-500/30 hover:border-red-400/40 transition-all duration-200 hover:scale-105 pointer-events-auto shadow-lg"
-                    data-exit-button
-                    onMouseDown={(e) => {
-                      e.stopPropagation()
-                      e.preventDefault()
-                    }}
-                    onMouseEnter={() => {
-                      console.log('Exit button hovered!')
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      e.preventDefault()
-                      console.log('🚪 Exit button clicked! Closing fireworks...')
-                      // Add visual feedback
-                      const button = e.currentTarget
-                      button.style.transform = 'scale(0.95)'
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-red-500/30 hover:border-red-400/40 transition-all duration-200 hover:scale-105 pointer-events-auto shadow-lg"
+                  data-exit-button
+                  onMouseDown={(e) => {
+                    e.stopPropagation()
+                    e.preventDefault()
+                  }}
+                  onMouseEnter={() => {
+                    console.log('Exit button hovered!')
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    e.preventDefault()
+                    console.log('🚪 Exit button clicked! Closing fireworks...')
+                    // Add visual feedback
+                    const button = e.currentTarget
+                    button.style.transform = 'scale(0.95)'
+                    setTimeout(() => {
+                      button.style.transform = 'scale(1.05)'
                       setTimeout(() => {
-                        button.style.transform = 'scale(1.05)'
-                        setTimeout(() => {
-                          onToggle(false)
-                        }, 100)
+                        onToggle(false)
                       }, 100)
-                    }}
-                    onTouchStart={(e) => {
-                      e.stopPropagation()
-                    }}
-                    aria-label="Exit fireworks mode"
-                  >
+                    }, 100)
+                  }}
+                  onTouchStart={(e) => {
+                    e.stopPropagation()
+                  }}
+                  aria-label="Exit fireworks mode"
+                >
                   <X className="h-4 w-4 mr-2" />
                   Exit Fireworks
                 </Button>
               </div>
-              
+
               {/* Enhanced Instructions with Animation */}
-              <motion.div 
+              <motion.div
                 className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-center space-y-2 max-w-md"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.5 }}
               >
-                <motion.p 
+                <motion.p
                   className="text-lg font-semibold gloria-hallelujah-regular"
-                  animate={{ 
+                  animate={{
                     textShadow: [
                       "0 0 20px rgba(255,255,255,0.5)",
                       "0 0 30px rgba(255,255,255,0.8)",
@@ -862,7 +826,7 @@ const FireworksMode: React.FC<{
                   <span>🚪 Exit Button</span>
                 </div>
               </motion.div>
-              
+
               {/* Performance Stats (Development only) */}
               {process.env.NODE_ENV === 'development' && (
                 <div className="absolute top-4 left-4 text-white text-xs opacity-50 space-y-1">
@@ -884,7 +848,7 @@ FireworksMode.displayName = 'FireworksMode'
 // Value Props Carousel Component
 const ValuePropsCarousel: React.FC = memo(() => {
   const [currentSlide, setCurrentSlide] = useState(0)
-  
+
   const valueProps = [
     {
       icon: <Wand2 className="h-12 w-12" />,
@@ -922,19 +886,19 @@ const ValuePropsCarousel: React.FC = memo(() => {
   return (
     <section className="py-24 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900">
       <div className="max-w-7xl mx-auto px-4">
-                  <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent finger-paint-regular">
-              Why Choose WaltWise?
-            </h2>
-            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto architects-daughter-regular">
-              Experience Disney magic like never before with our cutting-edge planning technology
-            </p>
-          </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent finger-paint-regular">
+            Why Choose WaltWise?
+          </h2>
+          <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto architects-daughter-regular">
+            Experience Disney magic like never before with our cutting-edge planning technology
+          </p>
+        </motion.div>
 
         <div className="relative overflow-hidden rounded-3xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-white/20 p-8">
           <AnimatePresence mode="wait">
@@ -947,26 +911,25 @@ const ValuePropsCarousel: React.FC = memo(() => {
               className="flex flex-col lg:flex-row items-center gap-12"
             >
               <div className="flex-1 text-center lg:text-left space-y-6">
-                <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-r ${valueProps[currentSlide].gradient} text-white`}>
-                  {valueProps[currentSlide].icon}
+                <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-r ${valueProps[currentSlide]?.gradient} text-white`}>
+                  {valueProps[currentSlide]?.icon}
                 </div>
-                <h3 className={`text-3xl font-bold text-slate-800 dark:text-white ${
-                  currentSlide === 0 ? 'gloria-hallelujah-regular' :
+                <h3 className={`text-3xl font-bold text-slate-800 dark:text-white ${currentSlide === 0 ? 'gloria-hallelujah-regular' :
                   currentSlide === 1 ? 'caveat-brush-regular' :
-                  currentSlide === 2 ? 'architects-daughter-regular' :
-                  'finger-paint-regular'
-                }`}>
-                  {valueProps[currentSlide].title}
+                    currentSlide === 2 ? 'architects-daughter-regular' :
+                      'finger-paint-regular'
+                  }`}>
+                  {valueProps[currentSlide]?.title}
                 </h3>
                 <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed gloria-hallelujah-regular">
-                  {valueProps[currentSlide].description}
+                  {valueProps[currentSlide]?.description}
                 </p>
               </div>
               <div className="flex-1">
                 <div className="relative w-full h-80 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center overflow-hidden">
                   {/* Placeholder for interactive demo */}
                   <div className="text-6xl opacity-50">
-                    {valueProps[currentSlide].icon}
+                    {valueProps[currentSlide]?.icon}
                   </div>
                 </div>
               </div>
@@ -980,8 +943,8 @@ const ValuePropsCarousel: React.FC = memo(() => {
                 key={index}
                 className={cn(
                   "w-3 h-3 rounded-full transition-all duration-300",
-                  currentSlide === index 
-                    ? "bg-purple-500 w-8" 
+                  currentSlide === index
+                    ? "bg-purple-500 w-8"
                     : "bg-slate-300 dark:bg-slate-600 hover:bg-slate-400"
                 )}
                 onClick={() => setCurrentSlide(index)}
@@ -1017,7 +980,7 @@ const InteractiveMapSection: React.FC = memo(() => {
         </motion.div>
 
         <div className="relative rounded-3xl overflow-hidden bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-white/20 p-8">
-          <Suspense 
+          <Suspense
             fallback={
               <div className="w-full h-96 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 rounded-2xl flex items-center justify-center">
                 <div className="text-center space-y-4">
@@ -1064,8 +1027,8 @@ const ItineraryCTA: React.FC = memo(() => {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="group relative overflow-hidden bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-2xl px-8 py-6 text-lg font-semibold"
             >
               <span className="relative z-10 flex items-center gap-2">
@@ -1073,9 +1036,9 @@ const ItineraryCTA: React.FC = memo(() => {
                 Start Your Free Plan
               </span>
             </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
+            <Button
+              variant="outline"
+              size="lg"
               className="rounded-2xl px-8 py-6 text-lg font-semibold"
             >
               <Heart className="h-5 w-5 mr-2" />
@@ -1130,4 +1093,4 @@ const HomePage: React.FC = () => {
 // Import Clock icon (was missing)
 import { Clock } from 'lucide-react'
 
-export default HomePage 
+export default HomePage
