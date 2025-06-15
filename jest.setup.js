@@ -1,6 +1,27 @@
 // Learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom'
 
+// Polyfill for Next.js server components
+global.Request = global.Request || class Request {
+  constructor(url, options) {
+    this.url = url
+    this.method = (options && options.method) || 'GET'
+    this.headers = new Map()
+  }
+}
+
+global.Response = global.Response || class Response {
+  constructor(body, options) {
+    this.body = body
+    this.status = (options && options.status) || 200
+    this.headers = new Map()
+  }
+  
+  json() {
+    return Promise.resolve(JSON.parse(this.body))
+  }
+}
+
 // Mock Next.js router
 jest.mock('next/router', () => ({
   useRouter() {
