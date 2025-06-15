@@ -972,23 +972,23 @@ export class WaitTimeAnalyticsService {
 }
 
 // Export singleton instance
-export const analyticsService = new WaitTimeAnalyticsService();
+export const waitTimeAnalyticsService = new WaitTimeAnalyticsService();
 
 // Utility functions
 export async function getPredictionsForAttraction(attractionId: string, hoursAhead = 24) {
-    return await analyticsService.getPredictions(attractionId, hoursAhead);
+    return await waitTimeAnalyticsService.getPredictions(attractionId, hoursAhead);
 }
 
 export async function analyzeParkCrowds(parkId: string) {
-    return await analyticsService.analyzeCrowds(parkId);
+    return await waitTimeAnalyticsService.analyzeCrowds(parkId);
 }
 
 export async function detectWaitTimeAnomalies(attractionId: string) {
-    return await analyticsService.detectAnomalies(attractionId);
+    return await waitTimeAnalyticsService.detectAnomalies(attractionId);
 }
 
 export async function getHistoricalTrends(attractionId: string, period: HistoricalTrend['period'] = 'daily') {
-    return await analyticsService.generateHistoricalTrends(attractionId, period);
+    return await waitTimeAnalyticsService.generateHistoricalTrends(attractionId, period);
 }
 
 export async function getOptimizedItinerary(
@@ -996,5 +996,5 @@ export async function getOptimizedItinerary(
     visitDate: string,
     preferences: OptimizationRecommendation['preferences']
 ) {
-    return await analyticsService.generateOptimizationRecommendations(parkId, visitDate, preferences);
+    return await waitTimeAnalyticsService.generateOptimizationRecommendations(parkId, visitDate, preferences);
 }
