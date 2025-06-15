@@ -288,14 +288,16 @@ export class OpenAPIGenerator {
                 { SessionAuth: [] }
             ],
             tags: [
+                { name: 'System', description: 'System health monitoring and metrics' },
                 { name: 'Authentication', description: 'User authentication and session management' },
+                { name: 'User', description: 'User profile and preferences management' },
                 { name: 'Parks', description: 'Disney park information and data' },
                 { name: 'Attractions', description: 'Attraction details and wait times' },
                 { name: 'Restaurants', description: 'Dining locations and reservations' },
                 { name: 'Resorts', description: 'Disney resort information' },
                 { name: 'Itineraries', description: 'Trip planning and itinerary management' },
                 { name: 'Weather', description: 'Weather information and forecasts' },
-                { name: 'User', description: 'User profile and preferences' }
+                { name: 'Analytics', description: 'Data analytics and predictions' }
             ]
         }
     }
@@ -512,8 +514,170 @@ export function generateDisneyAPISpec(): OpenAPISpec {
         })
     }))
 
-    // Add API routes
+    // Add comprehensive API routes
     
+    // Health check route
+    generator.addRoute({
+        path: '/api/health',
+        method: 'GET',
+        summary: 'Health check',
+        description: 'Check the health status of the API and its dependencies',
+        tags: ['System'],
+        responses: {
+            '200': {
+                description: 'System health status',
+                schema: z.object({
+                    success: z.boolean(),
+                    data: z.object({
+                        status: z.enum(['healthy', 'degraded', 'unhealthy']),
+                        services: z.array(z.object({
+                            name: z.string(),
+                            status: z.enum(['up', 'down', 'degraded']),
+                            responseTime: z.number().optional(),
+                            lastCheck: z.number(),
+                            errorMessage: z.string().optional()
+                        })),
+                        system: z.object({
+                            memory: z.object({
+                                used: z.number(),
+                                total: z.number(),
+                                percentage: z.number()
+                            }),
+                            cpu: z.object({
+                                percentage: z.number()
+                            })
+                        }),
+                        uptime: z.number()
+                    })
+                })
+            }
+        }
+    })
+
+    // Metrics route
+    generator.addRoute({
+        path: '/api/metrics',
+        method: 'GET',
+        summary: 'Get API metrics',
+        description: 'Retrieve performance metrics and statistics for API endpoints',
+        tags: ['System'],
+        security: ['BearerAuth'],
+        parameters: {
+            query: z.object({
+                endpoint: z.string().optional(),
+                timeRange: z.string().optional(),
+                aggregated: z.enum(['true', 'false']).optional()
+            })
+        },
+        responses: {
+            '200': {
+                description: 'API metrics data',
+                schema: z.object({
+                    success: z.boolean(),
+                    data: z.array(z.object({
+                        endpoint: z.string(),
+                        method: z.string(),
+                        totalRequests: z.number(),
+                        successRate: z.number(),
+                        averageResponseTime: z.number(),
+                        errorCount: z.number()
+                    }))
+                })
+            },
+            '401': {
+                description: 'Authentication required'
+            }
+        }
+    })
+
+    // Authentication routes
+    generator.addRoute({
+        path: '/api/auth/session',
+        method: 'GET',
+        summary: 'Get session info',
+        description: 'Retrieve current user session information',
+        tags: ['Authentication'],
+        security: ['SessionAuth'],
+        responses: {
+            '200': {
+                description: 'Session information',
+                schema: z.object({
+                    success: z.boolean(),
+                    data: z.object({
+                        user: z.object({
+                            uid: z.string(),
+                            email: z.string().optional(),
+                            displayName: z.string().optional(),
+                            emailVerified: z.boolean()
+                        }),
+                        expiresAt: z.number()
+                    })
+                })
+            },
+            '401': {
+                description: 'Session invalid or expired'
+            }
+        }
+    })
+
+    generator.addRoute({
+        path: '/api/auth/session',
+        method: 'POST',
+        summary: 'Create session',
+        description: 'Create a new user session from Firebase ID token',
+        tags: ['Authentication'],
+        requestBody: z.object({
+            idToken: z.string()
+        }),
+        responses: {
+            '200': {
+                description: 'Session created successfully',
+                schema: z.object({
+                    success: z.boolean(),
+                    data: z.object({
+                        sessionCookie: z.string(),
+                        expiresAt: z.number()
+                    })
+                })
+            },
+            '400': {
+                description: 'Invalid ID token'
+            }
+        }
+    })
+
+    // User routes
+    generator.addRoute({
+        path: '/api/user/profile',
+        method: 'GET',
+        summary: 'Get user profile',
+        description: 'Retrieve the current user\'s profile information',
+        tags: ['User'],
+        security: ['BearerAuth', 'SessionAuth'],
+        responses: {
+            '200': {
+                description: 'User profile data',
+                schema: z.object({
+                    success: z.boolean(),
+                    data: z.object({
+                        uid: z.string(),
+                        email: z.string().optional(),
+                        displayName: z.string().optional(),
+                        photoURL: z.string().optional(),
+                        preferences: z.object({
+                            favoriteParks: z.array(z.string()),
+                            dietaryRestrictions: z.array(z.string()),
+                            partySize: z.number().optional()
+                        }).optional()
+                    })
+                })
+            },
+            '401': {
+                description: 'Authentication required'
+            }
+        }
+    })
+
     // Attractions routes
     generator.addRoute({
         path: '/api/attractions',
@@ -596,6 +760,54 @@ export function generateDisneyAPISpec(): OpenAPISpec {
 
     // Weather routes
     generator.addRoute({
+        path: '/api/weather/realtime',
+        method: 'GET',
+        summary: 'Get real-time weather',
+        description: 'Get current weather conditions for a specific location',
+        tags: ['Weather'],
+        parameters: {
+            query: z.object({
+                location: z.string().optional(),
+                units: z.enum(['metric', 'imperial']).optional()
+            })
+        },
+        responses: {
+            '200': {
+                description: 'Real-time weather data',
+                schema: z.object({
+                    success: z.boolean(),
+                    data: z.object({
+                        data: z.object({
+                            time: z.string(),
+                            values: z.object({
+                                temperature: z.number(),
+                                temperatureApparent: z.number(),
+                                humidity: z.number(),
+                                windSpeed: z.number(),
+                                windDirection: z.number(),
+                                precipitationProbability: z.number(),
+                                uvIndex: z.number(),
+                                cloudCover: z.number(),
+                                weatherCode: z.number()
+                            })
+                        }),
+                        location: z.object({
+                            lat: z.number(),
+                            lon: z.number(),
+                            name: z.string().optional()
+                        })
+                    }),
+                    meta: z.object({
+                        timestamp: z.string(),
+                        dataSource: z.string(),
+                        cached: z.boolean()
+                    })
+                })
+            }
+        }
+    })
+
+    generator.addRoute({
         path: '/api/weather/forecast',
         method: 'GET',
         summary: 'Get weather forecast',
@@ -603,22 +815,209 @@ export function generateDisneyAPISpec(): OpenAPISpec {
         tags: ['Weather'],
         parameters: {
             query: z.object({
-                location: z.string(),
-                units: z.enum(['metric', 'imperial']).optional()
+                location: z.string().optional(),
+                units: z.enum(['metric', 'imperial']).optional(),
+                days: z.string().optional()
             })
         },
         responses: {
             '200': {
                 description: 'Weather forecast data',
                 schema: z.object({
-                    timelines: z.object({
-                        daily: z.array(z.any()),
-                        hourly: z.array(z.any())
-                    }),
-                    location: z.object({
-                        lat: z.number(),
-                        lon: z.number(),
-                        name: z.string()
+                    success: z.boolean(),
+                    data: z.object({
+                        timelines: z.object({
+                            daily: z.array(z.object({
+                                time: z.string(),
+                                values: z.object({
+                                    temperatureMin: z.number(),
+                                    temperatureMax: z.number(),
+                                    precipitationProbability: z.number(),
+                                    weatherCode: z.number()
+                                })
+                            })),
+                            hourly: z.array(z.object({
+                                time: z.string(),
+                                values: z.object({
+                                    temperature: z.number(),
+                                    precipitationProbability: z.number(),
+                                    weatherCode: z.number()
+                                })
+                            }))
+                        }),
+                        location: z.object({
+                            lat: z.number(),
+                            lon: z.number(),
+                            name: z.string()
+                        })
+                    })
+                })
+            }
+        }
+    })
+
+    // Restaurants routes
+    generator.addRoute({
+        path: '/api/restaurants',
+        method: 'GET',
+        summary: 'Get restaurants',
+        description: 'Retrieve a list of Disney restaurants with filtering options',
+        tags: ['Restaurants'],
+        parameters: {
+            query: z.object({
+                parkId: z.string().optional(),
+                cuisineType: z.string().optional(),
+                serviceType: z.enum(['quick-service', 'table-service', 'character-dining']).optional(),
+                priceRange: z.enum(['$', '$$', '$$$', '$$$$']).optional(),
+                search: z.string().optional(),
+                page: z.string().optional(),
+                limit: z.string().optional()
+            })
+        },
+        responses: {
+            '200': {
+                description: 'List of restaurants',
+                schema: z.object({
+                    success: z.boolean(),
+                    data: z.array(z.any()),
+                    meta: z.object({
+                        timestamp: z.string(),
+                        count: z.number()
+                    })
+                })
+            }
+        }
+    })
+
+    // Resorts routes
+    generator.addRoute({
+        path: '/api/resorts',
+        method: 'GET',
+        summary: 'Get resorts',
+        description: 'Retrieve information about Disney resorts',
+        tags: ['Resorts'],
+        parameters: {
+            query: z.object({
+                category: z.enum(['value', 'moderate', 'deluxe', 'villa']).optional(),
+                search: z.string().optional()
+            })
+        },
+        responses: {
+            '200': {
+                description: 'List of resorts',
+                schema: z.object({
+                    success: z.boolean(),
+                    data: z.array(z.object({
+                        id: z.string(),
+                        name: z.string(),
+                        category: z.string(),
+                        description: z.string(),
+                        amenities: z.array(z.string()),
+                        priceRange: z.string()
+                    }))
+                })
+            }
+        }
+    })
+
+    // Itinerary routes
+    generator.addRoute({
+        path: '/api/itinerary',
+        method: 'GET',
+        summary: 'Get user itineraries',
+        description: 'Retrieve user\'s saved itineraries',
+        tags: ['Itineraries'],
+        security: ['BearerAuth', 'SessionAuth'],
+        responses: {
+            '200': {
+                description: 'User itineraries',
+                schema: z.object({
+                    success: z.boolean(),
+                    data: z.array(z.object({
+                        id: z.string(),
+                        name: z.string(),
+                        startDate: z.string(),
+                        endDate: z.string(),
+                        events: z.array(z.any())
+                    }))
+                })
+            },
+            '401': {
+                description: 'Authentication required'
+            }
+        }
+    })
+
+    generator.addRoute({
+        path: '/api/itinerary',
+        method: 'POST',
+        summary: 'Create itinerary',
+        description: 'Create a new vacation itinerary',
+        tags: ['Itineraries'],
+        security: ['BearerAuth', 'SessionAuth'],
+        requestBody: z.object({
+            name: z.string(),
+            startDate: z.string(),
+            endDate: z.string(),
+            description: z.string().optional()
+        }),
+        responses: {
+            '201': {
+                description: 'Itinerary created successfully',
+                schema: z.object({
+                    success: z.boolean(),
+                    data: z.object({
+                        id: z.string(),
+                        name: z.string(),
+                        startDate: z.string(),
+                        endDate: z.string()
+                    })
+                })
+            },
+            '400': {
+                description: 'Invalid request data'
+            },
+            '401': {
+                description: 'Authentication required'
+            }
+        }
+    })
+
+    // Analytics routes
+    generator.addRoute({
+        path: '/api/analytics/wait-times',
+        method: 'GET',
+        summary: 'Get wait time analytics',
+        description: 'Retrieve wait time predictions and analytics for attractions',
+        tags: ['Analytics'],
+        parameters: {
+            query: z.object({
+                attractionId: z.string().optional(),
+                parkId: z.string().optional(),
+                date: z.string().optional(),
+                action: z.enum(['predict', 'historical', 'trends']).optional()
+            })
+        },
+        responses: {
+            '200': {
+                description: 'Wait time analytics data',
+                schema: z.object({
+                    success: z.boolean(),
+                    data: z.object({
+                        predictions: z.array(z.object({
+                            time: z.string(),
+                            predictedWaitTime: z.number(),
+                            confidence: z.number()
+                        })),
+                        historical: z.array(z.object({
+                            date: z.string(),
+                            averageWait: z.number(),
+                            peakWait: z.number()
+                        })).optional(),
+                        trends: z.object({
+                            direction: z.enum(['increasing', 'decreasing', 'stable']),
+                            confidence: z.number()
+                        }).optional()
                     })
                 })
             }
