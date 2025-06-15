@@ -1,0 +1,494 @@
+{
+  "rules": {
+    // ================== USERS ==================
+    "users": {
+      "$userId": {
+        ".read": "auth !== null && (auth.uid === $userId || root.child('users').child(auth.uid).child('profile').child('isAdmin').val() === true)",
+        ".write": "auth !== null && auth.uid === $userId && auth.token.email_verified === true",
+        
+        "profile": {
+          ".validate": "newData.hasChildren(['displayName', 'email', 'createdAt', 'lastActive'])",
+          "displayName": {
+            ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 50"
+          },
+          "email": {
+            ".validate": "newData.isString() && newData.val().matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/)"
+          },
+          "photoURL": {
+            ".validate": "newData.isString() && newData.val().matches(/^https?:\\/\\/.*/)"
+          },
+          "phoneNumber": {
+            ".validate": "newData.isString() && newData.val().matches(/^\\+?[1-9]\\d{1,14}$/)"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && newData.val() <= now"
+          },
+          "lastActive": {
+            ".validate": "newData.isNumber() && newData.val() <= now"
+          }
+        },
+        
+        "preferences": {
+          ".validate": "newData.hasChildren(['partySize', 'hasChildren', 'ridePreference', 'maxWaitTime', 'useGeniePlus', 'walkingPace', 'notifications'])",
+          "partySize": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 20"
+          },
+          "hasChildren": {
+            ".validate": "newData.isBoolean()"
+          },
+          "childrenAges": {
+            "$index": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 17"
+            }
+          },
+          "mobilityConsiderations": {
+            ".validate": "newData.isBoolean()"
+          },
+          "ridePreference": {
+            ".validate": "newData.isString() && newData.val().matches(/^(thrill|family|all)$/)"
+          },
+          "maxWaitTime": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 300"
+          },
+          "useGeniePlus": {
+            ".validate": "newData.isBoolean()"
+          },
+          "walkingPace": {
+            ".validate": "newData.isString() && newData.val().matches(/^(slow|moderate|fast)$/)"
+          },
+          "notifications": {
+            "waitTimes": {
+              ".validate": "newData.isBoolean()"
+            },
+            "groupMessages": {
+              ".validate": "newData.isBoolean()"
+            },
+            "emergencyAlerts": {
+              ".validate": "newData.isBoolean()"
+            }
+          }
+        },
+        
+        "vacationIds": {
+          "$vacationId": {
+            ".validate": "newData.isBoolean() && newData.val() === true"
+          }
+        },
+        
+        "deviceTokens": {
+          "$tokenId": {
+            ".validate": "newData.hasChildren(['token', 'platform', 'lastUpdated'])",
+            "token": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "platform": {
+              ".validate": "newData.isString() && newData.val().matches(/^(ios|android|web)$/)"
+            },
+            "lastUpdated": {
+              ".validate": "newData.isNumber() && newData.val() <= now"
+            }
+          }
+        }
+      }
+    },
+    
+    // ================== VACATIONS ==================
+    "vacations": {
+      "$vacationId": {
+        ".read": "auth !== null && (root.child('vacations').child($vacationId).child('members').child(auth.uid).exists() || root.child('users').child(auth.uid).child('profile').child('isAdmin').val() === true)",
+        ".write": "auth !== null && (root.child('vacations').child($vacationId).child('members').child(auth.uid).child('role').val() === 'owner' || (!data.exists() && auth.uid === newData.child('basic').child('createdBy').val()) || root.child('users').child(auth.uid).child('profile').child('isAdmin').val() === true)",
+        
+        "basic": {
+          ".validate": "newData.hasChildren(['name', 'destination', 'startDate', 'endDate', 'createdBy', 'createdAt', 'updatedAt', 'status'])",
+          "name": {
+            ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 100"
+          },
+          "description": {
+            ".validate": "newData.isString() && newData.val().length <= 500"
+          },
+          "destination": {
+            ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 100"
+          },
+          "startDate": {
+            ".validate": "newData.isString()"
+          },
+          "endDate": {
+            ".validate": "newData.isString()"
+          },
+          "createdBy": {
+            ".validate": "newData.isString() && (!data.exists() || data.val() === newData.val())"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && (!data.exists() || data.val() === newData.val())"
+          },
+          "updatedAt": {
+            ".validate": "newData.isNumber() && newData.val() <= now"
+          },
+          "status": {
+            ".validate": "newData.isString() && newData.val().matches(/^(planning|confirmed|active|completed)$/)"
+          },
+          "imageUrl": {
+            ".validate": "newData.isString() && newData.val().matches(/^https?:\\/\\/.*/)"
+          },
+          "shareCode": {
+            ".validate": "newData.isString() && newData.val().length === 8"
+          }
+        },
+        
+        "members": {
+          "$memberId": {
+            ".write": "auth !== null && (auth.uid === $memberId || root.child('vacations').child($vacationId).child('members').child(auth.uid).child('role').val() === 'owner' || root.child('vacations').child($vacationId).child('members').child(auth.uid).child('permissions').child('inviteOthers').val() === true)",
+            ".validate": "newData.hasChildren(['role', 'joinedAt', 'permissions'])",
+            "role": {
+              ".validate": "newData.isString() && newData.val().matches(/^(owner|editor|viewer)$/)"
+            },
+            "joinedAt": {
+              ".validate": "newData.isNumber() && newData.val() <= now"
+            },
+            "permissions": {
+              "editItinerary": {
+                ".validate": "newData.isBoolean()"
+              },
+              "manageBudget": {
+                ".validate": "newData.isBoolean()"
+              },
+              "inviteOthers": {
+                ".validate": "newData.isBoolean()"
+              }
+            }
+          }
+        },
+        
+        "accommodation": {
+          ".validate": "newData.hasChildren(['resortId', 'resortName', 'roomType', 'checkIn', 'checkOut'])",
+          "resortId": {
+            ".validate": "newData.isString()"
+          },
+          "resortName": {
+            ".validate": "newData.isString()"
+          },
+          "roomType": {
+            ".validate": "newData.isString()"
+          },
+          "checkIn": {
+            ".validate": "newData.isString()"
+          },
+          "checkOut": {
+            ".validate": "newData.isString()"
+          },
+          "confirmationNumber": {
+            ".validate": "newData.isString()"
+          }
+        },
+        
+        "travelers": {
+          ".validate": "newData.hasChildren(['adults', 'children'])",
+          "adults": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 10"
+          },
+          "children": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10"
+          },
+          "childrenAges": {
+            "$index": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 17"
+            }
+          }
+        }
+      }
+    },
+    
+    // ================== GROUP MESSAGES ==================
+    "groupMessages": {
+      "$vacationId": {
+        ".read": "auth !== null && root.child('vacations').child($vacationId).child('members').child(auth.uid).exists()",
+        
+        "$messageId": {
+          ".write": "auth !== null && root.child('vacations').child($vacationId).child('members').child(auth.uid).exists() && (auth.uid === newData.child('userId').val() || (data.exists() && auth.uid === data.child('userId').val()))",
+          ".validate": "newData.hasChildren(['userId', 'userName', 'content', 'timestamp', 'type', 'edited'])",
+          
+          "userId": {
+            ".validate": "newData.isString() && (!data.exists() || data.val() === newData.val())"
+          },
+          "userName": {
+            ".validate": "newData.isString() && newData.val().length > 0"
+          },
+          "userPhotoURL": {
+            ".validate": "newData.isString() && newData.val().matches(/^https?:\\/\\/.*/)"
+          },
+          "content": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 1000"
+          },
+          "timestamp": {
+            ".validate": "newData.isNumber() && (!data.exists() || data.val() === newData.val())"
+          },
+          "type": {
+            ".validate": "newData.isString() && newData.val().matches(/^(text|location|photo|poll)$/)"
+          },
+          "reactions": {
+            "$userId": {
+              ".write": "auth !== null && auth.uid === $userId",
+              ".validate": "newData.isString() && newData.val().length <= 10"
+            }
+          },
+          "replyTo": {
+            ".validate": "newData.isString()"
+          },
+          "edited": {
+            ".validate": "newData.isBoolean()"
+          },
+          "editedAt": {
+            ".validate": "newData.isNumber() && newData.val() <= now"
+          }
+        }
+      }
+    },
+    
+    // ================== GROUP LOCATIONS ==================
+    "groupLocations": {
+      "$vacationId": {
+        ".read": "auth !== null && root.child('vacations').child($vacationId).child('members').child(auth.uid).exists()",
+        
+        "members": {
+          "$userId": {
+            ".write": "auth !== null && auth.uid === $userId && root.child('vacations').child($vacationId).child('members').child(auth.uid).exists()",
+            ".validate": "newData.hasChildren(['userName', 'isSharing', 'lastUpdated'])",
+            
+            "userName": {
+              ".validate": "newData.isString()"
+            },
+            "userPhotoURL": {
+              ".validate": "newData.isString() && newData.val().matches(/^https?:\\/\\/.*/)"
+            },
+            "isSharing": {
+              ".validate": "newData.isBoolean()"
+            },
+            "lastUpdated": {
+              ".validate": "newData.isNumber() && newData.val() <= now"
+            },
+            "location": {
+              ".validate": "newData.hasChildren(['latitude', 'longitude', 'name'])",
+              "latitude": {
+                ".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90"
+              },
+              "longitude": {
+                ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180"
+              },
+              "accuracy": {
+                ".validate": "newData.isNumber() && newData.val() >= 0"
+              },
+              "parkId": {
+                ".validate": "newData.isString()"
+              },
+              "areaId": {
+                ".validate": "newData.isString()"
+              },
+              "attractionId": {
+                ".validate": "newData.isString()"
+              },
+              "name": {
+                ".validate": "newData.isString()"
+              }
+            }
+          }
+        },
+        
+        "updates": {
+          "$updateId": {
+            ".write": "auth !== null && root.child('vacations').child($vacationId).child('members').child(auth.uid).exists() && auth.uid === newData.child('userId').val()",
+            ".validate": "newData.hasChildren(['userId', 'userName', 'location', 'timestamp', 'isEmergency'])",
+            
+            "userId": {
+              ".validate": "newData.isString()"
+            },
+            "userName": {
+              ".validate": "newData.isString()"
+            },
+            "userPhotoURL": {
+              ".validate": "newData.isString() && newData.val().matches(/^https?:\\/\\/.*/)"
+            },
+            "location": {
+              ".validate": "newData.hasChildren(['latitude', 'longitude', 'name'])"
+            },
+            "message": {
+              ".validate": "newData.isString() && newData.val().length <= 200"
+            },
+            "timestamp": {
+              ".validate": "newData.isNumber() && newData.val() <= now"
+            },
+            "isEmergency": {
+              ".validate": "newData.isBoolean()"
+            }
+          }
+        }
+      }
+    },
+    
+    // ================== LIVE WAIT TIMES ==================
+    "liveWaitTimes": {
+      ".read": "auth !== null",
+      
+      "$parkId": {
+        ".write": "auth !== null && root.child('users').child(auth.uid).child('profile').child('isAdmin').val() === true",
+        
+        "lastUpdated": {
+          ".validate": "newData.isNumber() && newData.val() <= now"
+        },
+        
+        "attractions": {
+          "$attractionId": {
+            ".validate": "newData.hasChildren(['status', 'standbyWait', 'lastUpdated'])",
+            
+            "status": {
+              ".validate": "newData.isString() && newData.val().matches(/^(OPERATING|DOWN|CLOSED)$/)"
+            },
+            "standbyWait": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 999"
+            },
+            "lightningLane": {
+              "available": {
+                ".validate": "newData.isBoolean()"
+              },
+              "nextReturnTime": {
+                ".validate": "newData.isString()"
+              },
+              "price": {
+                ".validate": "newData.isNumber() && newData.val() >= 0"
+              }
+            },
+            "lastUpdated": {
+              ".validate": "newData.isNumber() && newData.val() <= now"
+            }
+          }
+        }
+      }
+    },
+    
+    // ================== NOTIFICATIONS ==================
+    "notifications": {
+      "$userId": {
+        ".read": "auth !== null && auth.uid === $userId",
+        
+        "$notificationId": {
+          ".write": "auth !== null && (auth.uid === $userId || root.child('users').child(auth.uid).child('profile').child('isAdmin').val() === true)",
+          ".validate": "newData.hasChildren(['type', 'title', 'message', 'timestamp', 'read'])",
+          
+          "type": {
+            ".validate": "newData.isString()"
+          },
+          "title": {
+            ".validate": "newData.isString() && newData.val().length <= 100"
+          },
+          "message": {
+            ".validate": "newData.isString() && newData.val().length <= 500"
+          },
+          "data": {
+            "$key": {
+              ".validate": "newData.isString() || newData.isNumber() || newData.isBoolean()"
+            }
+          },
+          "timestamp": {
+            ".validate": "newData.isNumber() && newData.val() <= now"
+          },
+          "read": {
+            ".validate": "newData.isBoolean()"
+          },
+          "vacationId": {
+            ".validate": "newData.isString()"
+          }
+        }
+      }
+    },
+    
+    // ================== SYSTEM CONFIGURATION ==================
+    "system": {
+      "maintenance": {
+        ".read": true,
+        ".write": "auth !== null && root.child('users').child(auth.uid).child('profile').child('isAdmin').val() === true"
+      },
+      
+      "config": {
+        ".read": "auth !== null",
+        ".write": "auth !== null && root.child('users').child(auth.uid).child('profile').child('isAdmin').val() === true"
+      },
+      
+      "featureFlags": {
+        ".read": "auth !== null",
+        ".write": "auth !== null && root.child('users').child(auth.uid).child('profile').child('isAdmin').val() === true"
+      }
+    },
+    
+    // ================== ANALYTICS ==================
+    "analytics": {
+      ".write": "auth !== null",
+      ".read": "auth !== null && root.child('users').child(auth.uid).child('profile').child('isAdmin').val() === true",
+      
+      "$analyticsId": {
+        ".validate": "newData.hasChildren(['userId', 'event', 'timestamp'])",
+        "userId": {
+          ".validate": "newData.isString() && newData.val() === auth.uid"
+        },
+        "event": {
+          ".validate": "newData.isString()"
+        },
+        "timestamp": {
+          ".validate": "newData.isNumber() && newData.val() <= now"
+        }
+      }
+    },
+    
+    // ================== CROWD LEVELS ==================
+    "crowdLevels": {
+      ".read": "auth !== null",
+      
+      "$parkId": {
+        ".write": "auth !== null && root.child('users').child(auth.uid).child('profile').child('isAdmin').val() === true",
+        
+        "level": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 10"
+        },
+        "capacity": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+        },
+        "lastUpdated": {
+          ".validate": "newData.isNumber() && newData.val() <= now"
+        }
+      }
+    },
+    
+    // ================== LIVE EVENTS ==================
+    "liveEvents": {
+      ".read": "auth !== null",
+      
+      "$parkId": {
+        ".write": "auth !== null && root.child('users').child(auth.uid).child('profile').child('isAdmin').val() === true",
+        
+        "$eventId": {
+          ".validate": "newData.hasChildren(['type', 'name', 'location', 'startTime', 'endTime'])",
+          
+          "type": {
+            ".validate": "newData.isString()"
+          },
+          "name": {
+            ".validate": "newData.isString()"
+          },
+          "location": {
+            ".validate": "newData.isString()"
+          },
+          "startTime": {
+            ".validate": "newData.isString()"
+          },
+          "endTime": {
+            ".validate": "newData.isString()"
+          }
+        }
+      }
+    },
+    
+    // ================== DEFAULT DENY ==================
+    "$other": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}
