@@ -163,14 +163,16 @@ Use the new validation middleware for external APIs:
 
 ```typescript
 // Before
-const response = await axios.get(`${WEATHER_API_URL}/current`)
-const weather = response.data
+const response = await fetch(`${WEATHER_API_URL}/current`)
+const weather = await response.json()
 
 // After
-import { createValidatedAxiosInstance, ThirdPartySchemas, FallbackProviders } from '@/lib/api/third-party-validation'
+import { createValidatedFetch, ThirdPartySchemas, FallbackProviders } from '@/lib/api/third-party-validation'
 
-const weatherApi = createValidatedAxiosInstance(WEATHER_API_URL, {
-    'Authorization': `Bearer ${process.env.WEATHER_API_KEY}`
+const weatherApi = createValidatedFetch(WEATHER_API_URL, {
+    headers: {
+        'Authorization': `Bearer ${process.env.WEATHER_API_KEY}`
+    }
 })
 
 const weather = await weatherApi.getValidated(
