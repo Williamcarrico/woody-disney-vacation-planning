@@ -735,4 +735,24 @@ export declare function searchAttractions(filters: AttractionFilters): Promise<P
  * @param filters - Filters to apply to the search
  * @returns Promise resolving to array of matching dining locations
  */
-export declare function searchDining(filters: DiningFilters): Promise<Restaurant[]>; 
+export declare function searchDining(filters: DiningFilters): Promise<Restaurant[]>;
+
+// =============================================================================
+// BACKWARD COMPATIBILITY ALIASES
+// =============================================================================
+
+/** Backward compatibility alias for existing code */
+export type Attraction = ParkAttraction;
+
+/** Backward compatibility alias for table service restaurants */
+export type TableServiceRestaurant = Restaurant;
+
+/** Backward compatibility alias for quick service restaurants */  
+export type QuickServiceRestaurant = Restaurant;
+
+/** Firebase-compatible park interface with Timestamp objects */
+export interface FirebasePark extends Omit<DisneyPark, 'timestamps'> {
+    /** Firebase Timestamp objects for compatibility */
+    createdAt?: any; // Firebase Timestamp
+    updatedAt?: any; // Firebase Timestamp
+} 
