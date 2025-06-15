@@ -20,7 +20,9 @@
     "test:ci": "jest --ci --coverage",
     "type-check": "tsc --noEmit",
     "build:default-images": "node scripts/convert-default-images.js",
-    "setup:restaurant-db": "node scripts/setup-restaurant-db.js"
+    "setup:restaurant-db": "node scripts/setup-restaurant-db.js",
+    "migrate:types": "node -r ts-node/register scripts/migrate-types.ts",
+    "migrate:types:dry-run": "node -r ts-node/register scripts/migrate-types.ts --dry-run"
   },
   "dependencies": {
     "@date-fns/tz": "^1.2.0",
