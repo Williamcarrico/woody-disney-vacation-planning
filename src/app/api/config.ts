@@ -53,7 +53,7 @@ export function withEdge(
                 )
             } else {
                 // Configure for no caching
-                response.headers.set('Cache-Control', finalConfig.cacheControlHeaders || defaultEdgeConfig.cacheControlHeaders)
+                response.headers.set('Cache-Control', finalConfig.cacheControlHeaders || defaultEdgeConfig.cacheControlHeaders!)
             }
 
             return response

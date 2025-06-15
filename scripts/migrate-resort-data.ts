@@ -8,7 +8,7 @@
  * structure, search indexes, and categorization.
  */
 
-import { initializeApp } from 'firebase/app'
+import { initializeApp, FirebaseOptions } from 'firebase/app'
 import {
     getFirestore,
     collection,
@@ -18,18 +18,32 @@ import {
     Timestamp
 } from 'firebase/firestore'
 
-// Firebase configuration - Update with your project config
+// Firebase config for standalone script
 const firebaseConfig = {
-    apiKey: process.env.FIREBASE_API_KEY,
-    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.FIREBASE_APP_ID
+    apiKey: process.env['FIREBASE_API_KEY'],
+    authDomain: process.env['FIREBASE_AUTH_DOMAIN'],
+    projectId: process.env['FIREBASE_PROJECT_ID'],
+    storageBucket: process.env['FIREBASE_STORAGE_BUCKET'],
+    messagingSenderId: process.env['FIREBASE_MESSAGING_SENDER_ID'],
+    appId: process.env['FIREBASE_APP_ID']
 }
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig)
+// Validate required environment variables
+const requiredEnvVars = [
+    'FIREBASE_API_KEY',
+    'FIREBASE_PROJECT_ID',
+    'FIREBASE_APP_ID'
+] as const
+
+for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+        console.error(`Missing required environment variable: ${envVar}`)
+        process.exit(1)
+    }
+}
+
+// Initialize Firebase app
+const app = initializeApp(firebaseConfig as FirebaseOptions)
 const db = getFirestore(app)
 
 // Walt Disney World Resort Data
@@ -605,7 +619,7 @@ async function migrateResortData() {
                 name: 'Value Resorts',
                 description: 'Budget-friendly accommodations with Disney theming and amenities',
                 priceRange: { min: 120, max: 200 },
-                resortCount: categoryStats.VALUE_RESORTS || 0,
+                resortCount: categoryStats['VALUE_RESORTS'] || 0,
                 features: ['Food court dining', 'Themed pools', 'Disney transportation'],
                 targetAudience: ['Budget-conscious families', 'First-time visitors']
             },
@@ -614,7 +628,7 @@ async function migrateResortData() {
                 name: 'Moderate Resorts',
                 description: 'Mid-tier resorts with enhanced theming and table service dining',
                 priceRange: { min: 240, max: 400 },
-                resortCount: categoryStats.MODERATE_RESORTS || 0,
+                resortCount: categoryStats['MODERATE_RESORTS'] || 0,
                 features: ['Table service dining', 'Themed pools with slides', 'Boat transportation'],
                 targetAudience: ['Families seeking upgraded amenities', 'Couples']
             },
@@ -623,7 +637,7 @@ async function migrateResortData() {
                 name: 'Deluxe Resorts',
                 description: 'Luxury accommodations with premium locations and amenities',
                 priceRange: { min: 650, max: 1200 },
-                resortCount: categoryStats.DELUXE_RESORTS || 0,
+                resortCount: categoryStats['DELUXE_RESORTS'] || 0,
                 features: ['Multiple signature restaurants', 'Spa services', 'Monorail/boat access'],
                 targetAudience: ['Luxury travelers', 'Special occasions']
             },
@@ -632,7 +646,7 @@ async function migrateResortData() {
                 name: 'Disney Vacation Club Resorts',
                 description: 'Villa-style accommodations for Disney Vacation Club members',
                 priceRange: { min: 550, max: 950 },
-                resortCount: categoryStats.DVC_RESORTS || 0,
+                resortCount: categoryStats['DVC_RESORTS'] || 0,
                 features: ['Villa accommodations', 'Kitchen facilities', 'Member exclusives'],
                 targetAudience: ['DVC members', 'Extended stays', 'Large families']
             },
@@ -641,7 +655,7 @@ async function migrateResortData() {
                 name: 'Other Resorts',
                 description: 'Specialized resorts with unique eligibility requirements',
                 priceRange: { min: 150, max: 250 },
-                resortCount: categoryStats.OTHER_RESORTS || 0,
+                resortCount: categoryStats['OTHER_RESORTS'] || 0,
                 features: ['Golf courses', 'Military exclusive', 'Special access'],
                 targetAudience: ['Military families', 'Golf enthusiasts']
             }
