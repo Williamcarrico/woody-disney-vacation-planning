@@ -16,7 +16,7 @@ import {
     FirestoreError
 } from 'firebase/firestore'
 import { db } from './config'
-import { cacheService } from '@/lib/api/cache-service'
+import { cacheService } from '@/lib/cache/cache-service'
 
 export interface PaginationOptions {
     limit: number

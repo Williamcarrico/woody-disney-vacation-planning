@@ -112,7 +112,13 @@ class CacheServiceImpl {
         try {
             this.redis = new IORedis.Redis(this.config.redisUrl, {
                 maxRetriesPerRequest: 3,
-                lazyConnect: true
+                retryDelayOnFailover: 100,
+                lazyConnect: true,
+                // Connection pool settings
+                family: 4,
+                keepAlive: true,
+                connectTimeout: 10000,
+                commandTimeout: 5000
             })
 
             this.redis.on('connect', () => {
@@ -439,6 +445,26 @@ class CacheServiceImpl {
             memory: memoryHealthy,
             stats
         }
+    }
+
+    /**
+     * Get or set pattern (cache-aside)
+     * Tries to get from cache, if not found, calls factory function and caches the result
+     */
+    async getOrSet<T extends CacheableData>(
+        key: string,
+        factory: () => Promise<T>,
+        ttl: number = this.config.defaultTTL,
+        tags?: string[]
+    ): Promise<T> {
+        const cached = await this.get<T>(key)
+        if (cached !== null) {
+            return cached
+        }
+
+        const data = await factory()
+        await this.set(key, data, ttl, tags)
+        return data
     }
 
     /**
