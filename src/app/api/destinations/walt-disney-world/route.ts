@@ -26,10 +26,10 @@ async function handleGet(request: NextRequest) {
         // Validate query parameters
         const validation = await validateQuery(request, WaltDisneyWorldQuerySchema)
         if (!validation.success) {
-            return validation.error!
+            return validation.error
         }
 
-        const { type } = validation.data as { type: string }
+        const { type } = validation.data
 
         switch (type) {
             case 'details': {
