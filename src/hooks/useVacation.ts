@@ -20,7 +20,7 @@ import {
     VacationErrorCodes,
     formatVacationForDisplay,
     getRecommendedTicketType
-} from '@/lib/services/vacation.service'
+} from '@/lib/firebase/vacation-service-enhanced'
 
 // =============================================================================
 // HOOK CONFIGURATION & TYPES
