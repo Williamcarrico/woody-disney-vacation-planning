@@ -2,299 +2,152 @@
  * React hooks for fetching and managing Disney park data
  */
 
-import { useState, useEffect } from 'react'
 import type { DisneyPark, ParkFilters, AttractionFilters, DiningFilters } from '@/types/parks'
+import { createQueryHook, createApiFetcher } from '@/lib/api/query-factory'
 
-interface ApiResponse<T> {
-    success: boolean
-    data: T
-    total?: number
-    error?: string
+interface AttractionWithParkInfo {
+  parkId: string
+  parkName: string
 }
 
-interface UseParksResult {
-    parks: DisneyPark[]
-    loading: boolean
-    error: string | null
-    refetch: () => Promise<void>
+interface DiningWithParkInfo {
+  parkId: string
+  parkName: string
+  type: 'tableService' | 'quickService' | 'snacks'
 }
 
-interface UseAttractionResult {
-    attractions: Array<DisneyPark['attractions'][0] & { parkId: string; parkName: string }>
-    loading: boolean
-    error: string | null
-    refetch: () => Promise<void>
+type AttractionResult = Array<DisneyPark['attractions'][0] & AttractionWithParkInfo>
+type DiningResult = Array<
+  (DisneyPark['dining']['tableService'][0] | DisneyPark['dining']['quickService'][0] | DisneyPark['dining']['snacks'][0])
+  & DiningWithParkInfo
+>
+
+interface ParkStats {
+  totalAttractions: number
+  totalDining: number
+  totalLands: number
+  mustDoAttractions: number
+  lightningLaneAttractions: number
 }
 
-interface UseDiningResult {
-    dining: Array<
-        (DisneyPark['dining']['tableService'][0] | DisneyPark['dining']['quickService'][0] | DisneyPark['dining']['snacks'][0])
-        & { parkId: string; parkName: string; type: 'tableService' | 'quickService' | 'snacks' }
-    >
-    loading: boolean
-    error: string | null
-    refetch: () => Promise<void>
-}
+// Create fetchers for each endpoint
+const parksFetcher = createApiFetcher<DisneyPark[], ParkFilters>(
+  '/api/parks',
+  (filters) => {
+    const params = new URLSearchParams()
+    if (filters?.searchTerm) params.set('searchTerm', filters.searchTerm)
+    if (filters?.hasAttraction) params.set('hasAttraction', filters.hasAttraction)
+    if (filters?.hasLand) params.set('hasLand', filters.hasLand)
+    if (filters?.operatingStatus) params.set('operatingStatus', filters.operatingStatus)
+    return params
+  }
+)
+
+const parkFetcher = createApiFetcher<DisneyPark, string>(
+  '/api/parks',
+  (parkId) => new URLSearchParams()
+)
+
+const attractionsFetcher = createApiFetcher<AttractionResult, AttractionFilters>(
+  '/api/attractions',
+  (filters) => {
+    const params = new URLSearchParams()
+    if (filters?.parkId) params.set('parkId', filters.parkId)
+    if (filters?.landId) params.set('landId', filters.landId)
+    if (filters?.type) params.set('type', filters.type)
+    if (filters?.thrillLevel !== undefined) params.set('thrillLevel', filters.thrillLevel.toString())
+    if (filters?.heightRequirement) params.set('heightRequirement', 'true')
+    if (filters?.lightningLane) params.set('lightningLane', 'true')
+    if (filters?.mustDo) params.set('mustDo', 'true')
+    if (filters?.ageGroup) params.set('ageGroup', filters.ageGroup)
+    return params
+  }
+)
+
+const diningFetcher = createApiFetcher<DiningResult, DiningFilters>(
+  '/api/dining',
+  (filters) => {
+    const params = new URLSearchParams()
+    if (filters?.parkId) params.set('parkId', filters.parkId)
+    if (filters?.landId) params.set('landId', filters.landId)
+    if (filters?.type) params.set('type', filters.type)
+    if (filters?.cuisine) params.set('cuisine', filters.cuisine)
+    if (filters?.priceRange) params.set('priceRange', filters.priceRange)
+    if (filters?.characterDining) params.set('characterDining', 'true')
+    if (filters?.mobileOrder) params.set('mobileOrder', 'true')
+    if (filters?.mealPeriod) params.set('mealPeriod', filters.mealPeriod)
+    return params
+  }
+)
+
+const parkStatsFetcher = createApiFetcher<ParkStats, string>(
+  '/api/parks',
+  (parkId) => new URLSearchParams()
+)
 
 /**
  * Hook to fetch all Disney parks with optional filtering
  */
-export function useParks(filters?: ParkFilters): UseParksResult {
-    const [parks, setParks] = useState<DisneyPark[]>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-
-    const fetchParks = async () => {
-        try {
-            setLoading(true)
-            setError(null)
-
-            const searchParams = new URLSearchParams()
-            if (filters?.searchTerm) searchParams.set('searchTerm', filters.searchTerm)
-            if (filters?.hasAttraction) searchParams.set('hasAttraction', filters.hasAttraction)
-            if (filters?.hasLand) searchParams.set('hasLand', filters.hasLand)
-            if (filters?.operatingStatus) searchParams.set('operatingStatus', filters.operatingStatus)
-
-            const url = `/api/parks${searchParams.toString() ? `?${searchParams.toString()}` : ''}`
-            const response = await fetch(url)
-            const data: ApiResponse<DisneyPark[]> = await response.json()
-
-            if (!data.success) {
-                throw new Error(data.error || 'Failed to fetch parks')
-            }
-
-            setParks(data.data)
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchParks()
-    }, [filters?.searchTerm, filters?.hasAttraction, filters?.hasLand, filters?.operatingStatus])
-
-    return {
-        parks,
-        loading,
-        error,
-        refetch: fetchParks
-    }
-}
+export const useParks = createQueryHook<DisneyPark[], ParkFilters>(
+  'parks',
+  parksFetcher,
+  { staleTime: 10 * 60 * 1000 } // 10 minutes
+)
 
 /**
  * Hook to fetch a specific Disney park by ID
  */
 export function usePark(parkId: string | null) {
-    const [park, setPark] = useState<DisneyPark | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-
-    const fetchPark = async () => {
-        if (!parkId) {
-            setLoading(false)
-            return
-        }
-
-        try {
-            setLoading(true)
-            setError(null)
-
-            const response = await fetch(`/api/parks/${parkId}`)
-            const data: ApiResponse<DisneyPark> = await response.json()
-
-            if (!data.success) {
-                throw new Error(data.error || 'Failed to fetch park')
-            }
-
-            setPark(data.data)
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred')
-        } finally {
-            setLoading(false)
-        }
+  return createQueryHook<DisneyPark, string>(
+    'park',
+    async (id) => {
+      if (!id) throw new Error('Park ID is required')
+      const response = await fetch(`/api/parks/${id}`)
+      const data = await response.json()
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch park')
+      }
+      
+      return data.data
     }
-
-    useEffect(() => {
-        fetchPark()
-    }, [parkId])
-
-    return {
-        park,
-        loading,
-        error,
-        refetch: fetchPark
-    }
+  )(parkId || '', { enabled: !!parkId })
 }
 
 /**
  * Hook to search attractions across all parks
  */
-export function useAttractions(filters?: AttractionFilters): UseAttractionResult {
-    const [attractions, setAttractions] = useState<UseAttractionResult['attractions']>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-
-    const fetchAttractions = async () => {
-        try {
-            setLoading(true)
-            setError(null)
-
-            const searchParams = new URLSearchParams()
-            if (filters?.parkId) searchParams.set('parkId', filters.parkId)
-            if (filters?.landId) searchParams.set('landId', filters.landId)
-            if (filters?.type) searchParams.set('type', filters.type)
-            if (filters?.thrillLevel !== undefined) searchParams.set('thrillLevel', filters.thrillLevel.toString())
-            if (filters?.heightRequirement) searchParams.set('heightRequirement', 'true')
-            if (filters?.lightningLane) searchParams.set('lightningLane', 'true')
-            if (filters?.mustDo) searchParams.set('mustDo', 'true')
-            if (filters?.ageGroup) searchParams.set('ageGroup', filters.ageGroup)
-
-            const url = `/api/attractions${searchParams.toString() ? `?${searchParams.toString()}` : ''}`
-            const response = await fetch(url)
-            const data: ApiResponse<UseAttractionResult['attractions']> = await response.json()
-
-            if (!data.success) {
-                throw new Error(data.error || 'Failed to fetch attractions')
-            }
-
-            setAttractions(data.data)
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchAttractions()
-    }, [
-        filters?.parkId,
-        filters?.landId,
-        filters?.type,
-        filters?.thrillLevel,
-        filters?.heightRequirement,
-        filters?.lightningLane,
-        filters?.mustDo,
-        filters?.ageGroup
-    ])
-
-    return {
-        attractions,
-        loading,
-        error,
-        refetch: fetchAttractions
-    }
-}
+export const useAttractions = createQueryHook<AttractionResult, AttractionFilters>(
+  'attractions',
+  attractionsFetcher,
+  { staleTime: 5 * 60 * 1000 } // 5 minutes
+)
 
 /**
  * Hook to search dining options across all parks
  */
-export function useDining(filters?: DiningFilters): UseDiningResult {
-    const [dining, setDining] = useState<UseDiningResult['dining']>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-
-    const fetchDining = async () => {
-        try {
-            setLoading(true)
-            setError(null)
-
-            const searchParams = new URLSearchParams()
-            if (filters?.parkId) searchParams.set('parkId', filters.parkId)
-            if (filters?.landId) searchParams.set('landId', filters.landId)
-            if (filters?.type) searchParams.set('type', filters.type)
-            if (filters?.cuisine) searchParams.set('cuisine', filters.cuisine)
-            if (filters?.priceRange) searchParams.set('priceRange', filters.priceRange)
-            if (filters?.characterDining) searchParams.set('characterDining', 'true')
-            if (filters?.mobileOrder) searchParams.set('mobileOrder', 'true')
-            if (filters?.mealPeriod) searchParams.set('mealPeriod', filters.mealPeriod)
-
-            const url = `/api/dining${searchParams.toString() ? `?${searchParams.toString()}` : ''}`
-            const response = await fetch(url)
-            const data: ApiResponse<UseDiningResult['dining']> = await response.json()
-
-            if (!data.success) {
-                throw new Error(data.error || 'Failed to fetch dining')
-            }
-
-            setDining(data.data)
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchDining()
-    }, [
-        filters?.parkId,
-        filters?.landId,
-        filters?.type,
-        filters?.cuisine,
-        filters?.priceRange,
-        filters?.characterDining,
-        filters?.mobileOrder,
-        filters?.mealPeriod
-    ])
-
-    return {
-        dining,
-        loading,
-        error,
-        refetch: fetchDining
-    }
-}
+export const useDining = createQueryHook<DiningResult, DiningFilters>(
+  'dining',
+  diningFetcher,
+  { staleTime: 5 * 60 * 1000 } // 5 minutes
+)
 
 /**
  * Hook to get park statistics
  */
 export function useParkStats(parkId: string | null) {
-    const [stats, setStats] = useState<{
-        totalAttractions: number
-        totalDining: number
-        totalLands: number
-        mustDoAttractions: number
-        lightningLaneAttractions: number
-    } | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-
-    const fetchStats = async () => {
-        if (!parkId) {
-            setLoading(false)
-            return
-        }
-
-        try {
-            setLoading(true)
-            setError(null)
-
-            const response = await fetch(`/api/parks/${parkId}/stats`)
-            const data = await response.json()
-
-            if (!data.success) {
-                throw new Error(data.error || 'Failed to fetch park stats')
-            }
-
-            setStats(data.data)
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred')
-        } finally {
-            setLoading(false)
-        }
+  return createQueryHook<ParkStats, string>(
+    'parkStats',
+    async (id) => {
+      if (!id) throw new Error('Park ID is required')
+      const response = await fetch(`/api/parks/${id}/stats`)
+      const data = await response.json()
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch park stats')
+      }
+      
+      return data.data
     }
-
-    useEffect(() => {
-        fetchStats()
-    }, [parkId])
-
-    return {
-        stats,
-        loading,
-        error,
-        refetch: fetchStats
-    }
+  )(parkId || '', { enabled: !!parkId })
 }

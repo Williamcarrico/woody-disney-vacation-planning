@@ -18,6 +18,7 @@ import {
     type LocationUpdate,
     type WaitTimeData
 } from '@/lib/firebase/realtime-database'
+import type { Notification } from '@/types/shared'
 
 // =============================================================================
 // TYPE DEFINITIONS
@@ -38,17 +39,6 @@ interface MemberLocation {
         attractionId?: string
         name: string
     }
-}
-
-interface Notification {
-    id: string
-    type: string
-    title: string
-    message: string
-    timestamp: number
-    read: boolean
-    data?: Record<string, unknown>
-    vacationId?: string
 }
 
 // =============================================================================

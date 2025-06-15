@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
     collection,
     query,
     where,
     onSnapshot,
     orderBy,
-    limit
+    limit,
+    Unsubscribe
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 
@@ -35,8 +36,21 @@ export function useRealtimeData(parkId?: string) {
     const [parkData, setParkData] = useState<ParkData[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    
+    // Use refs to track subscriptions and prevent zombie listeners
+    const unsubscribeRef = useRef<Unsubscribe | null>(null)
+    const isMountedRef = useRef(true)
 
     useEffect(() => {
+        // Reset mounted flag
+        isMountedRef.current = true
+        
+        // Clean up any existing subscription
+        if (unsubscribeRef.current) {
+            unsubscribeRef.current()
+            unsubscribeRef.current = null
+        }
+
         const parkDataRef = collection(db, 'parkData')
         let q = query(
             parkDataRef,
@@ -54,26 +68,38 @@ export function useRealtimeData(parkId?: string) {
             )
         }
 
-        const unsubscribe = onSnapshot(
+        unsubscribeRef.current = onSnapshot(
             q,
             (snapshot) => {
-                const data = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })) as ParkData[]
+                // Only update state if component is still mounted
+                if (isMountedRef.current) {
+                    const data = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    })) as ParkData[]
 
-                setParkData(data)
-                setIsLoading(false)
-                setError(null)
+                    setParkData(data)
+                    setIsLoading(false)
+                    setError(null)
+                }
             },
             (err) => {
-                console.error('Error fetching realtime park data:', err)
-                setError('Failed to load park data')
-                setIsLoading(false)
+                // Only update state if component is still mounted
+                if (isMountedRef.current) {
+                    console.error('Error fetching realtime park data:', err)
+                    setError('Failed to load park data')
+                    setIsLoading(false)
+                }
             }
         )
 
-        return () => unsubscribe()
+        return () => {
+            isMountedRef.current = false
+            if (unsubscribeRef.current) {
+                unsubscribeRef.current()
+                unsubscribeRef.current = null
+            }
+        }
     }, [parkId])
 
     // Get specific park data

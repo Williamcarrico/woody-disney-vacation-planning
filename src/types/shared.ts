@@ -581,4 +581,37 @@ export interface BaseFilters {
   area?: string
   priceRange?: PriceRange[]
   operatingStatus?: OperatingStatus
+}
+
+/**
+ * Shared notification interface
+ */
+export interface Notification {
+  id: string
+  title: string
+  message: string
+  category?: string
+  read: boolean
+  createdAt: string
+  actionUrl?: string
+  priority: 'low' | 'medium' | 'high'
+  type: 'wait_time' | 'dining' | 'weather' | 'system' | 'achievement' | string
+  timestamp?: number
+  data?: Record<string, unknown>
+  vacationId?: string
+  userId?: string
+}
+
+/**
+ * Shared query options for React Query hooks
+ */
+export interface SharedQueryOptions {
+  enabled?: boolean
+  refetchInterval?: number
+  refetchOnWindowFocus?: boolean
+  staleTime?: number
+  cacheTime?: number
+  retry?: boolean | number
+  onError?: (error: Error) => void
+  onSuccess?: (data: any) => void
 } 

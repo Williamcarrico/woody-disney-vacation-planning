@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import Image from 'next/image';
 import MapPage from '@/components/maps/pages/map-page';
 import {
@@ -43,6 +43,12 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+    StreamingWrapper, 
+    LoadingComponents, 
+    ErrorFallbacks, 
+    streamingConfigs 
+} from '@/lib/streaming/ssr-streaming';
 
 // Type definitions
 interface ApiResponse {
