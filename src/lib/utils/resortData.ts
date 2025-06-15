@@ -1,7 +1,7 @@
 import {
     Resort, ResortCategory, ResortArea, AmenityCategory,
     DiningCategory, RecreationCategory, TransportationType
-} from "@/types/resort";
+} from "@/types/resort.model";
 
 export const resorts: Resort[] = [
     {

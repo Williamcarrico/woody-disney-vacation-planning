@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { validateAuthToken as validateToken, validateSessionCookie as validateSession } from './auth-validation'
 
 // Enhanced rate limiting with different tiers
 export interface RateLimitTier {
@@ -568,20 +569,18 @@ function getClientIP(request: NextRequest): string {
 }
 
 async function validateAuthToken(token: string): Promise<boolean> {
-  // Implement JWT validation with Firebase Auth or your auth system
   try {
-    // This would use Firebase Admin SDK or your auth service
-    return true // Placeholder
+    await validateToken(token)
+    return true
   } catch {
     return false
   }
 }
 
 async function validateSessionCookie(sessionCookie: string): Promise<boolean> {
-  // Implement session validation
   try {
-    // This would validate against your session store
-    return true // Placeholder
+    await validateSession(sessionCookie)
+    return true
   } catch {
     return false
   }
