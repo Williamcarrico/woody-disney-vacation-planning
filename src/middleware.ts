@@ -314,20 +314,23 @@ function checkSessionRotation(request: NextRequest): { isValid: boolean, needsRo
  */
 const generateCsp = () => {
     const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
-    // Create CSP string - improved security with reduced unsafe directives
+    // Create CSP string - enhanced security with proper nonce usage and restricted directives
     const csp = [
         "default-src 'self'",
-        `script-src 'self' 'nonce-${nonce}' https://maps.googleapis.com https://www.googletagmanager.com https://cdn.jsdelivr.net https://firebasestorage.googleapis.com`,
-        `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com https://maps.googleapis.com`,
-        `img-src 'self' data: blob: https://maps.gstatic.com https://*.googleapis.com https://*.ggpht.com *.google.com *.googleusercontent.com`,
+        `script-src 'self' 'nonce-${nonce}' https://maps.googleapis.com https://www.googletagmanager.com https://cdn.jsdelivr.net https://firebasestorage.googleapis.com https://www.gstatic.com`,
+        `style-src 'self' 'nonce-${nonce}' 'unsafe-inline' https://fonts.googleapis.com https://maps.googleapis.com`,
+        `img-src 'self' data: blob: https: *.google.com *.googleapis.com *.gstatic.com *.ggpht.com *.googleusercontent.com`,
         `font-src 'self' https://fonts.gstatic.com`,
         `frame-src 'self' *.google.com`,
-        `connect-src 'self' https://maps.googleapis.com https://*.googleapis.com *.google.com https://*.google-analytics.com https://www.googletagmanager.com https://*.gstatic.com data: blob: https://firebasestorage.googleapis.com https://api.tomorrow.io`,
+        `connect-src 'self' https: wss: https://maps.googleapis.com https://*.googleapis.com https://www.google-analytics.com https://www.googletagmanager.com https://firebasestorage.googleapis.com https://api.tomorrow.io`,
         `worker-src 'self' blob:`,
         `form-action 'self'`,
         `frame-ancestors 'self'`,
         `base-uri 'self'`,
-        `media-src 'self' data: blob:`
+        `media-src 'self' data: blob:`,
+        `object-src 'none'`,
+        `manifest-src 'self'`,
+        `upgrade-insecure-requests`
     ].join('; ')
 
     return { csp, nonce }
@@ -481,11 +484,16 @@ export async function middleware(request: NextRequest) {
         // Generate CSP and nonce
         const { csp, nonce } = generateCsp()
 
-        // Set CSP header
-        // Note: 'unsafe-inline' for styles is often needed but try to restrict if possible
-        // 'unsafe-eval' for scripts is also a security risk, review its necessity
+        // Set comprehensive security headers
         response.headers.set('Content-Security-Policy', csp)
         response.headers.set('X-Nonce', nonce) // Pass nonce to be used in _document.tsx or page components
+        response.headers.set('X-Content-Type-Options', 'nosniff')
+        response.headers.set('X-Frame-Options', 'DENY')
+        response.headers.set('X-XSS-Protection', '1; mode=block')
+        response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+        response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self), payment=()')
+        response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload')
+        response.headers.set('X-DNS-Prefetch-Control', 'off')
     }
 
     // Skip token rotation for API routes that would cause infinite loops

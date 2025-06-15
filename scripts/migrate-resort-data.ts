@@ -505,28 +505,28 @@ function generateSearchTerms(resort: any): string[] {
 
     // Add name variations
     const nameWords = resort.name.toLowerCase().split(' ')
-    nameWords.forEach(word => {
+    nameWords.forEach((word: string) => {
         if (word.length > 2) terms.add(word)
     })
 
     // Add theme terms
     if (resort.theme) {
         const themeWords = resort.theme.toLowerCase().split(' ')
-        themeWords.forEach(word => {
+        themeWords.forEach((word: string) => {
             if (word.length > 2) terms.add(word)
         })
     }
 
     // Add location terms
     const locationWords = resort.location.toLowerCase().split(' ')
-    locationWords.forEach(word => {
+    locationWords.forEach((word: string) => {
         if (word.length > 2) terms.add(word)
     })
 
     // Add amenities
     resort.amenities.forEach((amenity: string) => {
         const amenityWords = amenity.toLowerCase().split(' ')
-        amenityWords.forEach(word => {
+        amenityWords.forEach((word: string) => {
             if (word.length > 2) terms.add(word)
         })
     })
@@ -534,7 +534,7 @@ function generateSearchTerms(resort: any): string[] {
     // Add promotional tags
     resort.promotionalTags.forEach((tag: string) => {
         const tagWords = tag.toLowerCase().split(' ')
-        tagWords.forEach(word => {
+        tagWords.forEach((word: string) => {
             if (word.length > 2) terms.add(word)
         })
     })
@@ -679,11 +679,11 @@ async function migrateResortData() {
             lastUpdated: new Date().toISOString(),
             dataSource: 'Walt Disney World Resort Data Migration',
             categories: {
-                value: categoryStats.VALUE_RESORTS || 0,
-                moderate: categoryStats.MODERATE_RESORTS || 0,
-                deluxe: categoryStats.DELUXE_RESORTS || 0,
-                dvc: categoryStats.DVC_RESORTS || 0,
-                other: categoryStats.OTHER_RESORTS || 0
+                value: categoryStats['VALUE_RESORTS'] || 0,
+                moderate: categoryStats['MODERATE_RESORTS'] || 0,
+                deluxe: categoryStats['DELUXE_RESORTS'] || 0,
+                dvc: categoryStats['DVC_RESORTS'] || 0,
+                other: categoryStats['OTHER_RESORTS'] || 0
             },
             averageRating: Math.round(averageRating * 10) / 10,
             priceRanges: {
