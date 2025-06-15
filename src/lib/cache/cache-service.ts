@@ -14,14 +14,23 @@ interface CacheConfig {
     enableRedis: boolean
     redisUrl?: string
     keyPrefix: string
+    /** Enable cache compression */
+    compression?: boolean
+    /** JSON serialization options */
+    jsonOptions?: {
+        replacer?: (key: string, value: any) => any
+        reviver?: (key: string, value: any) => any
+    }
 }
 
 const DEFAULT_CONFIG: CacheConfig = {
     defaultTTL: 300, // 5 minutes
     maxMemoryItems: 1000,
     enableRedis: process.env.NODE_ENV === 'production',
-    redisUrl: process.env.REDIS_URL,
-    keyPrefix: 'disney-vacation:'
+    redisUrl: process.env.REDIS_URL || process.env.REDIS_CONNECTION_STRING,
+    keyPrefix: 'disney-vacation:',
+    compression: false,
+    jsonOptions: {}
 }
 
 // Cache statistics
