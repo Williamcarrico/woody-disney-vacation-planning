@@ -198,7 +198,7 @@ function sortRestaurantsByDistance(restaurants: DisneyRestaurant[]): DisneyResta
         const restaurantsWithDistance = restaurants.map(restaurant => ({
             restaurant,
             distance: getCachedDistance(
-                userLocation!,
+                userLocation as UserLocation,
                 {
                     latitude: restaurant.location.latitude,
                     longitude: restaurant.location.longitude
@@ -310,9 +310,9 @@ export function parseTimeToMinutes(timeStr: string): number {
     const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i)
     if (!match) return 0
 
-    let hours = parseInt(match[1])
-    const minutes = parseInt(match[2])
-    const period = match[3].toUpperCase()
+    let hours = parseInt(match[1] as string)
+    const minutes = parseInt(match[2] as string)
+    const period = (match[3] as string).toUpperCase()
 
     if (period === 'PM' && hours !== 12) {
         hours += 12
@@ -343,8 +343,8 @@ export function isRestaurantOpen(restaurant: DisneyRestaurant, currentTime?: Dat
             return true
         }
 
-        const openingTime = parseTimeToMinutes(timeRange[0].trim())
-        const closingTime = parseTimeToMinutes(timeRange[1].trim())
+        const openingTime = parseTimeToMinutes(timeRange[0]?.trim() || '')
+        const closingTime = parseTimeToMinutes(timeRange[1]?.trim() || '')
         const currentMinutes = now.getHours() * 60 + now.getMinutes()
 
         // Handle cases where closing time is past midnight
@@ -376,13 +376,19 @@ export function getNextOpeningTime(restaurant: DisneyRestaurant): string | null 
             if (timeRange.length === 2) {
                 if (i === 0) {
                     // Today - check if we're before opening time
-                    const openingTime = parseTimeToMinutes(timeRange[0].trim())
-                    const currentMinutes = now.getHours() * 60 + now.getMinutes()
-                    if (currentMinutes < openingTime) {
-                        return `Today at ${timeRange[0].trim()}`
+                    const firstTime = timeRange[0]?.trim()
+                    if (firstTime) {
+                        const openingTime = parseTimeToMinutes(firstTime)
+                        const currentMinutes = now.getHours() * 60 + now.getMinutes()
+                        if (currentMinutes < openingTime) {
+                            return `Today at ${firstTime}`
+                        }
                     }
                 } else {
-                    return `${dayName} at ${timeRange[0].trim()}`
+                    const firstTime = timeRange[0]?.trim()
+                    if (firstTime) {
+                        return `${dayName} at ${firstTime}`
+                    }
                 }
             }
         }
@@ -530,7 +536,7 @@ export function getRestaurantStatus(restaurant: DisneyRestaurant): {
     const isOpen = isRestaurantOpen(restaurant)
     const now = new Date()
     const dayName = now.toLocaleDateString('en-US', { weekday: 'long' })
-    const hours = restaurant.operatingHours[dayName]
+    const hours = restaurant.operatingHours[dayName as keyof typeof restaurant.operatingHours]
 
     if (!hours || hours === "Closed" || hours.toLowerCase() === "closed") {
         const nextOpening = getNextOpeningTime(restaurant)
@@ -538,7 +544,7 @@ export function getRestaurantStatus(restaurant: DisneyRestaurant): {
             isOpen: false,
             status: 'closed',
             message: 'Closed today',
-            nextChange: nextOpening || undefined
+            ...(nextOpening ? { nextChange: nextOpening } : {})
         }
     }
 
@@ -551,8 +557,8 @@ export function getRestaurantStatus(restaurant: DisneyRestaurant): {
         }
     }
 
-    const openingTime = parseTimeToMinutes(timeRange[0].trim())
-    const closingTime = parseTimeToMinutes(timeRange[1].trim())
+    const openingTime = parseTimeToMinutes(timeRange[0]?.trim() || '')
+    const closingTime = parseTimeToMinutes(timeRange[1]?.trim() || '')
     const currentMinutes = now.getHours() * 60 + now.getMinutes()
 
     if (isOpen) {
@@ -563,14 +569,14 @@ export function getRestaurantStatus(restaurant: DisneyRestaurant): {
                 isOpen: true,
                 status: 'closing-soon',
                 message: `Closes in ${minutesToClose} minutes`,
-                nextChange: timeRange[1].trim()
+                ...(timeRange[1]?.trim() ? { nextChange: timeRange[1].trim() } : {})
             }
         }
         return {
             isOpen: true,
             status: 'open',
-            message: `Open until ${timeRange[1].trim()}`,
-            nextChange: timeRange[1].trim()
+            message: `Open until ${timeRange[1]?.trim() || ''}`,
+            ...(timeRange[1]?.trim() ? { nextChange: timeRange[1].trim() } : {})
         }
     } else {
         // Check if opening soon (within next 60 minutes)
@@ -580,14 +586,14 @@ export function getRestaurantStatus(restaurant: DisneyRestaurant): {
                 isOpen: false,
                 status: 'opening-soon',
                 message: `Opens in ${minutesToOpen} minutes`,
-                nextChange: timeRange[0].trim()
+                ...(timeRange[0]?.trim() ? { nextChange: timeRange[0].trim() } : {})
             }
         }
         return {
             isOpen: false,
             status: 'closed',
             message: 'Currently closed',
-            nextChange: timeRange[0].trim()
+            ...(timeRange[0]?.trim() ? { nextChange: timeRange[0].trim() } : {})
         }
     }
 }

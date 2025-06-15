@@ -97,7 +97,7 @@ function MapProviderComponent(props: Readonly<MapProviderProps>) {
 
     // Get API key from props or environment with validation
     const finalApiKey = useMemo(() => {
-        const key = apiKey || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+        const key = apiKey || process.env['NEXT_PUBLIC_GOOGLE_MAPS_API_KEY'];
         if (!key) {
             console.warn('Google Maps API key is missing. Falling back to no-maps mode.');
         }
@@ -195,17 +195,23 @@ function MapProviderComponent(props: Readonly<MapProviderProps>) {
     }, [onLoadError, retryAttempts, retryDelay, showUserNotification]);
 
     // API Provider configuration
-    const apiProviderConfig = useMemo(() => ({
-        apiKey: finalApiKey,
-        libraries,
-        region,
-        language,
-        onLoad: handleLoadSuccess,
-        onError: handleLoadError,
-        ...(process.env.NODE_ENV === 'development' && {
-            version: 'beta', // Use beta version in development for latest features
-        }),
-    }), [finalApiKey, libraries, region, language, handleLoadSuccess, handleLoadError]);
+    const apiProviderConfig = useMemo(() => {
+        const config: any = {
+            apiKey: finalApiKey,
+            libraries,
+            onLoad: handleLoadSuccess,
+            onError: handleLoadError,
+        };
+        
+        if (region) config.region = region;
+        if (language) config.language = language;
+        
+        if (process.env['NODE_ENV'] === 'development') {
+            config.version = 'beta'; // Use beta version in development for latest features
+        }
+        
+        return config;
+    }, [finalApiKey, libraries, region, language, handleLoadSuccess, handleLoadError]);
 
     // Reset loading state when API key changes
     useEffect(() => {

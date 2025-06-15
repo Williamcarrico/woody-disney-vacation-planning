@@ -117,7 +117,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         if (body.latitude !== undefined) updateData.latitude = body.latitude
         if (body.longitude !== undefined) updateData.longitude = body.longitude
         if (body.radius !== undefined) updateData.radius = body.radius
-        if (body.type !== undefined) updateData.type = body.type
+        if (body.type !== undefined) updateData.type = body.type as 'custom' | 'attraction' | 'altitude' | 'meeting' | 'safety' | 'directional'
         if (body.isActive !== undefined) updateData.isActive = body.isActive
 
         // Directional geofencing

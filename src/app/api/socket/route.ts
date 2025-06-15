@@ -376,5 +376,5 @@ export async function GET() {
     })
 }
 
-// Export the Socket.io server instance for use in other parts of the app
-export { io, initializeSocketServer }
+// Note: Socket.io server instance should be accessed through a separate module,
+// not exported from a route handler

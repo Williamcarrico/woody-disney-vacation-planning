@@ -34,10 +34,14 @@ healthChecker.registerService('firebase', async () => {
 healthChecker.registerService('weather-api', async () => {
     try {
         const startTime = Date.now()
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
         const response = await fetch('https://api.tomorrow.io/v4/weather/realtime?location=28.3772,-81.5707&apikey=test', {
             method: 'HEAD',
-            timeout: 5000
-        })
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
         const responseTime = Date.now() - startTime
         
         return {
@@ -46,14 +50,14 @@ healthChecker.registerService('weather-api', async () => {
             responseTime,
             lastCheck: Date.now()
         }
-    } catch (error) {
-        return {
-            name: 'weather-api',
-            status: 'down',
-            lastCheck: Date.now(),
-            errorMessage: error instanceof Error ? error.message : 'Connection failed'
+        } catch (error) {
+            return {
+                name: 'weather-api',
+                status: 'down',
+                lastCheck: Date.now(),
+                errorMessage: error instanceof Error ? error.message : 'Connection failed'
+            }
         }
-    }
 })
 
 export const GET = withErrorHandler(async (request: NextRequest) => {

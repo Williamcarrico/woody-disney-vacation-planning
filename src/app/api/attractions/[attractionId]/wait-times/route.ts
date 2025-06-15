@@ -482,35 +482,38 @@ async function transformLiveDataToAdvancedWaitTime(
   includeAnalytics = false
 ): Promise<WaitTimeResponse> {
   // Type guard to ensure attractions data is properly typed
-  const attractionsData = liveData.attractions && typeof liveData.attractions === 'object'
-    ? liveData.attractions as Record<string, LiveAttractionData>
+  const attractionsData = liveData['attractions'] && typeof liveData['attractions'] === 'object'
+    ? liveData['attractions'] as Record<string, LiveAttractionData>
     : {};
 
   const attraction = attractionsData[attractionId] || liveData;
-  const attractionMapping = ATTRACTION_ID_MAPPINGS[Object.keys(ATTRACTION_ID_MAPPINGS).find(
+  const mappingKey = Object.keys(ATTRACTION_ID_MAPPINGS).find(
     key => ATTRACTION_ID_MAPPINGS[key].themeParksId === attractionId
-  ) || ''];
+  );
+  const attractionMapping = mappingKey ? ATTRACTION_ID_MAPPINGS[mappingKey] : null;
 
   // Extract wait time from various queue types with intelligent parsing
   let waitTime = 0;
   let status: WaitTimeResponse['status'] = 'CLOSED';
   let confidence = 0.8; // Base confidence
 
-  if (attraction.queue) {
-    if (attraction.queue.STANDBY?.waitTime !== undefined) {
-      waitTime = attraction.queue.STANDBY.waitTime;
+  if (attraction['queue']) {
+    const queue = attraction['queue'] as any;
+    if (queue['STANDBY']?.waitTime !== undefined) {
+      waitTime = queue['STANDBY'].waitTime;
       status = 'OPERATING';
       confidence = 0.9;
-    } else if (attraction.queue.SINGLE_RIDER?.waitTime !== undefined) {
-      waitTime = attraction.queue.SINGLE_RIDER.waitTime;
+    } else if (queue['SINGLE_RIDER']?.waitTime !== undefined) {
+      waitTime = queue['SINGLE_RIDER'].waitTime;
       status = 'OPERATING';
       confidence = 0.8;
     }
   }
 
   // Enhanced status parsing
-  if (attraction.status) {
-    switch (attraction.status.toLowerCase()) {
+  if (attraction['status']) {
+    const statusValue = attraction['status'];
+    switch (typeof statusValue === 'string' ? statusValue.toLowerCase() : '') {
       case 'operating':
       case 'open':
         status = 'OPERATING';
@@ -540,12 +543,13 @@ async function transformLiveDataToAdvancedWaitTime(
     type: 'NONE'
   };
 
-  if (attraction.queue?.PAID_RETURN_TIME || attraction.queue?.RETURN_TIME) {
-    const paidQueue = attraction.queue.PAID_RETURN_TIME || attraction.queue.RETURN_TIME;
+  if (attraction['queue']) {
+    const queue = attraction['queue'] as any;
+    const paidQueue = queue['PAID_RETURN_TIME'] || queue['RETURN_TIME'];
 
     if (paidQueue) {
       lightningLane.available = paidQueue.state === 'AVAILABLE';
-      lightningLane.type = attraction.queue.PAID_RETURN_TIME ? 'INDIVIDUAL_LIGHTNING_LANE' : 'GENIE_PLUS';
+      lightningLane.type = queue['PAID_RETURN_TIME'] ? 'INDIVIDUAL_LIGHTNING_LANE' : 'GENIE_PLUS';
 
       if (paidQueue.price) {
         lightningLane.price = paidQueue.price;
@@ -567,13 +571,16 @@ async function transformLiveDataToAdvancedWaitTime(
     available: false
   };
 
-  if (attraction.queue?.BOARDING_GROUP) {
-    const boardingGroup = attraction.queue.BOARDING_GROUP;
-    virtualQueue.available = boardingGroup.state === 'AVAILABLE';
-    virtualQueue.currentGroup = boardingGroup.currentGroupStart;
-    virtualQueue.estimatedWait = boardingGroup.estimatedWait;
-    virtualQueue.totalGroups = boardingGroup.allocationStatus?.totalGroups;
-    virtualQueue.averageCallTime = 15; // Estimated average time between group calls
+  if (attraction['queue']) {
+    const queue = attraction['queue'] as any;
+    const boardingGroup = queue['BOARDING_GROUP'];
+    if (boardingGroup) {
+      virtualQueue.available = boardingGroup.state === 'AVAILABLE';
+      virtualQueue.currentGroup = boardingGroup.currentGroupStart;
+      virtualQueue.estimatedWait = boardingGroup.estimatedWait;
+      virtualQueue.totalGroups = boardingGroup.allocationStatus?.totalGroups;
+      virtualQueue.averageCallTime = 15; // Estimated average time between group calls
+    }
   }
 
   // Advanced metadata calculation
@@ -655,19 +662,34 @@ async function transformLiveDataToAdvancedWaitTime(
     analytics = await generateAdvancedAnalytics(attractionId, waitTime);
   }
 
-  return {
+  const response: WaitTimeResponse = {
     attractionId,
     waitTime,
     status,
     lastUpdated: new Date().toISOString(),
-    confidence,
-    predictedWaitTime,
-    predictionConfidence,
-    lightningLane,
-    virtualQueue,
-    metadata,
-    analytics
+    confidence
   };
+
+  if (predictedWaitTime !== undefined) {
+    response.predictedWaitTime = predictedWaitTime;
+  }
+  if (predictionConfidence !== undefined) {
+    response.predictionConfidence = predictionConfidence;
+  }
+  if (lightningLane) {
+    response.lightningLane = lightningLane;
+  }
+  if (virtualQueue) {
+    response.virtualQueue = virtualQueue;
+  }
+  if (metadata) {
+    response.metadata = metadata;
+  }
+  if (analytics) {
+    response.analytics = analytics;
+  }
+
+  return response;
 }
 
 // Enhanced data storage with comprehensive analytics
@@ -731,10 +753,11 @@ async function storeAdvancedWaitTimeData(
 // GET handler for a specific attraction's wait time with advanced features
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ attractionId: string }> }
+  context: { params: Promise<{ attractionId: string }> }
 ) {
   try {
-    const { attractionId } = await params;
+    const params = await context.params;
+    const { attractionId } = params;
     const url = new URL(request.url);
     const includePrediction = url.searchParams.get('prediction') !== 'false';
     const includeMetadata = url.searchParams.get('metadata') !== 'false';
@@ -796,7 +819,7 @@ export async function GET(
         const liveData = await getParkLiveData(parkThemeParksId);
         const transformedData = await transformLiveDataToAdvancedWaitTime(
           attractionMapping.themeParksId,
-          liveData.attractions?.[attractionMapping.themeParksId] || {},
+          liveData['attractions']?.[attractionMapping.themeParksId] || {},
           includeMetadata,
           includeAnalytics
         );
@@ -884,7 +907,10 @@ export async function GET(
 
       // Add analytics if requested
       if (includeAnalytics && response.status === 'OPERATING') {
-        response.analytics = await generateAdvancedAnalytics(attractionId, response.waitTime);
+        const analytics = await generateAdvancedAnalytics(attractionId, response.waitTime);
+        if (analytics) {
+          response.analytics = analytics;
+        }
       }
 
       // Cache the result
@@ -996,7 +1022,7 @@ export async function POST(request: Request) {
       // Fetch live data for the entire park
       const liveData = await getParkLiveData(themeParksId);
 
-      if (!liveData.attractions) {
+      if (!liveData['attractions']) {
         return NextResponse.json(
           { error: 'No attraction data available', parkId, timestamp: new Date().toISOString() },
           { status: 503 }
@@ -1010,14 +1036,15 @@ export async function POST(request: Request) {
       let operatingCount = 0;
 
       // Process each attraction
-      for (const [themeParksAttractionId, attractionData] of Object.entries(liveData.attractions)) {
+      const attractionsData = liveData['attractions'] as Record<string, unknown>;
+      for (const [themeParksAttractionId, attractionData] of Object.entries(attractionsData)) {
         // Find our internal attraction ID
         const internalAttractionId = Object.keys(ATTRACTION_ID_MAPPINGS).find(
           key => ATTRACTION_ID_MAPPINGS[key].themeParksId === themeParksAttractionId &&
             ATTRACTION_ID_MAPPINGS[key].parkId === parkId
         );
 
-        if (!internalAttractionId && attractionIds && !attractionIds.includes(themeParksAttractionId)) {
+        if (internalAttractionId === undefined && attractionIds && !attractionIds.includes(themeParksAttractionId)) {
           continue; // Skip if not in requested list and no mapping found
         }
 
@@ -1026,7 +1053,7 @@ export async function POST(request: Request) {
 
         const transformedData = await transformLiveDataToAdvancedWaitTime(
           themeParksAttractionId,
-          attractionData,
+          attractionData as Record<string, unknown>,
           includeMetadata,
           includeAnalytics
         );
@@ -1056,7 +1083,7 @@ export async function POST(request: Request) {
           waitTimes.push(transformedData.waitTime);
 
           // Group by area for heatmap
-          if (attractionMapping?.area) {
+          if (attractionMapping !== null && attractionMapping.area) {
             if (!areaWaitTimes[attractionMapping.area]) {
               areaWaitTimes[attractionMapping.area] = [];
             }

@@ -109,16 +109,16 @@ export async function POST(request: Request) {
 
         switch (action) {
             case 'optimize-itinerary':
-                return await handleOptimizeItinerary(body);
+                return await handleOptimizeItinerary(body as unknown as OptimizeItineraryRequest);
 
             case 'trigger-scraping':
                 return await handleTriggerScraping();
 
             case 'bulk-predictions':
-                return await handleBulkPredictions(body);
+                return await handleBulkPredictions(body as unknown as { attractionIds: string[]; hoursAhead?: number; includeFactors?: boolean });
 
             case 'park-insights':
-                return await handleParkInsights(body);
+                return await handleParkInsights(body as unknown as ParkInsightsRequest);
 
             default:
                 return NextResponse.json(

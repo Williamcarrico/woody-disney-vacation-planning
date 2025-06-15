@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { withEdge } from '../../config'
 import { validateQuery } from '@/lib/api/validation'
@@ -24,12 +24,12 @@ export const runtime = 'edge'
  * - year: YYYY (for schedule)
  * - month: MM (for schedule)
  */
-async function handleGet(request: NextRequest) {
+async function handleGet(request: NextRequest): Promise<NextResponse> {
     try {
         // Validate query parameters
         const validation = await validateQuery(request, MagicKingdomQuerySchema)
         if (!validation.success) {
-            return validation.error!
+            return validation.error as NextResponse
         }
 
         const { type, year, month } = validation.data

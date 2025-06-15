@@ -9,7 +9,7 @@ export function corsMiddleware(request: NextRequest, response: NextResponse) {
     const origin = request.headers.get('origin') || ''
     const isAllowedOrigin = [
         'https://woody-disney-vacation-planning.vercel.app',
-        process.env.NEXT_PUBLIC_SITE_URL || '',
+        process.env['NEXT_PUBLIC_SITE_URL'] || '',
     ].includes(origin)
 
     // Configure CORS headers

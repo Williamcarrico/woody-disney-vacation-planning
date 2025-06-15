@@ -242,8 +242,8 @@ const StatsCard = ({ icon: Icon, title, value, change, trend }: {
     )
 }
 
-export default function PlanningDashboardPage({ params }: { readonly params?: { readonly vacationId?: string } }) {
-    const vacationId = params?.vacationId || "vacation123"
+export default function PlanningDashboardPage() {
+    const vacationId = "vacation123" // Will be obtained from context or props in real implementation
     const [activeTab, setActiveTab] = useState("dashboard")
     const [isRefreshing, setIsRefreshing] = useState(false)
     const [notifications] = useState(3)

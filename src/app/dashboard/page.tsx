@@ -40,7 +40,7 @@ import { FirebaseUser, FirebaseVacation } from "@/lib/firebase/collections"
 
 // Types
 export interface DashboardPageProps {
-    searchParams?: { [key: string]: string | string[] | undefined }
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
 // Enhanced type definitions with Disney theming
@@ -304,6 +304,9 @@ export default async function EnhancedDashboardPage({ searchParams }: DashboardP
         redirect("/login")
     }
 
+    // Await searchParams
+    const params = await searchParams
+
     // Fetch all enhanced data in parallel
     const [userData, weatherData, statsData, eventsData, achievementsData]: [
         EnhancedUserData,
@@ -320,8 +323,8 @@ export default async function EnhancedDashboardPage({ searchParams }: DashboardP
     ])
 
     // Extract active tab from search params
-    const activeTab = (searchParams?.tab && typeof searchParams.tab === 'string')
-        ? searchParams.tab
+    const activeTab = (params?.tab && typeof params.tab === 'string')
+        ? params.tab
         : 'magical-overview'
 
     // Convert vacation dates for enhanced component compatibility

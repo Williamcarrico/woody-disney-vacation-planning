@@ -36,7 +36,7 @@ const FIREBASE_PATTERNS = [
         geofences: 'ValidatedGeofenceService',
         resorts: 'ValidatedResortService'
       }
-      const service = serviceMap[collection] || 'ValidatedFirestoreService'
+      const service = serviceMap[collection as keyof typeof serviceMap] || 'ValidatedFirestoreService'
       return `Use ${service} instead of direct collection() call`
     }
   },

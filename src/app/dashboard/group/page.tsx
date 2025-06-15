@@ -36,10 +36,11 @@ export const metadata: Metadata = {
     description: "Plan your Disney vacation with friends and family",
 }
 
-export default function GroupPage({ params }: { readonly params: { readonly vacationId?: string } }) {
+export default async function GroupPage({ params }: { readonly params: Promise<{ readonly vacationId?: string }> }) {
     // In a real app, we would get the vacation ID from the URL
     // For now, we'll use a hardcoded vacation ID
-    const vacationId = params.vacationId || "vacation123"
+    const resolvedParams = await params;
+    const vacationId = resolvedParams.vacationId || "vacation123"
 
     return (
         <div className="container py-6">

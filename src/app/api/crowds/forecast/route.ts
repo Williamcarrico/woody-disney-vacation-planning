@@ -16,6 +16,7 @@ interface DayPattern {
 
 interface EventData {
   date: string;
+  type: string;
   impact: number;
   description: string;
 }
@@ -51,14 +52,14 @@ async function generateCrowdForecast(parkId?: string | null, days: number = 7) {
         const upcomingEvents = await getUpcomingEvents(days);
 
         // Calculate today's crowd level
-        const todayCrowdLevel = calculateCurrentCrowdLevel(today, historicalPatterns, upcomingEvents);
+        const todayCrowdLevel = calculateCurrentCrowdLevel(today, historicalPatterns, upcomingEvents.filter(e => e.date !== undefined) as EventData[]);
 
         for (let i = 0; i < days; i++) {
             const forecastDate = new Date(today);
             forecastDate.setDate(today.getDate() + i);
 
-            const crowdLevel = calculateCrowdLevel(forecastDate, historicalPatterns, upcomingEvents);
-            const notes = generateCrowdNotes(forecastDate, crowdLevel, upcomingEvents);
+            const crowdLevel = calculateCrowdLevel(forecastDate, historicalPatterns, upcomingEvents.filter(e => e.date !== undefined) as EventData[]);
+            const notes = generateCrowdNotes(forecastDate, crowdLevel, upcomingEvents.filter(e => e.date !== undefined) as EventData[]);
 
             forecast.push({
                 date: forecastDate.toISOString().split('T')[0],
@@ -131,9 +132,9 @@ function analyzeHistoricalPatterns(data: unknown) {
                         // Normalize wait times to crowd levels (1-10)
                         const crowdLevel = Math.min(10, Math.max(1, Math.round(entry.waitTime / 10)));
 
-                    patterns.hourly[hour] = (patterns.hourly[hour] || 0) + crowdLevel;
-                    patterns.daily[dayOfWeek] = (patterns.daily[dayOfWeek] || 0) + crowdLevel;
-                    patterns.monthly[month] = (patterns.monthly[month] || 0) + crowdLevel;
+                        patterns.hourly[hour] = (patterns.hourly[hour] || 0) + crowdLevel;
+                        patterns.daily[dayOfWeek] = (patterns.daily[dayOfWeek] || 0) + crowdLevel;
+                        patterns.monthly[month] = (patterns.monthly[month] || 0) + crowdLevel;
                     }
                 });
             }
@@ -142,7 +143,10 @@ function analyzeHistoricalPatterns(data: unknown) {
 
     // Average the patterns
     Object.keys(patterns.hourly).forEach(hour => {
-        patterns.hourly[parseInt(hour)] = Math.round(patterns.hourly[parseInt(hour)] / 30); // Rough average
+        const hourNum = parseInt(hour);
+        if (patterns.hourly[hourNum] !== undefined) {
+            patterns.hourly[hourNum] = Math.round(patterns.hourly[hourNum] / 30); // Rough average
+        }
     });
 
     return patterns;
@@ -206,10 +210,11 @@ function calculateCurrentCrowdLevel(date: Date, patterns: Record<string, Record<
     const dayOfWeek = date.getDay();
     const month = date.getMonth();
 
-    let baseCrowdLevel = patterns.daily[dayOfWeek] || 5;
+    let baseCrowdLevel = (patterns['daily'] && patterns['daily'][dayOfWeek]) || 5;
 
     // Adjust for month
-    const monthlyFactor = (patterns.monthly[month] || 6) / 6;
+    const monthlyValue = (patterns['monthly'] && patterns['monthly'][month]) || 6;
+    const monthlyFactor = monthlyValue / 6;
     baseCrowdLevel = Math.round(baseCrowdLevel * monthlyFactor);
 
     // Adjust for events
@@ -240,10 +245,11 @@ function generateCrowdNotes(date: Date, crowdLevel: number, events: EventData[])
         return dayEvents[0].description;
     }
 
-    if (crowdLevel <= 3) return `${dayNames[dayOfWeek]}, light crowds`;
-    if (crowdLevel <= 5) return `${dayNames[dayOfWeek]}, moderate crowds`;
-    if (crowdLevel <= 7) return `${dayNames[dayOfWeek]}, busy`;
-    return `${dayNames[dayOfWeek]}, very busy`;
+    const dayName = dayOfWeek >= 0 && dayOfWeek < dayNames.length ? dayNames[dayOfWeek] : 'Unknown day';
+    if (crowdLevel <= 3) return `${dayName}, light crowds`;
+    if (crowdLevel <= 5) return `${dayName}, moderate crowds`;
+    if (crowdLevel <= 7) return `${dayName}, busy`;
+    return `${dayName}, very busy`;
 }
 
 function calculateTrend(forecast: { level: number }[]): string {

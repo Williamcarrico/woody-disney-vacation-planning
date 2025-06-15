@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { withEdge } from '../../config'
 import { validateQuery } from '@/lib/api/validation'
@@ -21,12 +21,12 @@ export const runtime = 'edge'
  * Query parameters:
  * - type: 'details' | 'children' | 'live'
  */
-async function handleGet(request: NextRequest) {
+async function handleGet(request: NextRequest): Promise<NextResponse> {
     try {
         // Validate query parameters
         const validation = await validateQuery(request, WaltDisneyWorldQuerySchema)
         if (!validation.success) {
-            return validation.error
+            return validation.error as NextResponse
         }
 
         const { type } = validation.data
@@ -53,11 +53,11 @@ async function handleGet(request: NextRequest) {
                     grouped,
                     summary: {
                         total: childrenData.children.length,
-                        parks: grouped.PARK?.length || 0,
-                        attractions: grouped.ATTRACTION?.length || 0,
-                        restaurants: grouped.RESTAURANT?.length || 0,
-                        shows: grouped.SHOW?.length || 0,
-                        hotels: grouped.HOTEL?.length || 0
+                        parks: grouped['PARK']?.length || 0,
+                        attractions: grouped['ATTRACTION']?.length || 0,
+                        restaurants: grouped['RESTAURANT']?.length || 0,
+                        shows: grouped['SHOW']?.length || 0,
+                        hotels: grouped['HOTEL']?.length || 0
                     }
                 })
             }

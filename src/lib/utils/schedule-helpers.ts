@@ -57,13 +57,13 @@ export function validateSchedule(schedule: unknown): schedule is Schedule {
   const s = schedule as Record<string, unknown>;
 
   // Check if it's an operating schedule
-  if (typeof s.openingTime === 'string' && typeof s.closingTime === 'string') {
+  if (typeof s['openingTime'] === 'string' && typeof s['closingTime'] === 'string') {
     return true;
   }
 
   // Check if it's a show schedule
-  if (Array.isArray(s.performanceTimes) && s.performanceTimes.length > 0) {
-    return s.performanceTimes.every(time => typeof time === 'string');
+  if (Array.isArray(s['performanceTimes']) && (s['performanceTimes'] as unknown[]).length > 0) {
+    return (s['performanceTimes'] as unknown[]).every(time => typeof time === 'string');
   }
 
   return false;

@@ -137,7 +137,7 @@ export class WebSocketService {
     public initialize(server: HTTPServer): void {
         this.io = new SocketIOServer(server, {
             cors: {
-                origin: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+                origin: process.env['NEXT_PUBLIC_APP_URL'] || "http://localhost:3000",
                 methods: ["GET", "POST"],
                 credentials: true
             },
@@ -383,7 +383,7 @@ export class WebSocketService {
         const connection = this.connections.get(socketId)
         if (!connection) return true
 
-        const limit = RATE_LIMITS[action] || RATE_LIMITS.default
+        const limit = RATE_LIMITS[action] || RATE_LIMITS['default']
         const now = Date.now()
         const requestInfo = connection.requestCounts.get(action)
 
@@ -391,12 +391,12 @@ export class WebSocketService {
             // Reset or initialize counter
             connection.requestCounts.set(action, {
                 count: 1,
-                resetTime: now + limit.windowMs
+                resetTime: now + limit!.windowMs
             })
             return false
         }
 
-        if (requestInfo.count >= limit.maxRequests) {
+        if (requestInfo.count >= limit!.maxRequests) {
             // Rate limited
             this.io?.to(socketId).emit(WebSocketEvents.RATE_LIMITED, {
                 action,

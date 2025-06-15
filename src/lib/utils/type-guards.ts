@@ -65,7 +65,7 @@ export const isObjectWith = <T extends Record<string, unknown>>(
     if (!isObject(value)) return false
     
     return Object.entries(shape).every(([key, guard]) => 
-        key in value && guard(value[key])
+        key in value && guard((value as Record<string, unknown>)[key])
     )
 }
 
@@ -124,7 +124,7 @@ export const isLocationData = (value: unknown): value is {
         longitude: isNumber
     }) && (
         !hasProperty(value, 'accuracy') || 
-        isNumber(value.accuracy)
+        isNumber(value['accuracy'])
     )
 
 // Form validation type guards
@@ -168,15 +168,15 @@ export const isApiResponse = <T>(
     dataGuard?: (data: unknown) => data is T
 ): value is { success: boolean; data?: T; error?: { message: string; code: string } } => {
     if (!isObject(value)) return false
-    if (!hasProperty(value, 'success') || !isBoolean(value.success)) return false
+    if (!hasProperty(value, 'success') || !isBoolean(value['success'])) return false
     
-    if (hasProperty(value, 'data') && dataGuard && !dataGuard(value.data)) return false
+    if (hasProperty(value, 'data') && dataGuard && !dataGuard(value['data'])) return false
     
     if (hasProperty(value, 'error')) {
-        const error = value.error
+        const error = value['error']
         if (!isObject(error)) return false
-        if (!hasProperty(error, 'message') || !isString(error.message)) return false
-        if (!hasProperty(error, 'code') || !isString(error.code)) return false
+        if (!hasProperty(error, 'message') || !isString(error['message'])) return false
+        if (!hasProperty(error, 'code') || !isString(error['code'])) return false
     }
     
     return true
@@ -197,10 +197,10 @@ export const isPaginatedResponse = <T>(
 } => {
     if (!isObject(value)) return false
     
-    if (!hasProperty(value, 'data') || !isArrayOf(value.data, itemGuard)) return false
+    if (!hasProperty(value, 'data') || !isArrayOf(value['data'], itemGuard)) return false
     
     if (!hasProperty(value, 'pagination')) return false
-    const pagination = value.pagination
+    const pagination = value['pagination']
     
     return isObjectWith(pagination, {
         page: isNumber,
@@ -223,11 +223,11 @@ export const isFirebaseUser = (value: unknown): value is {
         uid: isString,
         emailVerified: isBoolean
     }) && (
-        !hasProperty(value, 'email') || isString(value.email) || isNull(value.email)
+        !hasProperty(value, 'email') || isString(value['email']) || isNull(value['email'])
     ) && (
-        !hasProperty(value, 'displayName') || isString(value.displayName) || isNull(value.displayName)
+        !hasProperty(value, 'displayName') || isString(value['displayName']) || isNull(value['displayName'])
     ) && (
-        !hasProperty(value, 'photoURL') || isString(value.photoURL) || isNull(value.photoURL)
+        !hasProperty(value, 'photoURL') || isString(value['photoURL']) || isNull(value['photoURL'])
     )
 
 export const isFirebaseError = (value: unknown): value is {
@@ -254,7 +254,7 @@ export const isTouchEvent = (value: unknown): value is TouchEvent =>
 export const isInputEvent = (value: unknown): value is Event & { target: HTMLInputElement } =>
     value instanceof Event && 
     hasProperty(value, 'target') && 
-    value.target instanceof HTMLInputElement
+    value['target'] instanceof HTMLInputElement
 
 // Complex type guards for business logic
 export const isValidItineraryItem = (value: unknown): value is {
@@ -269,7 +269,8 @@ export const isValidItineraryItem = (value: unknown): value is {
         name: isString,
         startTime: isString,
         duration: isNumber,
-        type: (val: unknown) => isString(val) && ['attraction', 'dining', 'show', 'break'].includes(val)
+        type: (val: unknown): val is 'attraction' | 'dining' | 'show' | 'break' => 
+            isString(val) && ['attraction', 'dining', 'show', 'break'].includes(val)
     })
 
 export const isValidVacation = (value: unknown): value is {
@@ -343,5 +344,5 @@ export const safeCastAsync = async <T>(
 
 // Utility for exhaustive checking
 export const assertNever = (value: never): never => {
-    throw new Error(`Unexpected value: ${value}`)
+    throw new Error(`Unexpected value: ${JSON.stringify(value)}`)
 }

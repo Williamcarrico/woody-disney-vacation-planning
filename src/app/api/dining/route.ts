@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { parksService } from '@/lib/firebase/parks-service'
-import type { DiningFilters } from '@/types/parks.model'
+import type { DiningFilters, ParkId } from '@/types/parks.model'
 
 /**
  * GET /api/dining
@@ -11,16 +11,20 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url)
 
         // Extract filter parameters
-        const filters: DiningFilters = {
-            parkId: searchParams.get('parkId') || undefined,
-            landId: searchParams.get('landId') || undefined,
-            type: searchParams.get('type') as 'tableService' | 'quickService' | 'snacks' || undefined,
-            cuisine: searchParams.get('cuisine') || undefined,
-            priceRange: searchParams.get('priceRange') || undefined,
-            characterDining: searchParams.get('characterDining') === 'true' || undefined,
-            mobileOrder: searchParams.get('mobileOrder') === 'true' || undefined,
-            mealPeriod: searchParams.get('mealPeriod') as 'breakfast' | 'lunch' | 'dinner' | 'snacks' || undefined
-        }
+        const parkIdParam = searchParams.get('parkId');
+        const typeParam = searchParams.get('type');
+        const mealPeriodParam = searchParams.get('mealPeriod');
+        
+        const filters: any = {};
+        
+        if (parkIdParam) filters.parkId = parkIdParam as ParkId;
+        if (searchParams.get('landId')) filters.landId = searchParams.get('landId');
+        if (typeParam) filters.type = typeParam as 'tableService' | 'quickService' | 'snacks';
+        if (searchParams.get('cuisine')) filters.cuisine = searchParams.get('cuisine');
+        if (searchParams.get('priceRange')) filters.priceRange = searchParams.get('priceRange');
+        if (searchParams.get('characterDining') === 'true') filters.characterDining = true;
+        if (searchParams.get('mobileOrder') === 'true') filters.mobileOrder = true;
+        if (mealPeriodParam) filters.mealPeriod = mealPeriodParam as 'breakfast' | 'lunch' | 'dinner' | 'brunch' | 'allday';
 
         // Remove undefined filters
         const cleanFilters = Object.fromEntries(

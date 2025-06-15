@@ -19,6 +19,9 @@ import { Badge } from '../ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { toast } from '../ui/use-toast';
 import styles from './interactive-map.module.css';
+import { mapsProxy } from '@/lib/services/google-maps-proxy';
+import { useGeofencingWithLocation } from '@/hooks/useGeofencing';
+import { DistanceCalculator } from '@/lib/services/consolidated-geofencing';
 
 // Default Disney World coordinates (Magic Kingdom)
 const DEFAULT_CENTER = { lat: 28.4177, lng: -81.5812 };
@@ -64,6 +67,7 @@ export interface InteractiveMapProps {
     initialCenter?: { lat: number; lng: number };
     initialZoom?: number;
     mapId?: string;
+    userId?: string;
     groupMembers?: readonly GroupMember[];
     geofences?: readonly GeofenceData[];
     onLocationUpdate?: (location: { lat: number; lng: number }) => void;
@@ -84,23 +88,20 @@ function SearchBox() {
     const handleSearch = async () => {
         if (!map || !query) return;
 
-        // Check if Google Maps is loaded before using it
-        if (typeof google === 'undefined' || !google.maps?.Geocoder) {
-            console.warn('Google Maps API not loaded, search functionality unavailable');
-            return;
-        }
-
         try {
-            const geocoder = new google.maps.Geocoder();
-            geocoder.geocode({ address: query }, (results, status) => {
-                if (status === google.maps.GeocoderStatus.OK && results?.[0]) {
-                    const location = results[0].geometry.location;
-                    map.panTo({ lat: location.lat(), lng: location.lng() });
-                    map.setZoom(15);
-                }
-            });
+            const response = await mapsProxy.geocode(query);
+            if (response.status === 'OK' && response.results.length > 0) {
+                const location = response.results[0].geometry.location;
+                map.panTo({ lat: location.lat, lng: location.lng });
+                map.setZoom(15);
+            }
         } catch (error) {
             console.error('Error during search:', error);
+            toast({
+                title: 'Search failed',
+                description: 'Unable to find location. Please try again.',
+                variant: 'destructive',
+            });
         }
     };
 
@@ -560,6 +561,7 @@ export function InteractiveMap({
     initialCenter = DEFAULT_CENTER,
     initialZoom = DEFAULT_ZOOM,
     mapId,
+    userId,
     groupMembers = [],
     geofences = [],
     onLocationUpdate,
@@ -587,60 +589,65 @@ export function InteractiveMap({
         document.documentElement.style.setProperty('--map-width', typeof width === 'number' ? `${width}px` : width);
     }, [height, width]);
 
-    // Check if user has entered or exited any geofences
-    const checkGeofences = useCallback((location: { lat: number; lng: number }) => {
-        if (!onGeofenceEnter || !onGeofenceExit || !location) return;
+    // Initialize geofencing
+    const geofencing = useGeofencingWithLocation({
+        userId: userId || 'default-user',
+        onEnter: useCallback((event) => {
+            const geofence = {
+                id: event.geofence.id,
+                lat: event.geofence.lat,
+                lng: event.geofence.lng,
+                radius: event.geofence.radius,
+                name: event.geofence.name,
+            };
+            onGeofenceEnter?.(geofence);
+        }, [onGeofenceEnter]),
+        onExit: useCallback((event) => {
+            const geofence = {
+                id: event.geofence.id,
+                lat: event.geofence.lat,
+                lng: event.geofence.lng,
+                radius: event.geofence.radius,
+                name: event.geofence.name,
+            };
+            onGeofenceExit?.(geofence);
+        }, [onGeofenceExit]),
+        enableToasts: true,
+    });
 
-        // Check if Google Maps is loaded before using it
-        if (typeof google === 'undefined' || !google.maps?.geometry?.spherical) {
-            console.warn('Google Maps geometry library not loaded, skipping geofence checks');
-            return;
-        }
-
-        geofences.forEach(geofence => {
-            try {
-                // Calculate distance between user and geofence center in meters
-                const distance = google.maps.geometry.spherical.computeDistanceBetween(
-                    new google.maps.LatLng(location.lat, location.lng),
-                    new google.maps.LatLng(geofence.lat, geofence.lng)
-                );
-
-                // Store the previous inside state in a ref or state
-                const wasInside = sessionStorage.getItem(`geofence-${geofence.id}`) === 'inside';
-                const isInside = distance <= geofence.radius;
-
-                if (isInside && !wasInside) {
-                    // User entered the geofence
-                    sessionStorage.setItem(`geofence-${geofence.id}`, 'inside');
-                    onGeofenceEnter(geofence);
-                } else if (!isInside && wasInside) {
-                    // User exited the geofence
-                    sessionStorage.setItem(`geofence-${geofence.id}`, 'outside');
-                    onGeofenceExit(geofence);
-                }
-            } catch (error) {
-                console.error('Error checking geofences:', error);
-            }
+    // Sync geofences with the service
+    useEffect(() => {
+        // Remove all existing geofences
+        geofencing.activeGeofences.forEach(gf => {
+            geofencing.removeGeofence(gf.id);
         });
-    }, [geofences, onGeofenceEnter, onGeofenceExit]);
+
+        // Add new geofences
+        geofences.forEach(gf => {
+            geofencing.addGeofence({
+                ...gf,
+                type: 'custom',
+                priority: 'medium',
+                alerts: {
+                    onEnter: true,
+                    onExit: true,
+                    onDwell: false,
+                    cooldown: 300,
+                    sound: false,
+                    vibrate: true,
+                },
+            });
+        });
+    }, [geofences, geofencing]);
 
     // Check if user is too far from any group members
     const checkGroupSeparation = useCallback((location: { lat: number; lng: number }) => {
         if (!onGroupMemberDistanceAlert || !location) return;
 
-        // Check if Google Maps is loaded before using it
-        if (typeof google === 'undefined' || !google.maps?.geometry?.spherical) {
-            console.warn('Google Maps geometry library not loaded, skipping group separation checks');
-            return;
-        }
-
         groupMembers.forEach(member => {
             try {
-                // Calculate distance between user and group member in meters
-                const distance = google.maps.geometry.spherical.computeDistanceBetween(
-                    new google.maps.LatLng(location.lat, location.lng),
-                    new google.maps.LatLng(member.lat, member.lng)
-                );
+                // Calculate distance using consolidated service
+                const distance = DistanceCalculator.haversine(location, member);
 
                 // Check if distance exceeds max separation and alert hasn't been sent recently
                 const recentAlertKey = `distance-alert-${member.id}`;
@@ -663,56 +670,25 @@ export function InteractiveMap({
     useEffect(() => {
         if (!showUserLocation) return;
 
-        // Check if geolocation is supported by the browser
-        if ('geolocation' in navigator) {
-            // Get initial position
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const newLocation = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
-                    onLocationUpdate?.(newLocation);
-                },
-                (error) => {
-                    console.error('Error getting initial location:', error);
-                }
-            );
+        // Start watching location with geofencing
+        geofencing.startWatching();
 
-            // Set up continuous watching of position
-            watchIdRef.current = navigator.geolocation.watchPosition(
-                (position) => {
-                    const newLocation = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
-                    onLocationUpdate?.(newLocation);
-
-                    // Check for geofence entry/exit
-                    checkGeofences(newLocation);
-
-                    // Check distance to other group members
-                    checkGroupSeparation(newLocation);
-                },
-                (error) => {
-                    console.error('Error watching location:', error);
-                },
-                {
-                    enableHighAccuracy: true,
-                    maximumAge: 10000, // 10 seconds
-                    timeout: 10000     // 10 seconds
-                }
-            );
-        }
-
-        // Clean up the watch on component unmount
+        // Clean up on unmount
         return () => {
-            if (watchIdRef.current !== null) {
-                navigator.geolocation.clearWatch(watchIdRef.current);
-                watchIdRef.current = null;
-            }
+            geofencing.stopWatching();
         };
-    }, [showUserLocation, onLocationUpdate, checkGeofences, checkGroupSeparation]);
+    }, [showUserLocation, geofencing]);
+
+    // Update location callback when location changes
+    useEffect(() => {
+        if (geofencing.lastLocation && onLocationUpdate) {
+            const { lat, lng } = geofencing.lastLocation;
+            onLocationUpdate({ lat, lng });
+            
+            // Check distance to other group members
+            checkGroupSeparation({ lat, lng });
+        }
+    }, [geofencing.lastLocation, onLocationUpdate, checkGroupSeparation]);
 
     // Show warning if no mapId is provided
     useEffect(() => {

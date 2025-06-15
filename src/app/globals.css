@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 
 /* Import dynamic hero gradient styles */
-@import "../styles/hero-gradient.css";
+/* @import "../styles/hero-gradient.css"; */
 
 @custom-variant dark (&:is(.dark *));
 
@@ -59,6 +59,44 @@
   --theme-border-radius: 12px;
   --theme-shadow-color: rgba(0, 0, 0, 0.1);
   --theme-glow-intensity: 0.6;
+
+  /* Hero Gradient Variables - Integrated from hero-gradient.css */
+  --hero-gradient-primary: rgb(59, 130, 246);
+  --hero-gradient-secondary: rgb(147, 51, 234);
+  --hero-gradient-accent: rgb(236, 72, 153);
+  --hero-gradient-primary-light: color-mix(
+    in srgb,
+    var(--hero-gradient-primary) 70%,
+    white 30%
+  );
+  --hero-gradient-secondary-light: color-mix(
+    in srgb,
+    var(--hero-gradient-secondary) 70%,
+    white 30%
+  );
+  --hero-gradient-accent-light: color-mix(
+    in srgb,
+    var(--hero-gradient-accent) 70%,
+    white 30%
+  );
+  --hero-gradient-primary-dark: color-mix(
+    in srgb,
+    var(--hero-gradient-primary) 80%,
+    black 20%
+  );
+  --hero-gradient-secondary-dark: color-mix(
+    in srgb,
+    var(--hero-gradient-secondary) 80%,
+    black 20%
+  );
+  --hero-gradient-accent-dark: color-mix(
+    in srgb,
+    var(--hero-gradient-accent) 80%,
+    black 20%
+  );
+  --hero-gradient-intensity: 50;
+  --hero-gradient-weather-opacity: 0.85;
+  --hero-gradient-temp-saturation: 1;
 
   /* Existing animations */
   --animate-marquee: marquee var(--duration) infinite linear;
@@ -268,6 +306,117 @@
       opacity: 0;
     }
   }
+
+  /* Weather animations - Integrated from weather/animations.css */
+  --animate-bounce-slow: bounce-slow 2s infinite ease-in-out;
+  @keyframes bounce-slow {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+
+  --animate-shake: shake 1.5s infinite ease-in-out;
+  @keyframes shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(-2px);
+    }
+    50% {
+      transform: translateX(0);
+    }
+    75% {
+      transform: translateX(2px);
+    }
+  }
+
+  --animate-fade-in: fade-in 0.3s ease-in-out;
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  --animate-slide-up: slide-up 0.4s ease-out;
+  @keyframes slide-up {
+    from {
+      transform: translateY(10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  /* User location pulse animation - Integrated from ParkMap.module.css */
+  --animate-user-location-pulse: userLocationPulse 2s infinite;
+  @keyframes userLocationPulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  /* Hero gradient pulse animation - Integrated from hero-gradient.css */
+  --animate-hero-gradient-pulse: hero-gradient-pulse 12s ease-in-out infinite;
+  @keyframes hero-gradient-pulse {
+    0%,
+    100% {
+      opacity: 0.4;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.7;
+      transform: scale(1.1);
+    }
+  }
+
+  /* Hero orb float animation - Integrated from hero-gradient.css */
+  --animate-hero-orb-float: hero-orb-float 15s ease-in-out infinite;
+  @keyframes hero-orb-float {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.3;
+    }
+    33% {
+      transform: translate(30px, -40px) scale(1.1);
+      opacity: 0.5;
+    }
+    66% {
+      transform: translate(-20px, 20px) scale(0.9);
+      opacity: 0.4;
+    }
+  }
+
+  /* Hero shimmer animation - Integrated from hero-gradient.css */
+  --animate-hero-shimmer: hero-shimmer 3s ease-in-out infinite;
+  @keyframes hero-shimmer {
+    0%,
+    100% {
+      background-position: 200% 0;
+    }
+    50% {
+      background-position: -200% 0;
+    }
+  }
+
+  /* Duplicate marquee keyframes removed for optimization */
   @keyframes marquee {
     from {
       transform: translateX(0);
@@ -1459,4 +1608,720 @@
 .floating-element-positioned {
   left: var(--random-left);
   top: var(--random-top);
+}
+
+/* ===== HERO GRADIENT STYLES - Integrated from hero-gradient.css ===== */
+
+/* Main hero background gradient */
+.hero-live-gradient {
+  background: radial-gradient(
+    ellipse 120% 80% at 50% 0%,
+    color-mix(
+      in srgb,
+      var(--hero-gradient-primary) calc(var(--hero-gradient-intensity) * 1%),
+      transparent
+    ),
+    color-mix(
+        in srgb,
+        var(--hero-gradient-secondary)
+          calc(var(--hero-gradient-intensity) * 0.8%),
+        transparent
+      )
+      45%,
+    color-mix(
+        in srgb,
+        var(--hero-gradient-accent) calc(var(--hero-gradient-intensity) * 0.6%),
+        transparent
+      )
+      70%,
+    transparent 90%
+  );
+
+  /* Smooth transitions for color changes */
+  transition: background 2s ease-in-out;
+
+  /* Weather opacity modifier */
+  opacity: var(--hero-gradient-weather-opacity);
+
+  /* Filter for temperature-based saturation */
+  filter: saturate(var(--hero-gradient-temp-saturation));
+}
+
+/* Animated overlay gradient for movement */
+.hero-live-gradient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 100% 60% at 30% 20%,
+    color-mix(in srgb, var(--hero-gradient-accent-light) 30%, transparent),
+    transparent 60%
+  );
+  animation: hero-gradient-pulse 12s ease-in-out infinite;
+  z-index: -1;
+}
+
+/* Secondary overlay for depth */
+.hero-live-gradient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 100% at 70% 80%,
+    color-mix(in srgb, var(--hero-gradient-primary-light) 25%, transparent),
+    transparent 50%
+  );
+  animation: hero-gradient-pulse 8s ease-in-out infinite reverse;
+  z-index: -1;
+}
+
+/* Hero floating orbs using live colors */
+.hero-floating-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(60px);
+  animation: hero-orb-float 15s ease-in-out infinite;
+}
+
+.hero-floating-orb-1 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--hero-gradient-primary) 40%, transparent),
+    transparent 70%
+  );
+  top: -20%;
+  right: -10%;
+  animation-delay: -3s;
+}
+
+.hero-floating-orb-2 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--hero-gradient-secondary) 35%, transparent),
+    transparent 70%
+  );
+  bottom: -25%;
+  left: -15%;
+  animation-delay: -8s;
+}
+
+.hero-floating-orb-3 {
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--hero-gradient-accent) 45%, transparent),
+    transparent 70%
+  );
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation-delay: -12s;
+}
+
+/* Shimmer effect for text using live colors */
+.hero-text-shimmer {
+  background: linear-gradient(
+    110deg,
+    var(--hero-gradient-primary),
+    var(--hero-gradient-secondary) 45%,
+    var(--hero-gradient-accent) 55%,
+    var(--hero-gradient-primary)
+  );
+  background-size: 250% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: hero-shimmer 3s ease-in-out infinite;
+}
+
+/* ===== NEON GRADIENT CARD STYLES - Integrated from neon-gradient-card.css ===== */
+
+.neon-gradient-card {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--border-radius);
+}
+
+.neon-gradient-card-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  border-radius: var(--card-content-radius);
+  background-color: #f5f5f5;
+  padding: 1.5rem;
+}
+
+.neon-gradient-card-content::before {
+  position: absolute;
+  left: calc(-1 * var(--border-size));
+  top: calc(-1 * var(--border-size));
+  z-index: -10;
+  display: block;
+  width: var(--pseudo-element-width);
+  height: var(--pseudo-element-height);
+  border-radius: var(--border-radius);
+  content: "";
+  background-image: linear-gradient(
+    0deg,
+    var(--neon-first-color),
+    var(--neon-second-color)
+  );
+  background-size: 100% 200%;
+  animation: background-position-spin 3000ms infinite alternate;
+}
+
+.neon-gradient-card-content::after {
+  position: absolute;
+  left: calc(-1 * var(--border-size));
+  top: calc(-1 * var(--border-size));
+  z-index: -10;
+  display: block;
+  width: var(--pseudo-element-width);
+  height: var(--pseudo-element-height);
+  border-radius: var(--border-radius);
+  content: "";
+  background-image: linear-gradient(
+    0deg,
+    var(--neon-first-color),
+    var(--neon-second-color)
+  );
+  background-size: 100% 200%;
+  opacity: 0.8;
+  filter: blur(var(--after-blur));
+  animation: background-position-spin 3000ms infinite alternate;
+}
+
+.neon-gradient-card-content.dark {
+  background-color: #171717;
+}
+
+/* ===== WEATHER COMPONENT STYLES - Integrated from weather/animations.css ===== */
+
+.animate-bounce-slow {
+  animation: bounce-slow 2s infinite ease-in-out;
+}
+
+.animate-shake {
+  animation: shake 1.5s infinite ease-in-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out;
+}
+
+/* Enhanced scrollbar styles for forecast lists */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  height: 5px;
+  width: 5px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.3);
+  border-radius: 9999px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.5);
+}
+
+/* ===== PARK MAP STYLES - Integrated from ParkMap.module.css ===== */
+
+/* Map container */
+.mapContainer {
+  position: relative;
+  background-color: #f3f4f6;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border-width: 1px;
+  height: var(--map-height);
+}
+
+/* Full size map container for Leaflet */
+.leafletMapContainer {
+  height: 100%;
+  width: 100%;
+}
+
+/* Marker icon styles */
+.markerIcon {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  background-color: var(--icon-color);
+  border: 2px solid white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: var(--icon-font-size);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* User location marker styles */
+.userLocationIcon {
+  width: 20px;
+  height: 20px;
+  background-color: #3b82f6;
+  border: 3px solid white;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
+  animation: userLocationPulse 2s infinite;
+}
+
+/* Leaflet integration styles */
+.mapContainer .leaflet-container {
+  border-radius: 0.5rem;
+  font-family: inherit;
+}
+
+.mapContainer .leaflet-popup-content-wrapper {
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.mapContainer .leaflet-popup-tip {
+  box-shadow: none;
+}
+
+/* Custom marker styles */
+.mapContainer .custom-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.mapContainer .user-location-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Park areas */
+.parkArea {
+  position: absolute;
+  border-radius: 9999px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  background-color: var(--area-bg-color);
+  width: var(--area-size);
+  height: var(--area-size);
+  left: var(--area-left);
+  top: var(--area-top);
+}
+
+.parkAreaLabel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+/* Attraction markers */
+.markerButton {
+  position: absolute;
+  cursor: pointer;
+  transition: all 300ms;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  appearance: none;
+  left: var(--marker-left);
+  top: var(--marker-top);
+}
+
+.markerButton:hover {
+  z-index: 10;
+}
+
+.markerPin {
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  background-color: var(--marker-bg-color);
+  width: var(--marker-size);
+  height: var(--marker-size);
+}
+
+.waitTimeLabel {
+  font-size: var(--marker-wait-time-font-size);
+}
+
+.attractionLabel {
+  position: absolute;
+  white-space: nowrap;
+  padding: 0.25rem 0.5rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 0.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 200ms;
+  transform: translateX(-50%);
+  z-index: 30;
+  font-size: var(--attraction-label-font-size);
+  bottom: var(--attraction-label-bottom);
+  left: var(--attraction-label-left);
+}
+
+.markerButton:hover .attractionLabel {
+  opacity: 1;
+}
+
+.selectedLabel {
+  opacity: 1;
+}
+
+/* Map background */
+.mapBackground {
+  position: absolute;
+  inset: 0;
+  background-color: #e8f4f8;
+}
+
+/* Legend styles */
+.mapLegend {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  font-size: 0.75rem;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+
+.legendColorDot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+  margin-right: 0.25rem;
+}
+
+.greenDot {
+  background-color: #059669;
+}
+
+.blueDot {
+  background-color: #2563eb;
+}
+
+.amberDot {
+  background-color: #d97706;
+}
+
+.redDot {
+  background-color: #dc2626;
+}
+
+.grayDot {
+  background-color: #6b7280;
+}
+
+/* User location */
+.userLocation {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 40;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.userLocationDot {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  background-color: #3b82f6;
+  border: 2px solid white;
+}
+
+.userLocationPing {
+  position: absolute;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  background-color: rgba(59, 130, 246, 0.3);
+  left: -0.75rem;
+  top: -0.75rem;
+  animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* North indicator */
+.northIndicator {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 9999px;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.northIcon {
+  height: 1.25rem;
+  width: 1.25rem;
+  color: #374151;
+}
+
+/* Loading state */
+.loadingOverlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loadingSpinner {
+  animation: spin 1s linear infinite;
+  height: 2rem;
+  width: 2rem;
+  border-radius: 9999px;
+  border-width: 2px;
+  border-style: solid;
+  border-color: transparent transparent currentColor transparent;
+  color: var(--primary);
+  margin: 0 auto;
+}
+
+/* Coming soon message */
+.comingSoonOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.comingSoonMessage {
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  text-align: center;
+  max-width: 20rem;
+}
+
+/* Animation keyframes for park map */
+@keyframes ping {
+  75%,
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== CHART STYLES - Integrated from BarChart.module.css ===== */
+
+.tooltip-entry {
+  color: var(--entry-color);
+}
+
+.tooltip-entry[data-color] {
+  color: var(--tooltip-color);
+}
+
+/* ===== INTERACTIVE MAP STYLES - Integrated from interactive-map.module.css ===== */
+
+/* Common heights */
+.h-300 {
+  height: 300px;
+}
+.h-400 {
+  height: 400px;
+}
+.h-500 {
+  height: 500px;
+}
+.h-600 {
+  height: 600px;
+}
+.h-full {
+  height: 100%;
+}
+
+/* Common widths */
+.w-full {
+  width: 100%;
+}
+.w-half {
+  width: 50%;
+}
+.w-auto {
+  width: auto;
+}
+
+/* ===== RESPONSIVE ADJUSTMENTS FOR HERO GRADIENT ===== */
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .hero-live-gradient {
+    background: radial-gradient(
+      ellipse 150% 100% at 50% 0%,
+      color-mix(
+        in srgb,
+        var(--hero-gradient-primary) calc(var(--hero-gradient-intensity) * 0.8%),
+        transparent
+      ),
+      color-mix(
+          in srgb,
+          var(--hero-gradient-secondary)
+            calc(var(--hero-gradient-intensity) * 0.6%),
+          transparent
+        )
+        50%,
+      transparent 80%
+    );
+  }
+
+  .hero-floating-orb-1 {
+    width: 200px;
+    height: 200px;
+    top: -10%;
+    right: -5%;
+  }
+
+  .hero-floating-orb-2 {
+    width: 250px;
+    height: 250px;
+    bottom: -15%;
+    left: -10%;
+  }
+
+  .hero-floating-orb-3 {
+    width: 150px;
+    height: 150px;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .hero-live-gradient {
+    /* Increase intensity in dark mode for better visibility */
+    background: radial-gradient(
+      ellipse 120% 80% at 50% 0%,
+      color-mix(
+        in srgb,
+        var(--hero-gradient-primary) calc(var(--hero-gradient-intensity) * 1.2%),
+        transparent
+      ),
+      color-mix(
+          in srgb,
+          var(--hero-gradient-secondary)
+            calc(var(--hero-gradient-intensity) * 1%),
+          transparent
+        )
+        45%,
+      color-mix(
+          in srgb,
+          var(--hero-gradient-accent)
+            calc(var(--hero-gradient-intensity) * 0.8%),
+          transparent
+        )
+        70%,
+      transparent 90%
+    );
+  }
+
+  .hero-floating-orb {
+    filter: blur(40px); /* Less blur in dark mode for more definition */
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .hero-live-gradient {
+    --hero-gradient-intensity: 80; /* Increase intensity */
+    opacity: 1; /* Full opacity */
+    filter: none; /* Remove saturation filter */
+  }
+
+  .hero-floating-orb {
+    display: none; /* Hide decorative elements */
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .hero-live-gradient,
+  .hero-live-gradient::before,
+  .hero-live-gradient::after {
+    animation: none;
+    transition: background 0.3s ease;
+  }
+
+  .hero-floating-orb {
+    animation: none;
+  }
+
+  .hero-text-shimmer {
+    animation: none;
+    background-position: 0 0;
+  }
+}
+
+/* Performance optimization for low-end devices */
+@media (max-resolution: 1dppx) {
+  .hero-floating-orb {
+    display: none; /* Hide complex animations on low-res displays */
+  }
+
+  .hero-live-gradient::before,
+  .hero-live-gradient::after {
+    display: none; /* Simplify gradient on low-res displays */
+  }
 }

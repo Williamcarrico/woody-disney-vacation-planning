@@ -27,10 +27,10 @@ export async function GET(request: NextRequest) {
         // Use GraphQL for complex queries
         if (useGraphQL || (name && (parkAttraction || film || tvShow))) {
             const filter: Record<string, string> = {}
-            if (name) filter.name = name
-            if (parkAttraction) filter.parkAttractions = parkAttraction
-            if (film) filter.films = film
-            if (tvShow) filter.tvShows = tvShow
+            if (name) filter['name'] = name
+            if (parkAttraction) filter['parkAttractions'] = parkAttraction
+            if (film) filter['films'] = film
+            if (tvShow) filter['tvShows'] = tvShow
 
             const result = await disneyAPI.queryCharactersGraphQL(filter, page, pageSize)
 

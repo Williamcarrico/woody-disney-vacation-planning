@@ -138,7 +138,8 @@ export async function GET(request: NextRequest) {
             ? baseCountQuery.where(and(...conditions))
             : baseCountQuery
 
-        const [{ count: totalCount }] = await countQuery
+        const countResult = await countQuery
+        const totalCount = countResult?.[0]?.count ?? 0
 
         return NextResponse.json({
             alerts,

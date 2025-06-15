@@ -1,13 +1,13 @@
 import {
-    Resort, ResortCategory, ResortArea, AmenityCategory,
+    DisneyResort, ResortCategory, ResortArea, AmenityCategory,
     DiningCategory, RecreationCategory, TransportationType
 } from "@/types/resort.model";
 
-export const resorts: Resort[] = [
+export const resorts: DisneyResort[] = [
     {
         id: "grand-floridian",
         name: "Disney's Grand Floridian Resort & Spa",
-        category: ResortCategory.Deluxe,
+        category: ResortCategory.DELUXE,
         description: "Victorian elegance meets modern sophistication at Disney's Grand Floridian Resort & Spa, Walt Disney World's crown jewel.",
         longDescription: "Experience the Victorian splendor and elegance of Disney's Grand Floridian Resort & Spa, Walt Disney World Resort's crown jewel. Nestled on the shores of the Seven Seas Lagoon, this magnificent red-gabled resort combines timeless charm with the utmost in Disney luxury. Immerse yourself in the opulence of the grand lobby, where live orchestra music fills the air, setting the tone for a truly refined experience. The resort's attention to detail extends from the meticulously manicured gardens to the sumptuous guest rooms and world-class dining options. As a flagship Disney resort, the Grand Floridian offers unparalleled service, amenities, and proximity to Magic Kingdom Park, connected by both monorail and water launch service. Every aspect of your stay is designed to evoke the golden age of leisure, creating memories that are both magical and distinguished.",
         amenities: [
@@ -16,42 +16,42 @@ export const resorts: Resort[] = [
                 name: "Beach Pool",
                 description: "Zero-entry pool with an Alice in Wonderland theme and 181-foot waterslide",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "courtyard-pool",
                 name: "Courtyard Pool",
                 description: "Quiet pool experience for a more relaxed swimming environment",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "senses-spa",
                 name: "Senses Spa",
                 description: "Full-service spa offering massages, facials, and body treatments",
                 icon: "spa",
-                category: AmenityCategory.Fitness
+                category: AmenityCategory.FITNESS
             },
             {
                 id: "health-club",
                 name: "Health Club",
                 description: "24-hour fitness center with state-of-the-art equipment",
                 icon: "fitness",
-                category: AmenityCategory.Fitness
+                category: AmenityCategory.FITNESS
             },
             {
                 id: "boat-rentals",
                 name: "Boat Rentals",
                 description: "Motorized boat rentals available at the marina",
                 icon: "boat",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             },
             {
                 id: "arcadia-games",
                 name: "Arcadia Games",
                 description: "Arcade featuring classic and modern video games",
                 icon: "games",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             }
         ],
         roomTypes: [
@@ -92,7 +92,7 @@ export const resorts: Resort[] = [
         location: {
             latitude: 28.4111,
             longitude: -81.5866,
-            area: ResortArea.MagicKingdom,
+            area: ResortArea.MAGIC_KINGDOM,
             distanceToParks: {
                 "Magic Kingdom": 0.5,
                 "Epcot": 3.2,
@@ -106,7 +106,7 @@ export const resorts: Resort[] = [
                 id: "victoria-alberts",
                 name: "Victoria & Albert's",
                 description: "The crown jewel of Walt Disney World dining, offering a prix fixe menu in an elegant setting",
-                category: DiningCategory.Signature,
+                category: DiningCategory.SIGNATURE,
                 cuisine: ["American", "Contemporary"],
                 priceRange: 4,
                 requiresReservation: true,
@@ -117,7 +117,7 @@ export const resorts: Resort[] = [
                 id: "narcoossees",
                 name: "Narcoossee's",
                 description: "Waterfront dining featuring coastal cuisine and Magic Kingdom fireworks views",
-                category: DiningCategory.Signature,
+                category: DiningCategory.SIGNATURE,
                 cuisine: ["Seafood", "Steakhouse"],
                 priceRange: 3,
                 requiresReservation: true,
@@ -128,7 +128,7 @@ export const resorts: Resort[] = [
                 id: "grand-floridian-cafe",
                 name: "Grand Floridian Café",
                 description: "Casual elegance serving American favorites for breakfast, lunch, and dinner",
-                category: DiningCategory.TableService,
+                category: DiningCategory.TABLE_SERVICE,
                 cuisine: ["American"],
                 priceRange: 2,
                 requiresReservation: true,
@@ -139,7 +139,7 @@ export const resorts: Resort[] = [
                 id: "gasparilla-island",
                 name: "Gasparilla Island Grill",
                 description: "Quick-service dining available 24 hours a day",
-                category: DiningCategory.QuickService,
+                category: DiningCategory.QUICK_SERVICE,
                 cuisine: ["American"],
                 priceRange: 1,
                 requiresReservation: false,
@@ -152,7 +152,7 @@ export const resorts: Resort[] = [
                 id: "beach-pool-rec",
                 name: "Beach Pool with Waterslide",
                 description: "Zero-entry pool featuring a 181-foot-long waterslide and a poolside bar",
-                category: RecreationCategory.Pool,
+                category: RecreationCategory.POOL,
                 hours: "7:00 AM - 11:00 PM",
                 additionalFee: false,
                 reservationRequired: false
@@ -161,7 +161,7 @@ export const resorts: Resort[] = [
                 id: "fishing",
                 name: "Guided Fishing Excursions",
                 description: "Guided catch-and-release fishing excursions on Seven Seas Lagoon and Bay Lake",
-                category: RecreationCategory.Water,
+                category: RecreationCategory.WATER,
                 hours: "7:00 AM - 1:30 PM",
                 additionalFee: true,
                 reservationRequired: true
@@ -170,7 +170,7 @@ export const resorts: Resort[] = [
                 id: "campfire",
                 name: "Electrical Water Pageant",
                 description: "View this floating nighttime spectacle from the resort's marina or beach",
-                category: RecreationCategory.Entertainment,
+                category: RecreationCategory.ENTERTAINMENT,
                 hours: "Check daily times",
                 additionalFee: false,
                 reservationRequired: false
@@ -178,19 +178,19 @@ export const resorts: Resort[] = [
         ],
         transportation: [
             {
-                type: TransportationType.Monorail,
+                type: TransportationType.MONORAIL,
                 destinationsServed: ["Magic Kingdom", "Transportation and Ticket Center", "Disney's Contemporary Resort", "Disney's Polynesian Village Resort"],
                 frequency: "Every 4-7 minutes",
                 hours: "6:30 AM - 12:00 AM"
             },
             {
-                type: TransportationType.Boat,
+                type: TransportationType.BOAT,
                 destinationsServed: ["Magic Kingdom", "Disney's Polynesian Village Resort", "Disney's Wilderness Lodge", "Disney's Fort Wilderness Resort & Campground"],
                 frequency: "Every 15-20 minutes",
                 hours: "8:30 AM - 11:00 PM"
             },
             {
-                type: TransportationType.Bus,
+                type: TransportationType.BUS,
                 destinationsServed: ["Disney's Animal Kingdom", "Disney's Hollywood Studios", "Disney Springs", "Water Parks"],
                 frequency: "Every 20 minutes",
                 hours: "6:30 AM - 2:00 AM"
@@ -273,7 +273,7 @@ export const resorts: Resort[] = [
     {
         id: "animal-kingdom-lodge",
         name: "Disney's Animal Kingdom Lodge",
-        category: ResortCategory.Deluxe,
+        category: ResortCategory.DELUXE,
         description: "An African savanna comes to life at this spectacular resort where you can observe exotic animals from your room or public viewing areas.",
         longDescription: "Inspired by the traditional African kraal, Disney's Animal Kingdom Lodge is a wildlife reserve where over 200 hoofed animals and birds live. Featuring authentic African-inspired architecture, this resort offers an unforgettable experience combining the majesty of wildlife with the rich culture of Africa. The horseshoe-curved design provides spectacular views of four lush savannas where over 30 species of African wildlife roam freely. Inside, the resort celebrates African culture with one of the largest collections of African art in the United States, along with the warmth of traditional African hospitality. Each day brings new opportunities for cultural immersion through storytelling, culinary adventures, and educational activities that highlight the diversity and richness of African traditions.",
         amenities: [
@@ -282,42 +282,42 @@ export const resorts: Resort[] = [
                 name: "Uzima Pool",
                 description: "11,000-square-foot tropical oasis with a 67-foot-long slide and zero-depth entry point",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "samawati-pool",
                 name: "Samawati Springs Pool",
                 description: "Secondary pool with a waterslide located at Kidani Village",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "zahanati-fitness",
                 name: "Zahanati Fitness Center",
                 description: "State-of-the-art fitness center with cardio equipment and free weights",
                 icon: "fitness",
-                category: AmenityCategory.Fitness
+                category: AmenityCategory.FITNESS
             },
             {
                 id: "wanyama-safari",
                 name: "Wanyama Safari",
                 description: "Exclusive sunset safari followed by a multi-course dinner",
                 icon: "safari",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             },
             {
                 id: "simba-clubhouse",
                 name: "Simba's Clubhouse",
                 description: "Supervised children's activity center",
                 icon: "kids",
-                category: AmenityCategory.Service
+                category: AmenityCategory.SERVICE
             },
             {
                 id: "survival-outpost",
                 name: "Survival of the Fittest Fitness Trail",
                 description: "Jogging trail around the resort property",
                 icon: "trail",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             }
         ],
         roomTypes: [
@@ -358,7 +358,7 @@ export const resorts: Resort[] = [
         location: {
             latitude: 28.3539,
             longitude: -81.6021,
-            area: ResortArea.AnimalKingdom,
+            area: ResortArea.ANIMAL_KINGDOM,
             distanceToParks: {
                 "Magic Kingdom": 7.2,
                 "Epcot": 5.8,
@@ -372,7 +372,7 @@ export const resorts: Resort[] = [
                 id: "jiko",
                 name: "Jiko - The Cooking Place",
                 description: "Signature dining experience featuring African, Indian, and Mediterranean cuisine",
-                category: DiningCategory.Signature,
+                category: DiningCategory.SIGNATURE,
                 cuisine: ["African", "Indian", "Mediterranean"],
                 priceRange: 3,
                 requiresReservation: true,
@@ -383,7 +383,7 @@ export const resorts: Resort[] = [
                 id: "boma",
                 name: "Boma - Flavors of Africa",
                 description: "Buffet restaurant featuring African cuisine and American favorites",
-                category: DiningCategory.TableService,
+                category: DiningCategory.TABLE_SERVICE,
                 cuisine: ["African", "American"],
                 priceRange: 2,
                 requiresReservation: true,
@@ -394,7 +394,7 @@ export const resorts: Resort[] = [
                 id: "sanaa",
                 name: "Sanaa",
                 description: "Casual dining with savanna views and African cuisine with Indian flavors",
-                category: DiningCategory.TableService,
+                category: DiningCategory.TABLE_SERVICE,
                 cuisine: ["African", "Indian"],
                 priceRange: 2,
                 requiresReservation: true,
@@ -405,7 +405,7 @@ export const resorts: Resort[] = [
                 id: "mara",
                 name: "The Mara",
                 description: "Quick-service restaurant offering African-inspired dishes and American favorites",
-                category: DiningCategory.QuickService,
+                category: DiningCategory.QUICK_SERVICE,
                 cuisine: ["African", "American"],
                 priceRange: 1,
                 requiresReservation: false,
@@ -418,7 +418,7 @@ export const resorts: Resort[] = [
                 id: "safari",
                 name: "Wildlife Viewing",
                 description: "Observe exotic animals from viewing areas throughout the resort",
-                category: RecreationCategory.Outdoor,
+                category: RecreationCategory.OUTDOOR,
                 hours: "Dawn to Dusk",
                 additionalFee: false,
                 reservationRequired: false
@@ -427,7 +427,7 @@ export const resorts: Resort[] = [
                 id: "cultural-activities",
                 name: "Cultural Immersion Activities",
                 description: "African-inspired crafts, music, and cultural experiences led by Cast Members from African countries",
-                category: RecreationCategory.Entertainment,
+                category: RecreationCategory.ENTERTAINMENT,
                 hours: "Various times throughout the day",
                 additionalFee: false,
                 reservationRequired: false
@@ -436,7 +436,7 @@ export const resorts: Resort[] = [
                 id: "night-safari",
                 name: "Night Safari",
                 description: "Evening wildlife viewing using night vision equipment",
-                category: RecreationCategory.Outdoor,
+                category: RecreationCategory.OUTDOOR,
                 hours: "Check daily schedule",
                 additionalFee: false,
                 reservationRequired: false
@@ -444,7 +444,7 @@ export const resorts: Resort[] = [
         ],
         transportation: [
             {
-                type: TransportationType.Bus,
+                type: TransportationType.BUS,
                 destinationsServed: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom", "Disney Springs", "Water Parks"],
                 frequency: "Every 20 minutes",
                 hours: "6:30 AM - 2:00 AM"
@@ -525,7 +525,7 @@ export const resorts: Resort[] = [
     {
         id: "polynesian-village",
         name: "Disney's Polynesian Village Resort",
-        category: ResortCategory.Deluxe,
+        category: ResortCategory.DELUXE,
         description: "A South Pacific paradise featuring lush vegetation, tropical beaches, and an exotic atmosphere that transports guests to the islands of Polynesia.",
         longDescription: "Experience the spirit of aloha at Disney's Polynesian Village Resort, a tropical oasis that brings the exotic allure of the South Pacific to Walt Disney World Resort. This iconic retreat opened with Magic Kingdom Park in 1971 and has remained one of Disney's most beloved resorts. The island ambiance embraces you from the moment you step into the Great Ceremonial House, with its soaring thatched roof and cascading waterfall garden. Swaying palm trees, white sand beaches, and torch-lit walkways create a serene island escape where time seems to slow down. Featuring architecture inspired by the Pacific Islands, the resort offers breathtaking views across the Seven Seas Lagoon, immersive cultural activities, authentic island cuisine, and a spirit of relaxation that captures the essence of island life. As one of the original Walt Disney World resorts, the Polynesian combines nostalgic Disney charm with modern luxuries, creating an unforgettable tropical retreat for guests of all ages.",
         amenities: [
@@ -534,42 +534,42 @@ export const resorts: Resort[] = [
                 name: "Lava Pool",
                 description: "Zero-entry volcano-themed feature pool with a 142-foot waterslide and interactive play area",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "oasis-pool",
                 name: "Oasis Pool",
                 description: "Quiet pool offering a more relaxed swimming environment",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "lilo-arcade",
                 name: "Lilo's Playhouse",
                 description: "Supervised children's activity center with games and activities",
                 icon: "kids",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             },
             {
                 id: "moorea-fitness",
                 name: "Moorea Health & Fitness Center",
                 description: "24-hour fitness center with cardiovascular equipment and free weights",
                 icon: "fitness",
-                category: AmenityCategory.Fitness
+                category: AmenityCategory.FITNESS
             },
             {
                 id: "beach-hammocks",
                 name: "Beach & Hammocks",
                 description: "White-sand beach with hammocks along the shore of Seven Seas Lagoon",
                 icon: "beach",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             },
             {
                 id: "marina-rentals",
                 name: "Marina Boat Rentals",
                 description: "Watercraft rentals including motorized boats and specialty cruises",
                 icon: "boat",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             }
         ],
         roomTypes: [
@@ -610,7 +610,7 @@ export const resorts: Resort[] = [
         location: {
             latitude: 28.4095,
             longitude: -81.5839,
-            area: ResortArea.MagicKingdom,
+            area: ResortArea.MAGIC_KINGDOM,
             distanceToParks: {
                 "Magic Kingdom": 0.7,
                 "Epcot": 2.5,
@@ -624,7 +624,7 @@ export const resorts: Resort[] = [
                 id: "ohana",
                 name: "'Ohana",
                 description: "All-you-care-to-enjoy family-style dining featuring Polynesian-inspired cuisine",
-                category: DiningCategory.TableService,
+                category: DiningCategory.TABLE_SERVICE,
                 cuisine: ["Polynesian", "American"],
                 priceRange: 2,
                 requiresReservation: true,
@@ -635,7 +635,7 @@ export const resorts: Resort[] = [
                 id: "kona-cafe",
                 name: "Kona Cafe",
                 description: "Casual table-service restaurant serving American cuisine with an Asian flair",
-                category: DiningCategory.TableService,
+                category: DiningCategory.TABLE_SERVICE,
                 cuisine: ["American", "Asian", "Polynesian"],
                 priceRange: 2,
                 requiresReservation: true,
@@ -646,7 +646,7 @@ export const resorts: Resort[] = [
                 id: "trader-sams",
                 name: "Trader Sam's Grog Grotto",
                 description: "Enchanted tiki bar serving exotic drinks and light appetizers with interactive elements",
-                category: DiningCategory.Lounge,
+                category: DiningCategory.LOUNGE,
                 cuisine: ["Polynesian", "American"],
                 priceRange: 2,
                 requiresReservation: false,
@@ -657,7 +657,7 @@ export const resorts: Resort[] = [
                 id: "capt-cooks",
                 name: "Capt. Cook's",
                 description: "Quick-service restaurant offering a variety of meals and snacks",
-                category: DiningCategory.QuickService,
+                category: DiningCategory.QUICK_SERVICE,
                 cuisine: ["American", "Polynesian"],
                 priceRange: 1,
                 requiresReservation: false,
@@ -670,7 +670,7 @@ export const resorts: Resort[] = [
                 id: "volcano-pool",
                 name: "Lava Pool",
                 description: "Volcano-themed feature pool with a 142-foot waterslide and interactive play area",
-                category: RecreationCategory.Pool,
+                category: RecreationCategory.POOL,
                 hours: "9:00 AM - 9:00 PM",
                 additionalFee: false,
                 reservationRequired: false
@@ -679,7 +679,7 @@ export const resorts: Resort[] = [
                 id: "movie-nights",
                 name: "Movies Under the Stars",
                 description: "Outdoor Disney movies shown on the beach",
-                category: RecreationCategory.Entertainment,
+                category: RecreationCategory.ENTERTAINMENT,
                 hours: "Check daily times",
                 additionalFee: false,
                 reservationRequired: false
@@ -688,7 +688,7 @@ export const resorts: Resort[] = [
                 id: "torches",
                 name: "Torch Lighting Ceremony",
                 description: "Traditional torch lighting ceremony with storytelling and music",
-                category: RecreationCategory.Entertainment,
+                category: RecreationCategory.ENTERTAINMENT,
                 hours: "Check daily times",
                 additionalFee: false,
                 reservationRequired: false
@@ -697,7 +697,7 @@ export const resorts: Resort[] = [
                 id: "motorized-rentals",
                 name: "Motorized Boat Rentals",
                 description: "Rent motorized boats to explore Seven Seas Lagoon",
-                category: RecreationCategory.Water,
+                category: RecreationCategory.WATER,
                 hours: "10:00 AM - 5:00 PM",
                 additionalFee: true,
                 reservationRequired: false
@@ -705,25 +705,25 @@ export const resorts: Resort[] = [
         ],
         transportation: [
             {
-                type: TransportationType.Monorail,
+                type: TransportationType.MONORAIL,
                 destinationsServed: ["Magic Kingdom", "Transportation and Ticket Center", "Disney's Grand Floridian Resort & Spa", "Disney's Contemporary Resort"],
                 frequency: "Every 4-7 minutes",
                 hours: "6:30 AM - 12:00 AM"
             },
             {
-                type: TransportationType.Boat,
+                type: TransportationType.BOAT,
                 destinationsServed: ["Magic Kingdom", "Disney's Grand Floridian Resort & Spa", "Disney's Wilderness Lodge", "Disney's Fort Wilderness Resort & Campground"],
                 frequency: "Every 15-20 minutes",
                 hours: "8:30 AM - 11:00 PM"
             },
             {
-                type: TransportationType.Walking,
+                type: TransportationType.WALKING,
                 destinationsServed: ["Transportation and Ticket Center"],
                 frequency: "Anytime",
                 hours: "24 hours"
             },
             {
-                type: TransportationType.Bus,
+                type: TransportationType.BUS,
                 destinationsServed: ["Disney's Hollywood Studios", "Disney's Animal Kingdom", "Disney Springs", "Water Parks"],
                 frequency: "Every 20 minutes",
                 hours: "6:30 AM - 2:00 AM"
@@ -806,7 +806,7 @@ export const resorts: Resort[] = [
     {
         id: "contemporary-resort",
         name: "Disney's Contemporary Resort",
-        category: ResortCategory.Deluxe,
+        category: ResortCategory.DELUXE,
         description: "An iconic modern marvel featuring the monorail running through its A-frame tower, offering spectacular views of Magic Kingdom and Bay Lake.",
         longDescription: "Step into the future at Disney's Contemporary Resort, an architectural marvel that has become an iconic symbol of Walt Disney World since its opening in 1971. This landmark resort features the distinctive A-frame Grand Canyon Concourse where the monorail glides directly through the heart of the building—a visionary design that continues to inspire awe. The resort combines sleek, modern aesthetics with bold artistic elements, including the massive 90-foot-tall mural by Disney Legend Mary Blair that celebrates the Grand Canyon and the American Southwest. Floor-to-ceiling windows throughout the resort offer breathtaking panoramic views of Magic Kingdom Park, Seven Seas Lagoon, and Bay Lake. The Contemporary's convenient location makes it possible to walk to Magic Kingdom Park, while its ultra-modern amenities and dining options provide sophisticated comfort. As one of Walt Disney World's original resorts, the Contemporary delivers a perfect blend of nostalgic Disney heritage and contemporary luxury.",
         amenities: [
@@ -815,42 +815,42 @@ export const resorts: Resort[] = [
                 name: "Feature Pool",
                 description: "Zero-entry pool with a 17-foot waterslide surrounded by palm trees and sandy beach area",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "bay-lake-pool",
                 name: "Bay Lake Pool",
                 description: "Quiet pool offering a more relaxed swimming environment with views of Bay Lake",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "contemporary-fitness",
                 name: "Contemporary Fitness Center",
                 description: "24-hour fitness center with state-of-the-art equipment and floor-to-ceiling windows",
                 icon: "fitness",
-                category: AmenityCategory.Fitness
+                category: AmenityCategory.FITNESS
             },
             {
                 id: "pixar-play-zone",
                 name: "Pixar Play Zone",
                 description: "Supervised children's activity center with Pixar-themed games and activities",
                 icon: "kids",
-                category: AmenityCategory.Service
+                category: AmenityCategory.SERVICE
             },
             {
                 id: "marina-rentals-contemporary",
                 name: "Contemporary Marina",
                 description: "Watercraft rentals and specialty cruises on Bay Lake",
                 icon: "boat",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             },
             {
                 id: "tennis-basketball",
                 name: "Tennis & Basketball Courts",
                 description: "Lighted courts for sports activities",
                 icon: "sports",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             }
         ],
         roomTypes: [
@@ -891,7 +891,7 @@ export const resorts: Resort[] = [
         location: {
             latitude: 28.4156,
             longitude: -81.5812,
-            area: ResortArea.MagicKingdom,
+            area: ResortArea.MAGIC_KINGDOM,
             distanceToParks: {
                 "Magic Kingdom": 0.6,
                 "Epcot": 3.0,
@@ -905,7 +905,7 @@ export const resorts: Resort[] = [
                 id: "california-grill",
                 name: "California Grill",
                 description: "Signature dining experience offering California-inspired cuisine with panoramic views from the 15th floor",
-                category: DiningCategory.Signature,
+                category: DiningCategory.SIGNATURE,
                 cuisine: ["American", "California", "Sushi"],
                 priceRange: 3,
                 requiresReservation: true,
@@ -916,7 +916,7 @@ export const resorts: Resort[] = [
                 id: "chef-mickeys",
                 name: "Chef Mickey's",
                 description: "Character dining experience featuring the Fab Five in a lively, contemporary setting",
-                category: DiningCategory.CharacterDining,
+                category: DiningCategory.CHARACTER_DINING,
                 cuisine: ["American", "Buffet"],
                 priceRange: 2,
                 requiresReservation: true,
@@ -927,7 +927,7 @@ export const resorts: Resort[] = [
                 id: "steakhouse-71",
                 name: "Steakhouse 71",
                 description: "Modern steakhouse inspired by the resort's opening year, serving breakfast, lunch, and dinner",
-                category: DiningCategory.TableService,
+                category: DiningCategory.TABLE_SERVICE,
                 cuisine: ["American", "Steakhouse"],
                 priceRange: 2,
                 requiresReservation: true,
@@ -938,7 +938,7 @@ export const resorts: Resort[] = [
                 id: "contempo-cafe",
                 name: "Contempo Cafe",
                 description: "Quick-service restaurant in the Grand Canyon Concourse",
-                category: DiningCategory.QuickService,
+                category: DiningCategory.QUICK_SERVICE,
                 cuisine: ["American"],
                 priceRange: 1,
                 requiresReservation: false,
@@ -951,7 +951,7 @@ export const resorts: Resort[] = [
                 id: "contemporary-pools",
                 name: "Feature Pool and Water Play Area",
                 description: "Main pool complex with a 17-foot waterslide and interactive water play area",
-                category: RecreationCategory.Pool,
+                category: RecreationCategory.POOL,
                 hours: "7:00 AM - 11:00 PM",
                 additionalFee: false,
                 reservationRequired: false
@@ -960,7 +960,7 @@ export const resorts: Resort[] = [
                 id: "contemporary-fireworks",
                 name: "Fireworks Viewing",
                 description: "Premium viewing of Magic Kingdom fireworks from the observation deck",
-                category: RecreationCategory.Entertainment,
+                category: RecreationCategory.ENTERTAINMENT,
                 hours: "Check daily times",
                 additionalFee: false,
                 reservationRequired: false
@@ -969,7 +969,7 @@ export const resorts: Resort[] = [
                 id: "pirate-adventure",
                 name: "Pirates and Pals Fireworks Voyage",
                 description: "Character-filled cruise with snacks and premium fireworks viewing",
-                category: RecreationCategory.Water,
+                category: RecreationCategory.WATER,
                 hours: "Check for cruise times",
                 additionalFee: true,
                 reservationRequired: true
@@ -978,7 +978,7 @@ export const resorts: Resort[] = [
                 id: "motorized-rentals-contemporary",
                 name: "Motorized Boat Rentals",
                 description: "Rent motorized boats to explore Bay Lake",
-                category: RecreationCategory.Water,
+                category: RecreationCategory.WATER,
                 hours: "10:00 AM - 5:00 PM",
                 additionalFee: true,
                 reservationRequired: false
@@ -986,25 +986,25 @@ export const resorts: Resort[] = [
         ],
         transportation: [
             {
-                type: TransportationType.Monorail,
+                type: TransportationType.MONORAIL,
                 destinationsServed: ["Magic Kingdom", "Transportation and Ticket Center", "Disney's Grand Floridian Resort & Spa", "Disney's Polynesian Village Resort"],
                 frequency: "Every 4-7 minutes",
                 hours: "6:30 AM - 12:00 AM"
             },
             {
-                type: TransportationType.Boat,
+                type: TransportationType.BOAT,
                 destinationsServed: ["Magic Kingdom", "Disney's Wilderness Lodge", "Disney's Fort Wilderness Resort & Campground"],
                 frequency: "Every 15-20 minutes",
                 hours: "8:30 AM - 11:00 PM"
             },
             {
-                type: TransportationType.Walking,
+                type: TransportationType.WALKING,
                 destinationsServed: ["Magic Kingdom"],
                 frequency: "Anytime",
                 hours: "24 hours"
             },
             {
-                type: TransportationType.Bus,
+                type: TransportationType.BUS,
                 destinationsServed: ["Disney's Hollywood Studios", "Disney's Animal Kingdom", "Disney Springs", "Water Parks"],
                 frequency: "Every 20 minutes",
                 hours: "6:30 AM - 2:00 AM"
@@ -1087,7 +1087,7 @@ export const resorts: Resort[] = [
     {
         id: "wilderness-lodge",
         name: "Disney's Wilderness Lodge",
-        category: ResortCategory.Deluxe,
+        category: ResortCategory.DELUXE,
         description: "A majestic mountain lodge inspired by America's Great Northwest national park lodges, featuring towering pines, bubbling springs, and rustic elegance.",
         longDescription: "Escape to the rustic majesty of America's Great Northwest at Disney's Wilderness Lodge. This magnificent resort hotel celebrates the grandeur of the great outdoors through its breathtaking architecture, meticulously crafted details, and immersive wilderness theming. Inspired by historic National Park lodges from the early 20th century, the resort features an 82-foot-tall stone fireplace in its awe-inspiring lobby, verdant pine forests, and a dramatic waterfall that flows into a bubbling hot spring before cascading into the resort's feature pool. Authentic Native American artifacts and art, intricately carved totem poles, and carefully chosen music create an atmosphere of serene wilderness beauty. Despite its secluded ambiance, the resort offers convenient boat transportation to Magic Kingdom Park and modern amenities that ensure a comfortable stay. Disney's Wilderness Lodge masterfully balances the romance of a distant mountain retreat with the enchantment of the Disney experience.",
         amenities: [
@@ -1096,42 +1096,42 @@ export const resorts: Resort[] = [
                 name: "Copper Creek Springs Pool",
                 description: "Feature pool with a 67-foot waterslide, hot and cold whirlpool spas, and a children's play area",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "boulder-ridge-cove-pool",
                 name: "Boulder Ridge Cove Pool",
                 description: "Zero-depth entry pool with a whirlpool spa and shaded seating areas",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "sturdy-branches-health-club",
                 name: "Sturdy Branches Health Club",
                 description: "Fully equipped fitness center with cardio equipment and free weights",
                 icon: "fitness",
-                category: AmenityCategory.Fitness
+                category: AmenityCategory.FITNESS
             },
             {
                 id: "wilderness-arcade",
                 name: "Wilderness Arcade",
                 description: "Video and redemption games for guests of all ages",
                 icon: "games",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             },
             {
                 id: "bike-rentals",
                 name: "Bike Rentals",
                 description: "Bicycles available for exploring the resort and surrounding areas",
                 icon: "bike",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             },
             {
                 id: "wilderness-marina",
                 name: "Wilderness Marina",
                 description: "Boat rentals for exploring Bay Lake",
                 icon: "boat",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             }
         ],
         roomTypes: [
@@ -1172,7 +1172,7 @@ export const resorts: Resort[] = [
         location: {
             latitude: 28.4109,
             longitude: -81.5723,
-            area: ResortArea.MagicKingdom,
+            area: ResortArea.MAGIC_KINGDOM,
             distanceToParks: {
                 "Magic Kingdom": 1.2,
                 "Epcot": 4.0,
@@ -1186,7 +1186,7 @@ export const resorts: Resort[] = [
                 id: "artist-point",
                 name: "Story Book Dining at Artist Point",
                 description: "Character dining experience featuring Snow White and the Seven Dwarfs in an enchanted forest setting",
-                category: DiningCategory.CharacterDining,
+                category: DiningCategory.CHARACTER_DINING,
                 cuisine: ["American", "Pacific Northwest"],
                 priceRange: 3,
                 requiresReservation: true,
@@ -1197,7 +1197,7 @@ export const resorts: Resort[] = [
                 id: "whispering-canyon-cafe",
                 name: "Whispering Canyon Cafe",
                 description: "Family-friendly dining with western flair and playful antics by the serving staff",
-                category: DiningCategory.TableService,
+                category: DiningCategory.TABLE_SERVICE,
                 cuisine: ["American", "Barbecue"],
                 priceRange: 2,
                 requiresReservation: true,
@@ -1208,7 +1208,7 @@ export const resorts: Resort[] = [
                 id: "geyser-point",
                 name: "Geyser Point Bar & Grill",
                 description: "Outdoor lounge and quick-service restaurant with views of Bay Lake",
-                category: DiningCategory.TableService,
+                category: DiningCategory.TABLE_SERVICE,
                 cuisine: ["American", "Pacific Northwest"],
                 priceRange: 2,
                 requiresReservation: false,
@@ -1219,7 +1219,7 @@ export const resorts: Resort[] = [
                 id: "roaring-fork",
                 name: "Roaring Fork",
                 description: "Quick-service restaurant offering American favorites for breakfast, lunch, and dinner",
-                category: DiningCategory.QuickService,
+                category: DiningCategory.QUICK_SERVICE,
                 cuisine: ["American"],
                 priceRange: 1,
                 requiresReservation: false,
@@ -1232,7 +1232,7 @@ export const resorts: Resort[] = [
                 id: "pools-wilderness",
                 name: "Pools and Hot Tubs",
                 description: "Two themed pools with hot tubs and a children's water play area",
-                category: RecreationCategory.Pool,
+                category: RecreationCategory.POOL,
                 hours: "7:00 AM - 11:00 PM",
                 additionalFee: false,
                 reservationRequired: false
@@ -1241,7 +1241,7 @@ export const resorts: Resort[] = [
                 id: "fire-rock-geyser",
                 name: "Fire Rock Geyser",
                 description: "Spectacular 120-foot geyser that erupts hourly",
-                category: RecreationCategory.Entertainment,
+                category: RecreationCategory.ENTERTAINMENT,
                 hours: "7:00 AM - 10:00 PM",
                 additionalFee: false,
                 reservationRequired: false
@@ -1250,7 +1250,7 @@ export const resorts: Resort[] = [
                 id: "campfire-wilderness",
                 name: "Wilderness Campfire",
                 description: "Evening campfire with marshmallow roasting and storytelling",
-                category: RecreationCategory.Entertainment,
+                category: RecreationCategory.ENTERTAINMENT,
                 hours: "Check daily times",
                 additionalFee: false,
                 reservationRequired: false
@@ -1259,7 +1259,7 @@ export const resorts: Resort[] = [
                 id: "wilderness-rentals",
                 name: "Boat Rentals",
                 description: "Rent various watercraft to explore Bay Lake",
-                category: RecreationCategory.Water,
+                category: RecreationCategory.WATER,
                 hours: "10:00 AM - 5:00 PM",
                 additionalFee: true,
                 reservationRequired: false
@@ -1267,13 +1267,13 @@ export const resorts: Resort[] = [
         ],
         transportation: [
             {
-                type: TransportationType.Boat,
+                type: TransportationType.BOAT,
                 destinationsServed: ["Magic Kingdom", "Disney's Fort Wilderness Resort & Campground", "Disney's Contemporary Resort"],
                 frequency: "Every 15-20 minutes",
                 hours: "8:30 AM - 11:00 PM"
             },
             {
-                type: TransportationType.Bus,
+                type: TransportationType.BUS,
                 destinationsServed: ["Epcot", "Disney's Hollywood Studios", "Disney's Animal Kingdom", "Disney Springs", "Water Parks"],
                 frequency: "Every 20 minutes",
                 hours: "6:30 AM - 2:00 AM"
@@ -1356,7 +1356,7 @@ export const resorts: Resort[] = [
     {
         id: "yacht-club",
         name: "Disney's Yacht Club Resort",
-        category: ResortCategory.Deluxe,
+        category: ResortCategory.DELUXE,
         description: "A luxurious New England-style yacht club from the late 1800s featuring nautical details, marina views, and exceptional dining options.",
         longDescription: "Disney's Yacht Club Resort invites you to experience the refined elegance of a New England-style yacht club from the late 1800s. This deluxe resort embraces a nautical theme with its slate-blue roofs, white wooden trim, and marina setting along the shores of Crescent Lake. The stately lobby features rich dark wood, brass accents, and maritime details that evoke the ambiance of a prestigious harbor club. Beyond its sophisticated theming, the resort offers exceptional amenities, including access to Stormalong Bay—a 3-acre water wonderland featuring a life-sized shipwreck, one of the highest hotel waterslides at Walt Disney World, and the only sand-bottom pool on property. With its convenient location within walking distance of Epcot and a short boat ride to Disney's Hollywood Studios, the Yacht Club provides the perfect blend of luxury, recreation, and accessibility for an unforgettable Disney vacation.",
         amenities: [
@@ -1365,42 +1365,42 @@ export const resorts: Resort[] = [
                 name: "Stormalong Bay",
                 description: "3-acre water wonderland featuring a sand-bottom pool, 230-foot waterslide, and lazy river",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "admiral-pool",
                 name: "Admiral Pool",
                 description: "Quiet pool offering a more relaxed swimming environment",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "ship-shape-health-club",
                 name: "Ship Shape Health Club",
                 description: "24-hour fitness center with cardiovascular equipment and free weights",
                 icon: "fitness",
-                category: AmenityCategory.Fitness
+                category: AmenityCategory.FITNESS
             },
             {
                 id: "lafferty-place-arcade",
                 name: "Lafferty Place Arcade",
                 description: "Game room featuring classic and modern video games",
                 icon: "games",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             },
             {
                 id: "fantasia-gardens",
                 name: "Fantasia Gardens Miniature Golf",
                 description: "Themed miniature golf course located near the resort",
                 icon: "golf",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             },
             {
                 id: "yacht-club-marina",
                 name: "Yacht Club Marina",
                 description: "Watercraft rentals and fishing excursions",
                 icon: "boat",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             }
         ],
         roomTypes: [
@@ -1441,7 +1441,7 @@ export const resorts: Resort[] = [
         location: {
             latitude: 28.3722,
             longitude: -81.5582,
-            area: ResortArea.Epcot,
+            area: ResortArea.EPCOT,
             distanceToParks: {
                 "Magic Kingdom": 3.5,
                 "Epcot": 0.2,
@@ -1455,7 +1455,7 @@ export const resorts: Resort[] = [
                 id: "yachtsman-steakhouse",
                 name: "Yachtsman Steakhouse",
                 description: "Signature dining experience featuring premium steaks and fresh seafood",
-                category: DiningCategory.Signature,
+                category: DiningCategory.SIGNATURE,
                 cuisine: ["Steakhouse", "American"],
                 priceRange: 3,
                 requiresReservation: true,
@@ -1466,7 +1466,7 @@ export const resorts: Resort[] = [
                 id: "ale-and-compass",
                 name: "Ale & Compass Restaurant",
                 description: "Casual table-service restaurant serving New England-inspired comfort food",
-                category: DiningCategory.TableService,
+                category: DiningCategory.TABLE_SERVICE,
                 cuisine: ["American", "New England"],
                 priceRange: 2,
                 requiresReservation: true,
@@ -1477,7 +1477,7 @@ export const resorts: Resort[] = [
                 id: "crew-cup-lounge",
                 name: "Crew's Cup Lounge",
                 description: "Nautical-themed lounge serving drinks and light fare",
-                category: DiningCategory.Lounge,
+                category: DiningCategory.LOUNGE,
                 cuisine: ["American"],
                 priceRange: 2,
                 requiresReservation: false,
@@ -1488,7 +1488,7 @@ export const resorts: Resort[] = [
                 id: "ale-and-compass-lounge",
                 name: "Ale & Compass Lounge",
                 description: "Cozy lounge serving drinks and light bites",
-                category: DiningCategory.Lounge,
+                category: DiningCategory.LOUNGE,
                 cuisine: ["American"],
                 priceRange: 2,
                 requiresReservation: false,
@@ -1499,7 +1499,7 @@ export const resorts: Resort[] = [
                 id: "market-at-ale-and-compass",
                 name: "The Market at Ale & Compass",
                 description: "Quick-service market offering grab-and-go items and beverages",
-                category: DiningCategory.QuickService,
+                category: DiningCategory.QUICK_SERVICE,
                 cuisine: ["American"],
                 priceRange: 1,
                 requiresReservation: false,
@@ -1512,7 +1512,7 @@ export const resorts: Resort[] = [
                 id: "yacht-stormalong-bay",
                 name: "Stormalong Bay",
                 description: "3-acre water complex with a sand-bottom pool, lazy river, and 230-foot waterslide",
-                category: RecreationCategory.Pool,
+                category: RecreationCategory.POOL,
                 hours: "9:00 AM - 9:00 PM",
                 additionalFee: false,
                 reservationRequired: false
@@ -1521,7 +1521,7 @@ export const resorts: Resort[] = [
                 id: "yacht-volleyball",
                 name: "Volleyball Court",
                 description: "White sand volleyball court on Crescent Beach",
-                category: RecreationCategory.Outdoor,
+                category: RecreationCategory.OUTDOOR,
                 hours: "8:00 AM - Dusk",
                 additionalFee: false,
                 reservationRequired: false
@@ -1530,7 +1530,7 @@ export const resorts: Resort[] = [
                 id: "yacht-movies",
                 name: "Movies Under the Stars",
                 description: "Outdoor film screenings on the beach",
-                category: RecreationCategory.Entertainment,
+                category: RecreationCategory.ENTERTAINMENT,
                 hours: "Check daily times",
                 additionalFee: false,
                 reservationRequired: false
@@ -1539,7 +1539,7 @@ export const resorts: Resort[] = [
                 id: "yacht-boat-rentals",
                 name: "Watercraft Rentals",
                 description: "Rent various boats to explore Crescent Lake",
-                category: RecreationCategory.Water,
+                category: RecreationCategory.WATER,
                 hours: "10:00 AM - 5:00 PM",
                 additionalFee: true,
                 reservationRequired: false
@@ -1547,25 +1547,25 @@ export const resorts: Resort[] = [
         ],
         transportation: [
             {
-                type: TransportationType.Walking,
+                type: TransportationType.WALKING,
                 destinationsServed: ["Epcot", "Disney's BoardWalk", "Disney's Beach Club Resort"],
                 frequency: "Anytime",
                 hours: "24 hours"
             },
             {
-                type: TransportationType.Boat,
+                type: TransportationType.BOAT,
                 destinationsServed: ["Epcot", "Disney's Hollywood Studios", "Disney's BoardWalk", "Disney's Beach Club Resort"],
                 frequency: "Every 15-20 minutes",
                 hours: "10:30 AM - 11:00 PM"
             },
             {
-                type: TransportationType.Skyliner,
+                type: TransportationType.SKYLINER,
                 destinationsServed: ["Epcot", "Disney's Hollywood Studios", "Disney's Caribbean Beach Resort", "Disney's Riviera Resort", "Disney's Pop Century Resort", "Disney's Art of Animation Resort"],
                 frequency: "Continuous",
                 hours: "7:30 AM - 10:30 PM"
             },
             {
-                type: TransportationType.Bus,
+                type: TransportationType.BUS,
                 destinationsServed: ["Magic Kingdom", "Disney's Animal Kingdom", "Disney Springs", "Water Parks"],
                 frequency: "Every 20 minutes",
                 hours: "6:30 AM - 2:00 AM"
@@ -1648,7 +1648,7 @@ export const resorts: Resort[] = [
     {
         id: "beach-club",
         name: "Disney's Beach Club Resort",
-        category: ResortCategory.Deluxe,
+        category: ResortCategory.DELUXE,
         description: "A casual, beach-themed resort inspired by the mid-Atlantic seashore of the early 20th century, featuring the exceptional Stormalong Bay pool complex.",
         longDescription: "Disney's Beach Club Resort captures the laid-back charm of a New England seaside retreat from the early 1900s. This deluxe resort welcomes guests with its distinctive pale blue and white clapboard exterior, complete with porches and balconies perfect for enjoying the coastal atmosphere. The airy, sand-colored lobby features wicker furniture, seaside accents, and maritime details that evoke the feeling of a grand beach cottage. The resort's crowning jewel is Stormalong Bay, a 3-acre water paradise shared with the adjacent Yacht Club Resort, featuring a sand-bottom pool, a 230-foot waterslide built into a life-sized shipwreck, and a lazy river. With its prime location along Crescent Lake, the Beach Club offers walking access to Epcot's International Gateway entrance and convenient boat transportation to Disney's Hollywood Studios. Combining relaxed beachside ambiance with sophisticated amenities and exceptional dining options, the Beach Club creates a refreshing retreat within the magic of Walt Disney World.",
         amenities: [
@@ -1657,42 +1657,42 @@ export const resorts: Resort[] = [
                 name: "Stormalong Bay",
                 description: "3-acre water wonderland featuring a sand-bottom pool, 230-foot waterslide, and lazy river",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "tidal-pool",
                 name: "Tidal Pool",
                 description: "Quiet pool offering a more relaxed swimming environment",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "ship-shape-health-club-beach",
                 name: "Ship Shape Health Club",
                 description: "24-hour fitness center with cardiovascular equipment and free weights",
                 icon: "fitness",
-                category: AmenityCategory.Fitness
+                category: AmenityCategory.FITNESS
             },
             {
                 id: "beach-club-arcade",
                 name: "Beaches & Cream Soda Shop Arcade",
                 description: "Game room featuring classic and modern video games",
                 icon: "games",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             },
             {
                 id: "beach-club-campfire",
                 name: "Campfire Activities",
                 description: "Evening campfire with marshmallow roasting and storytelling",
                 icon: "campfire",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             },
             {
                 id: "beach-club-marina",
                 name: "Beach Club Marina",
                 description: "Watercraft rentals and fishing excursions",
                 icon: "boat",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             }
         ],
         roomTypes: [
@@ -1733,7 +1733,7 @@ export const resorts: Resort[] = [
         location: {
             latitude: 28.3729,
             longitude: -81.5584,
-            area: ResortArea.Epcot,
+            area: ResortArea.EPCOT,
             distanceToParks: {
                 "Magic Kingdom": 3.5,
                 "Epcot": 0.1,
@@ -1747,7 +1747,7 @@ export const resorts: Resort[] = [
                 id: "beaches-and-cream",
                 name: "Beaches & Cream Soda Shop",
                 description: "Retro soda shop serving burgers, sandwiches, and elaborate ice cream desserts",
-                category: DiningCategory.TableService,
+                category: DiningCategory.TABLE_SERVICE,
                 cuisine: ["American", "Ice Cream"],
                 priceRange: 2,
                 requiresReservation: true,
@@ -1758,7 +1758,7 @@ export const resorts: Resort[] = [
                 id: "cape-may-cafe",
                 name: "Cape May Cafe",
                 description: "New England-style seafood buffet and character breakfast",
-                category: DiningCategory.TableService,
+                category: DiningCategory.TABLE_SERVICE,
                 cuisine: ["American", "Seafood"],
                 priceRange: 2,
                 requiresReservation: true,
@@ -1769,7 +1769,7 @@ export const resorts: Resort[] = [
                 id: "beach-club-marketplace",
                 name: "Beach Club Marketplace",
                 description: "Quick-service restaurant and market offering grab-and-go items and made-to-order meals",
-                category: DiningCategory.QuickService,
+                category: DiningCategory.QUICK_SERVICE,
                 cuisine: ["American"],
                 priceRange: 1,
                 requiresReservation: false,
@@ -1780,7 +1780,7 @@ export const resorts: Resort[] = [
                 id: "hurricane-hannas",
                 name: "Hurricane Hanna's Waterside Bar & Grill",
                 description: "Poolside bar and grill serving sandwiches, salads, and tropical drinks",
-                category: DiningCategory.QuickService,
+                category: DiningCategory.QUICK_SERVICE,
                 cuisine: ["American"],
                 priceRange: 1,
                 requiresReservation: false,
@@ -1791,7 +1791,7 @@ export const resorts: Resort[] = [
                 id: "martha-vineyard-lounge",
                 name: "Martha's Vineyard Lounge",
                 description: "Casual lounge serving specialty cocktails and light bites",
-                category: DiningCategory.Lounge,
+                category: DiningCategory.LOUNGE,
                 cuisine: ["American"],
                 priceRange: 2,
                 requiresReservation: false,
@@ -1804,7 +1804,7 @@ export const resorts: Resort[] = [
                 id: "beach-stormalong-recreation",
                 name: "Stormalong Bay",
                 description: "3-acre water complex with a sand-bottom pool, lazy river, and 230-foot waterslide",
-                category: RecreationCategory.Pool,
+                category: RecreationCategory.POOL,
                 hours: "9:00 AM - 9:00 PM",
                 additionalFee: false,
                 reservationRequired: false
@@ -1813,7 +1813,7 @@ export const resorts: Resort[] = [
                 id: "beach-volleyball",
                 name: "Volleyball Court",
                 description: "White sand volleyball court on Crescent Beach",
-                category: RecreationCategory.Outdoor,
+                category: RecreationCategory.OUTDOOR,
                 hours: "8:00 AM - Dusk",
                 additionalFee: false,
                 reservationRequired: false
@@ -1822,7 +1822,7 @@ export const resorts: Resort[] = [
                 id: "beach-movies",
                 name: "Movies Under the Stars",
                 description: "Outdoor film screenings on the beach",
-                category: RecreationCategory.Entertainment,
+                category: RecreationCategory.ENTERTAINMENT,
                 hours: "Check daily times",
                 additionalFee: false,
                 reservationRequired: false
@@ -1831,7 +1831,7 @@ export const resorts: Resort[] = [
                 id: "beach-boat-rentals",
                 name: "Watercraft Rentals",
                 description: "Rent various boats to explore Crescent Lake",
-                category: RecreationCategory.Water,
+                category: RecreationCategory.WATER,
                 hours: "10:00 AM - 5:00 PM",
                 additionalFee: true,
                 reservationRequired: false
@@ -1839,25 +1839,25 @@ export const resorts: Resort[] = [
         ],
         transportation: [
             {
-                type: TransportationType.Walking,
+                type: TransportationType.WALKING,
                 destinationsServed: ["Epcot", "Disney's BoardWalk", "Disney's Yacht Club Resort"],
                 frequency: "Anytime",
                 hours: "24 hours"
             },
             {
-                type: TransportationType.Boat,
+                type: TransportationType.BOAT,
                 destinationsServed: ["Epcot", "Disney's Hollywood Studios", "Disney's BoardWalk", "Disney's Yacht Club Resort"],
                 frequency: "Every 15-20 minutes",
                 hours: "10:30 AM - 11:00 PM"
             },
             {
-                type: TransportationType.Skyliner,
+                type: TransportationType.SKYLINER,
                 destinationsServed: ["Epcot", "Disney's Hollywood Studios", "Disney's Caribbean Beach Resort", "Disney's Riviera Resort", "Disney's Pop Century Resort", "Disney's Art of Animation Resort"],
                 frequency: "Continuous",
                 hours: "7:30 AM - 10:30 PM"
             },
             {
-                type: TransportationType.Bus,
+                type: TransportationType.BUS,
                 destinationsServed: ["Magic Kingdom", "Disney's Animal Kingdom", "Disney Springs", "Water Parks"],
                 frequency: "Every 20 minutes",
                 hours: "6:30 AM - 2:00 AM"
@@ -1940,7 +1940,7 @@ export const resorts: Resort[] = [
     {
         id: "all-star-movies",
         name: "Disney's All-Star Movies Resort",
-        category: ResortCategory.Value,
+        category: ResortCategory.VALUE,
         description: "A value resort celebrating classic Disney films with larger-than-life icons and family-friendly amenities.",
         longDescription: "Step into the magic of the movies at Disney's All-Star Movies Resort, where beloved Disney films come to life through giant icons and playful theming. Each area of this value resort pays tribute to Disney classics like Toy Story, 101 Dalmatians, Fantasia, The Love Bug, and The Mighty Ducks. The Fantasia-themed pool features a larger-than-life Sorcerer Mickey spouting water, while the Duck Pond Pool offers a quieter swimming experience. With quick-service dining, arcade gaming, and a movie-under-the-stars experience, this resort provides fun and affordable accommodations for families and film enthusiasts. Recently refurbished rooms feature clean, modern designs with clever storage solutions and the Disney touches guests love, all within easy reach of the parks via complimentary bus transportation.",
         amenities: [
@@ -1949,42 +1949,42 @@ export const resorts: Resort[] = [
                 name: "Fantasia Pool",
                 description: "Feature pool with Sorcerer Mickey spouting water and a kiddie pool area",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "duck-pond-pool",
                 name: "Duck Pond Pool",
                 description: "Quiet pool located in the Mighty Ducks section",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "world-premiere-arcade",
                 name: "World Premiere Food Court",
                 description: "Quick-service dining with multiple stations serving breakfast, lunch, and dinner",
                 icon: "food",
-                category: AmenityCategory.Dining
+                category: AmenityCategory.DINING
             },
             {
                 id: "reel-fun-arcade",
                 name: "Reel Fun Arcade",
                 description: "Video arcade featuring classic and modern games",
                 icon: "games",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             },
             {
                 id: "movies-playground",
                 name: "Fantasia Playground",
                 description: "Children's playground area",
                 icon: "kids",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             },
             {
                 id: "movies-under-stars",
                 name: "Movies Under the Stars",
                 description: "Outdoor movie screenings featuring Disney films",
                 icon: "movie",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             }
         ],
         roomTypes: [
@@ -2014,7 +2014,7 @@ export const resorts: Resort[] = [
         location: {
             latitude: 28.3400,
             longitude: -81.5744,
-            area: ResortArea.AnimalKingdom,
+            area: ResortArea.ANIMAL_KINGDOM,
             distanceToParks: {
                 "Magic Kingdom": 6.0,
                 "Epcot": 4.2,
@@ -2028,7 +2028,7 @@ export const resorts: Resort[] = [
                 id: "world-premiere",
                 name: "World Premiere Food Court",
                 description: "Food court with multiple stations serving American favorites for breakfast, lunch, and dinner",
-                category: DiningCategory.QuickService,
+                category: DiningCategory.QUICK_SERVICE,
                 cuisine: ["American"],
                 priceRange: 1,
                 requiresReservation: false,
@@ -2039,7 +2039,7 @@ export const resorts: Resort[] = [
                 id: "silver-screen-spirits",
                 name: "Silver Screen Spirits Pool Bar",
                 description: "Pool bar serving alcoholic beverages, soft drinks, and light snacks",
-                category: DiningCategory.SnackShop,
+                category: DiningCategory.SNACK_SHOP,
                 cuisine: ["American"],
                 priceRange: 1,
                 requiresReservation: false,
@@ -2052,7 +2052,7 @@ export const resorts: Resort[] = [
                 id: "fantasia-pool-rec",
                 name: "Fantasia Pool",
                 description: "Sorcerer Mickey-themed main pool with slide and kiddie pool",
-                category: RecreationCategory.Pool,
+                category: RecreationCategory.POOL,
                 hours: "9:00 AM - 10:00 PM",
                 additionalFee: false,
                 reservationRequired: false
@@ -2061,7 +2061,7 @@ export const resorts: Resort[] = [
                 id: "movies-jogging",
                 name: "Jogging Trail",
                 description: "1-mile jogging path around the resort",
-                category: RecreationCategory.Outdoor,
+                category: RecreationCategory.OUTDOOR,
                 hours: "Dawn to Dusk",
                 additionalFee: false,
                 reservationRequired: false
@@ -2070,7 +2070,7 @@ export const resorts: Resort[] = [
                 id: "movies-arcade",
                 name: "Reel Fun Arcade",
                 description: "Video arcade featuring classic and modern games",
-                category: RecreationCategory.Entertainment,
+                category: RecreationCategory.ENTERTAINMENT,
                 hours: "8:00 AM - 11:00 PM",
                 additionalFee: true,
                 reservationRequired: false
@@ -2078,7 +2078,7 @@ export const resorts: Resort[] = [
         ],
         transportation: [
             {
-                type: TransportationType.Bus,
+                type: TransportationType.BUS,
                 destinationsServed: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom", "Disney Springs", "Water Parks"],
                 frequency: "Every 20 minutes",
                 hours: "6:30 AM - 2:00 AM"
@@ -2156,7 +2156,7 @@ export const resorts: Resort[] = [
     {
         id: "port-orleans-riverside",
         name: "Disney's Port Orleans Resort - Riverside",
-        category: ResortCategory.Moderate,
+        category: ResortCategory.MODERATE,
         description: "A picturesque resort that captures the charm of the rural Louisiana bayou with stately mansions and rustic lodges along the Sassagoula River.",
         longDescription: "Disney's Port Orleans Resort - Riverside invites you to experience the rustic beauty and genteel elegance of the American South in the 1800s. This sprawling, tranquil retreat is divided into two distinct areas: Magnolia Bend, with its grand, white-columned mansions reminiscent of antebellum plantations; and Alligator Bayou, featuring rustic, backwoods-inspired lodges nestled amid swaying pine trees and lush vegetation. The resort's focal point is the scenic Sassagoula River, which winds through the property, offering peaceful boat transportation to Disney Springs. The grounds feature cobblestone streets, quaint bridges, and the working cotton press-themed main building with a grist mill waterwheel. Every detail, from the romantic pathways ideal for evening strolls to the Southern-inspired cuisine at Boatwright's Dining Hall, captures the essence of Southern hospitality and the charm of rural Louisiana ports that once thrived along the Mississippi.",
         amenities: [
@@ -2165,42 +2165,42 @@ export const resorts: Resort[] = [
                 name: "Ol' Man Island Pool",
                 description: "Main pool with a 95-foot water slide, hot tub, and a themed sawmill",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "quiet-pools",
                 name: "Quiet Pools",
                 description: "Five leisure pools located throughout the resort's grounds",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "medicine-show-arcade",
                 name: "Medicine Show Arcade",
                 description: "Game room featuring classic and modern video games",
                 icon: "games",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             },
             {
                 id: "bike-rentals-riverside",
                 name: "Bike Rentals",
                 description: "Bicycles available for exploring the resort and surrounding areas",
                 icon: "bike",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             },
             {
                 id: "fishing-riverside",
                 name: "Fishin' Hole",
                 description: "Catch-and-release fishing experience",
                 icon: "fishing",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             },
             {
                 id: "carriage-rides",
                 name: "Horse-Drawn Carriage Rides",
                 description: "Romantic carriage rides along the Sassagoula River",
                 icon: "carriage",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             }
         ],
         roomTypes: [
@@ -2241,7 +2241,7 @@ export const resorts: Resort[] = [
         location: {
             latitude: 28.4169,
             longitude: -81.5434,
-            area: ResortArea.DisneyStrings,
+            area: ResortArea.DISNEY_SPRINGS,
             distanceToParks: {
                 "Magic Kingdom": 4.3,
                 "Epcot": 3.2,
@@ -2255,7 +2255,7 @@ export const resorts: Resort[] = [
                 id: "boatwrights",
                 name: "Boatwright's Dining Hall",
                 description: "Southern-inspired cuisine in a shipyard warehouse setting",
-                category: DiningCategory.TableService,
+                category: DiningCategory.TABLE_SERVICE,
                 cuisine: ["American", "Southern", "Cajun/Creole"],
                 priceRange: 2,
                 requiresReservation: true,
@@ -2266,7 +2266,7 @@ export const resorts: Resort[] = [
                 id: "riverside-mill",
                 name: "Riverside Mill Food Court",
                 description: "Quick-service dining in a themed riverside mill with multiple food stations",
-                category: DiningCategory.QuickService,
+                category: DiningCategory.QUICK_SERVICE,
                 cuisine: ["American", "Italian", "Pizza", "Salads"],
                 priceRange: 1,
                 requiresReservation: false,
@@ -2277,7 +2277,7 @@ export const resorts: Resort[] = [
                 id: "river-roost",
                 name: "River Roost Lounge",
                 description: "Casual lounge featuring entertainment and a full bar",
-                category: DiningCategory.Lounge,
+                category: DiningCategory.LOUNGE,
                 cuisine: ["American"],
                 priceRange: 2,
                 requiresReservation: false,
@@ -2288,7 +2288,7 @@ export const resorts: Resort[] = [
                 id: "muddy-rivers",
                 name: "Muddy Rivers Pool Bar",
                 description: "Pool bar serving refreshing beverages and light snacks",
-                category: DiningCategory.SnackShop,
+                category: DiningCategory.SNACK_SHOP,
                 cuisine: ["American"],
                 priceRange: 1,
                 requiresReservation: false,
@@ -2301,7 +2301,7 @@ export const resorts: Resort[] = [
                 id: "ol-man-island-rec",
                 name: "Ol' Man Island Pool",
                 description: "Feature pool with a 95-foot waterslide and themed sawmill play area",
-                category: RecreationCategory.Pool,
+                category: RecreationCategory.POOL,
                 hours: "9:00 AM - 9:00 PM",
                 additionalFee: false,
                 reservationRequired: false
@@ -2310,7 +2310,7 @@ export const resorts: Resort[] = [
                 id: "campfire-riverside",
                 name: "Campfire on de Bayou",
                 description: "Evening campfire with marshmallow roasting and storytelling",
-                category: RecreationCategory.Entertainment,
+                category: RecreationCategory.ENTERTAINMENT,
                 hours: "Check daily times",
                 additionalFee: false,
                 reservationRequired: false
@@ -2319,7 +2319,7 @@ export const resorts: Resort[] = [
                 id: "movies-riverside",
                 name: "Movies Under the Stars",
                 description: "Outdoor film screenings near Ol' Man Island",
-                category: RecreationCategory.Entertainment,
+                category: RecreationCategory.ENTERTAINMENT,
                 hours: "Check daily times",
                 additionalFee: false,
                 reservationRequired: false
@@ -2328,7 +2328,7 @@ export const resorts: Resort[] = [
                 id: "fishing-riverside-rec",
                 name: "Fishin' Hole",
                 description: "Cane pole fishing at the Ol' Man Island fishing hole",
-                category: RecreationCategory.Outdoor,
+                category: RecreationCategory.OUTDOOR,
                 hours: "7:00 AM - 1:30 PM",
                 additionalFee: true,
                 reservationRequired: false
@@ -2337,7 +2337,7 @@ export const resorts: Resort[] = [
                 id: "carriage-rides-rec",
                 name: "Horse-Drawn Carriage Rides",
                 description: "25-minute scenic carriage rides along the Sassagoula River",
-                category: RecreationCategory.Outdoor,
+                category: RecreationCategory.OUTDOOR,
                 hours: "6:00 PM - 9:30 PM",
                 additionalFee: true,
                 reservationRequired: true
@@ -2345,19 +2345,19 @@ export const resorts: Resort[] = [
         ],
         transportation: [
             {
-                type: TransportationType.Bus,
+                type: TransportationType.BUS,
                 destinationsServed: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom", "Disney Springs", "Water Parks"],
                 frequency: "Every 20 minutes",
                 hours: "6:30 AM - 2:00 AM"
             },
             {
-                type: TransportationType.Boat,
+                type: TransportationType.BOAT,
                 destinationsServed: ["Disney Springs", "Disney's Port Orleans Resort - French Quarter"],
                 frequency: "Every 20 minutes",
                 hours: "10:00 AM - 11:00 PM"
             },
             {
-                type: TransportationType.Walking,
+                type: TransportationType.WALKING,
                 destinationsServed: ["Disney's Port Orleans Resort - French Quarter"],
                 frequency: "Anytime",
                 hours: "24 hours"
@@ -2441,7 +2441,7 @@ export const resorts: Resort[] = [
     {
         id: "pop-century",
         name: "Disney's Pop Century Resort",
-        category: ResortCategory.Value,
+        category: ResortCategory.VALUE,
         description: "A playful value resort celebrating popular culture from the 1950s through the 1990s with giant icons and retro theming.",
         longDescription: "Disney's Pop Century Resort takes guests on a nostalgic journey through the decades with its celebration of fads, catchphrases, toys, and gadgets that defined American pop culture from the 1950s through the 1990s. This value resort features giant, larger-than-life icons throughout its grounds, from a massive Play-Doh container and enormous Rubik's Cube to towering bowling pins and oversized yo-yos. Each section of the resort represents a different decade, with exterior décor and vibrant color schemes that instantly transport guests back in time. The resort's recently renovated rooms offer modern amenities with fun Disney touches, while the resort's central hub, Classic Hall, houses the Everything POP Shopping & Dining complex, where guests can enjoy diverse dining options and purchase decade-themed souvenirs. As one of Disney's most affordable on-property options, Pop Century provides the perfect blend of Disney magic, playful theming, and value for families and pop culture enthusiasts alike.",
         amenities: [
@@ -2450,42 +2450,42 @@ export const resorts: Resort[] = [
                 name: "Hippy Dippy Pool",
                 description: "Flower-shaped main pool located in the 1960s section",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "bowling-pool",
                 name: "Bowling Pool",
                 description: "Bowling pin-shaped pool in the 1950s section",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "computer-pool",
                 name: "Computer Pool",
                 description: "Computer-shaped pool in the 1990s section",
                 icon: "pool",
-                category: AmenityCategory.Pool
+                category: AmenityCategory.POOL
             },
             {
                 id: "fast-forward-arcade",
                 name: "Fast Forward Arcade",
                 description: "Arcade featuring classic and modern video games",
                 icon: "games",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             },
             {
                 id: "everything-pop",
                 name: "Everything POP Shopping & Dining",
                 description: "Combined quick-service food court and gift shop",
                 icon: "food",
-                category: AmenityCategory.Dining
+                category: AmenityCategory.DINING
             },
             {
                 id: "jogging-trail",
                 name: "Jogging Trail",
                 description: "1-mile jogging path around Hourglass Lake",
                 icon: "trail",
-                category: AmenityCategory.Recreation
+                category: AmenityCategory.RECREATION
             }
         ],
         roomTypes: [
@@ -2526,7 +2526,7 @@ export const resorts: Resort[] = [
         location: {
             latitude: 28.3538,
             longitude: -81.5457,
-            area: ResortArea.Other,
+            area: ResortArea.OTHER,
             distanceToParks: {
                 "Magic Kingdom": 5.9,
                 "Epcot": 3.2,
@@ -2540,7 +2540,7 @@ export const resorts: Resort[] = [
                 id: "everything-pop-dining",
                 name: "Everything POP Shopping & Dining",
                 description: "Quick-service food court featuring multiple stations with diverse menu options",
-                category: DiningCategory.QuickService,
+                category: DiningCategory.QUICK_SERVICE,
                 cuisine: ["American", "Italian", "Asian", "Salads", "Desserts"],
                 priceRange: 1,
                 requiresReservation: false,
@@ -2551,7 +2551,7 @@ export const resorts: Resort[] = [
                 id: "petals-pool-bar",
                 name: "Petals Pool Bar",
                 description: "Pool bar serving alcoholic beverages, soft drinks, and light snacks",
-                category: DiningCategory.SnackShop,
+                category: DiningCategory.SNACK_SHOP,
                 cuisine: ["American"],
                 priceRange: 1,
                 requiresReservation: false,
@@ -2564,7 +2564,7 @@ export const resorts: Resort[] = [
                 id: "hippy-dippy-pool-rec",
                 name: "Hippy Dippy Pool",
                 description: "Flower-shaped main pool with poolside activities and games",
-                category: RecreationCategory.Pool,
+                category: RecreationCategory.POOL,
                 hours: "9:00 AM - 10:00 PM",
                 additionalFee: false,
                 reservationRequired: false
@@ -2573,7 +2573,7 @@ export const resorts: Resort[] = [
                 id: "kiddie-pool",
                 name: "Kiddie Pool & Play Area",
                 description: "Interactive splash area for young children",
-                category: RecreationCategory.Pool,
+                category: RecreationCategory.POOL,
                 hours: "9:00 AM - 10:00 PM",
                 additionalFee: false,
                 reservationRequired: false
@@ -2582,7 +2582,7 @@ export const resorts: Resort[] = [
                 id: "movies-pop",
                 name: "Movies Under the Stars",
                 description: "Outdoor film screenings near the Hippy Dippy Pool",
-                category: RecreationCategory.Entertainment,
+                category: RecreationCategory.ENTERTAINMENT,
                 hours: "Check daily times",
                 additionalFee: false,
                 reservationRequired: false
@@ -2591,7 +2591,7 @@ export const resorts: Resort[] = [
                 id: "campfire-pop",
                 name: "Campfire Activities",
                 description: "Evening campfire with marshmallow roasting",
-                category: RecreationCategory.Entertainment,
+                category: RecreationCategory.ENTERTAINMENT,
                 hours: "Check daily times",
                 additionalFee: false,
                 reservationRequired: false
@@ -2599,19 +2599,19 @@ export const resorts: Resort[] = [
         ],
         transportation: [
             {
-                type: TransportationType.Bus,
+                type: TransportationType.BUS,
                 destinationsServed: ["Magic Kingdom", "Animal Kingdom", "Disney Springs", "Water Parks"],
                 frequency: "Every 20 minutes",
                 hours: "6:30 AM - 2:00 AM"
             },
             {
-                type: TransportationType.Skyliner,
+                type: TransportationType.SKYLINER,
                 destinationsServed: ["Epcot", "Hollywood Studios", "Disney's Caribbean Beach Resort", "Disney's Riviera Resort", "Disney's Art of Animation Resort"],
                 frequency: "Continuous",
                 hours: "7:30 AM - 10:30 PM"
             },
             {
-                type: TransportationType.Walking,
+                type: TransportationType.WALKING,
                 destinationsServed: ["Disney's Art of Animation Resort"],
                 frequency: "Anytime",
                 hours: "24 hours"

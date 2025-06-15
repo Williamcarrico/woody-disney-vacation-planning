@@ -30,7 +30,7 @@ export const defaultEdgeConfig: EdgeConfigType = {
  * @param config - Edge configuration options
  */
 export function withEdge(
-    handler: (req: NextRequest, event: NextFetchEvent) => Promise<NextResponse> | NextResponse,
+    handler: (req: NextRequest) => Promise<NextResponse> | NextResponse,
     config: EdgeConfigType = {}
 ) {
     // Merge with default config
@@ -39,10 +39,10 @@ export function withEdge(
         ...config,
     }
 
-    return async function edgeHandler(req: NextRequest, event: NextFetchEvent) {
+    return async function edgeHandler(req: NextRequest) {
         try {
             // Get response from handler
-            const response = await handler(req, event)
+            const response = await handler(req)
 
             // Apply cache control headers based on configuration
             if (finalConfig.edgeCaching) {

@@ -61,7 +61,7 @@ const validateEmailAdvanced = (email: string) => {
     const isValid = emailRegex.test(email)
     const domain = email.split('@')[1]
     const commonDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com']
-    const isCommonDomain = commonDomains.includes(domain?.toLowerCase())
+    const isCommonDomain = domain ? commonDomains.includes(domain.toLowerCase()) : false
 
     return { isValid, isCommonDomain, domain }
 }
