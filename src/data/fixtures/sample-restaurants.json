@@ -1,0 +1,457 @@
+{
+  "metadata": {
+    "description": "Sample Disney World dining location fixtures",
+    "lastUpdated": "2024-12-28",
+    "totalLocations": 3,
+    "dataSource": "Disney World official data"
+  },
+  "restaurants": [
+    {
+      "id": "be-our-guest-restaurant",
+      "name": "Be Our Guest Restaurant",
+      "description": "Step into the Beast's enchanted castle for an elegant dining experience in the grand ballroom, mysterious west wing, or beautiful castle library.",
+      "shortDescription": "Enchanted castle dining experience from Beauty and the Beast",
+      "location": {
+        "latitude": 28.420138,
+        "longitude": -81.578891,
+        "area": "magic-kingdom",
+        "landName": "Fantasyland",
+        "address": {
+          "street": "1180 Seven Seas Dr",
+          "city": "Bay Lake",
+          "state": "FL",
+          "zipCode": "32830"
+        }
+      },
+      "cuisineTypes": ["French", "American", "Continental"],
+      "serviceType": "table-service",
+      "priceRange": "$$$",
+      "diningExperience": "themed",
+      "mealPeriods": ["breakfast", "lunch", "dinner"],
+      "pricing": {
+        "breakfast": {
+          "adult": 42,
+          "child": 27
+        },
+        "lunch": {
+          "adult": 62,
+          "child": 37
+        },
+        "dinner": {
+          "adult": 65,
+          "child": 40
+        },
+        "averageCostPerPerson": 60
+      },
+      "operatingHours": {
+        "monday": "08:00 - 21:00",
+        "tuesday": "08:00 - 21:00",
+        "wednesday": "08:00 - 21:00",
+        "thursday": "08:00 - 21:00",
+        "friday": "08:00 - 21:00",
+        "saturday": "08:00 - 21:00",
+        "sunday": "08:00 - 21:00"
+      },
+      "phoneNumber": "(407) 939-3463",
+      "reservationInfo": {
+        "acceptsReservations": true,
+        "requiresReservations": true,
+        "advanceReservationDays": 60,
+        "difficulty": {
+          "level": "extremely-difficult",
+          "score": 9,
+          "description": "Extremely hard to get",
+          "adviceText": "Book exactly 60 days in advance at 6 AM EST. Consider cancellation alerts and alternative times."
+        },
+        "reservationUrl": "https://disneyworld.disney.go.com/dining/magic-kingdom/be-our-guest-restaurant/",
+        "walkUpsAccepted": false,
+        "reservationTips": [
+          "Book exactly 60 days in advance at 6 AM EST",
+          "Breakfast and lunch are often easier to get than dinner",
+          "Set up dining alerts for cancellations",
+          "Consider the pre-fixe lunch option"
+        ],
+        "peakTimes": ["Dinner service", "Weekend evenings"],
+        "bestTimesToVisit": ["Early breakfast", "Late lunch"]
+      },
+      "diningPlanInfo": {
+        "acceptsDiningPlan": true,
+        "participating": true,
+        "creditsRequired": 2,
+        "isSignatureDining": true,
+        "tableServiceCredits": 2,
+        "eligiblePlans": ["dining-plan", "deluxe-dining-plan"],
+        "notes": "Signature dining experience requiring 2 table service credits"
+      },
+      "characterDining": {
+        "hasCharacterDining": false
+      },
+      "specialFeatures": {
+        "mobileOrdering": false,
+        "curbsidePickup": false,
+        "delivery": false,
+        "outdoorSeating": false,
+        "privateDining": false,
+        "chefsTable": false,
+        "wineBar": true,
+        "fullBar": true,
+        "craftCocktails": true,
+        "liveEntertainment": false,
+        "fireworksView": false,
+        "waterView": false,
+        "parkView": true,
+        "rooftopDining": false,
+        "interactiveExperience": true,
+        "cookingClass": false,
+        "wineTasting": false,
+        "happyHour": false,
+        "lateNightDining": false,
+        "breakfastAllDay": false
+      },
+      "menuHighlights": [
+        {
+          "name": "The Master's Cupcake",
+          "description": "The Beast's grey stuff on a chocolate cupcake",
+          "price": 6.49,
+          "category": "Dessert",
+          "isSignature": true,
+          "dietary": ["vegetarian"]
+        },
+        {
+          "name": "Ratatouille",
+          "description": "Layered vegetables with quinoa, eggplant caviar, and roasted red pepper coulis",
+          "price": 34,
+          "category": "Entree",
+          "isSignature": true,
+          "dietary": ["vegetarian", "vegan", "gluten-free"]
+        }
+      ],
+      "popularItems": [
+        "The Master's Cupcake",
+        "French Onion Soup",
+        "Braised Short Rib",
+        "Ratatouille"
+      ],
+      "chefSpecialties": [
+        "French-inspired cuisine",
+        "Theatrical presentation",
+        "Seasonal ingredients"
+      ],
+      "imageUrl": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/900/360/75/dam/disney-world/dining/magic-kingdom/be-our-guest-restaurant/be-our-guest-restaurant-dining-room-16x9.jpg",
+      "thumbnailUrl": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/300/200/75/dam/disney-world/dining/magic-kingdom/be-our-guest-restaurant/be-our-guest-restaurant-dining-room-16x9.jpg",
+      "galleryImages": [
+        "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/900/360/75/dam/disney-world/dining/magic-kingdom/be-our-guest-restaurant/be-our-guest-restaurant-ballroom-16x9.jpg",
+        "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/900/360/75/dam/disney-world/dining/magic-kingdom/be-our-guest-restaurant/be-our-guest-restaurant-west-wing-16x9.jpg"
+      ],
+      "dietaryAccommodations": {
+        "vegetarian": true,
+        "vegan": true,
+        "glutenFree": true,
+        "dairyFree": true,
+        "nutFree": false,
+        "halal": false,
+        "kosher": false,
+        "keto": true,
+        "paleo": false
+      },
+      "accessibility": {
+        "wheelchairAccessible": true,
+        "assistedListening": true,
+        "brailleMenus": true,
+        "largePrintMenus": true,
+        "signLanguage": false,
+        "serviceAnimalFriendly": true,
+        "accessibleParking": true,
+        "accessibleRestrooms": true
+      },
+      "ambiance": ["Elegant", "Romantic", "Theatrical", "Enchanted"],
+      "isPopular": true,
+      "isNew": false,
+      "isSeasonal": false,
+      "requiresID": false,
+      "averageRating": 4.3,
+      "reviewCount": 12847,
+      "disneyRating": 4,
+      "tags": ["Beauty and the Beast", "Signature Dining", "Castle", "French", "Romantic"],
+      "alternateNames": ["BOG", "Beast's Castle"],
+      "searchKeywords": ["beauty beast castle french signature dining ballroom west wing"],
+      "challenges": ["Extremely difficult reservations", "Long waits without reservations"],
+      "createdAt": "2023-01-01T00:00:00.000Z",
+      "updatedAt": "2024-12-28T00:00:00.000Z"
+    },
+    {
+      "id": "dole-whip-magic-kingdom",
+      "name": "Dole Whip Stand",
+      "description": "The iconic pineapple soft-serve treat that has become a Disney World legend, served at this classic Adventureland location.",
+      "shortDescription": "Home of the famous Dole Whip pineapple soft serve",
+      "location": {
+        "latitude": 28.418477,
+        "longitude": -81.583421,
+        "area": "magic-kingdom",
+        "landName": "Adventureland"
+      },
+      "cuisineTypes": ["Frozen Treats", "Snacks"],
+      "serviceType": "quick-service",
+      "priceRange": "$",
+      "diningExperience": "quick-bite",
+      "mealPeriods": ["snack"],
+      "pricing": {
+        "averageCostPerPerson": 6
+      },
+      "operatingHours": {
+        "monday": "09:00 - 20:00",
+        "tuesday": "09:00 - 20:00",
+        "wednesday": "09:00 - 20:00",
+        "thursday": "09:00 - 20:00",
+        "friday": "09:00 - 20:00",
+        "saturday": "09:00 - 20:00",
+        "sunday": "09:00 - 20:00"
+      },
+      "reservationInfo": {
+        "acceptsReservations": false,
+        "requiresReservations": false,
+        "advanceReservationDays": 0,
+        "difficulty": {
+          "level": "easy",
+          "score": 1,
+          "description": "Reservations generally available",
+          "adviceText": "No reservations needed. Walk-ups only."
+        },
+        "walkUpsAccepted": true,
+        "bestTimesToVisit": ["Mid-morning", "Late afternoon"]
+      },
+      "diningPlanInfo": {
+        "acceptsDiningPlan": true,
+        "participating": true,
+        "creditsRequired": 1,
+        "isSignatureDining": false,
+        "snackCredits": 1,
+        "eligiblePlans": ["quick-service-plan", "dining-plan", "deluxe-dining-plan"],
+        "notes": "Accepts 1 snack credit"
+      },
+      "specialFeatures": {
+        "mobileOrdering": true,
+        "curbsidePickup": false,
+        "delivery": false,
+        "outdoorSeating": true,
+        "privateDining": false,
+        "chefsTable": false,
+        "wineBar": false,
+        "fullBar": false,
+        "craftCocktails": false,
+        "liveEntertainment": false,
+        "fireworksView": false,
+        "waterView": false,
+        "parkView": true,
+        "rooftopDining": false,
+        "interactiveExperience": false,
+        "cookingClass": false,
+        "wineTasting": false,
+        "happyHour": false,
+        "lateNightDining": false,
+        "breakfastAllDay": false
+      },
+      "menuHighlights": [
+        {
+          "name": "Dole Whip",
+          "description": "Famous pineapple soft-serve",
+          "price": 5.49,
+          "category": "Frozen Treat",
+          "isSignature": true,
+          "dietary": ["vegan", "dairy-free"]
+        },
+        {
+          "name": "Dole Whip Float",
+          "description": "Dole Whip with pineapple juice",
+          "price": 5.99,
+          "category": "Frozen Treat",
+          "dietary": ["vegan", "dairy-free"]
+        }
+      ],
+      "popularItems": ["Dole Whip", "Dole Whip Float", "Pineapple Juice"],
+      "dietaryAccommodations": {
+        "vegetarian": true,
+        "vegan": true,
+        "glutenFree": true,
+        "dairyFree": true,
+        "nutFree": true,
+        "halal": true,
+        "kosher": false,
+        "keto": false,
+        "paleo": false
+      },
+      "accessibility": {
+        "wheelchairAccessible": true,
+        "assistedListening": false,
+        "brailleMenus": false,
+        "largePrintMenus": false,
+        "signLanguage": false,
+        "serviceAnimalFriendly": true,
+        "accessibleParking": false,
+        "accessibleRestrooms": false
+      },
+      "ambiance": ["Casual", "Tropical", "Outdoor"],
+      "isPopular": true,
+      "isNew": false,
+      "isSeasonal": false,
+      "requiresID": false,
+      "averageRating": 4.8,
+      "reviewCount": 23891,
+      "tags": ["Dole Whip", "Pineapple", "Frozen Treat", "Vegan", "Iconic"],
+      "alternateNames": ["Aloha Isle"],
+      "searchKeywords": ["dole whip pineapple frozen soft serve adventureland"],
+      "createdAt": "2023-01-01T00:00:00.000Z",
+      "updatedAt": "2024-12-28T00:00:00.000Z"
+    },
+    {
+      "id": "wine-bar-george-disney-springs",
+      "name": "Wine Bar George",
+      "description": "An upscale wine bar and restaurant by celebrity chef Geoffrey Zakarian, featuring an extensive wine collection and elevated cuisine in Disney Springs.",
+      "shortDescription": "Upscale wine bar with extensive collection and elevated cuisine",
+      "location": {
+        "latitude": 28.370128,
+        "longitude": -81.516891,
+        "area": "disney-springs-landing"
+      },
+      "cuisineTypes": ["Modern American", "Wine Bar", "Elevated Cuisine"],
+      "serviceType": "table-service",
+      "priceRange": "$$$",
+      "diningExperience": "fine-dining",
+      "mealPeriods": ["lunch", "dinner"],
+      "pricing": {
+        "lunch": {
+          "adult": 45,
+          "child": 25
+        },
+        "dinner": {
+          "adult": 65,
+          "child": 35
+        },
+        "averageCostPerPerson": 55
+      },
+      "operatingHours": {
+        "monday": "11:30 - 23:00",
+        "tuesday": "11:30 - 23:00",
+        "wednesday": "11:30 - 23:00",
+        "thursday": "11:30 - 23:00",
+        "friday": "11:30 - 24:00",
+        "saturday": "11:30 - 24:00",
+        "sunday": "11:30 - 23:00"
+      },
+      "phoneNumber": "(407) 490-1800",
+      "reservationInfo": {
+        "acceptsReservations": true,
+        "requiresReservations": false,
+        "advanceReservationDays": 60,
+        "difficulty": {
+          "level": "moderate",
+          "score": 4,
+          "description": "Reservations recommended",
+          "adviceText": "Book 1-2 weeks in advance. Limited walk-up availability."
+        },
+        "reservationUrl": "https://disneyworld.disney.go.com/dining/disney-springs/wine-bar-george/",
+        "walkUpsAccepted": true,
+        "reservationTips": [
+          "Bar seating often available for walk-ups",
+          "Happy hour offers great value",
+          "Wine flights are popular"
+        ],
+        "peakTimes": ["Weekend evenings", "Happy hour"],
+        "bestTimesToVisit": ["Weekday lunch", "Late evening"]
+      },
+      "diningPlanInfo": {
+        "acceptsDiningPlan": false,
+        "participating": false,
+        "creditsRequired": 0,
+        "isSignatureDining": false,
+        "eligiblePlans": [],
+        "notes": "Does not participate in Disney Dining Plan"
+      },
+      "specialFeatures": {
+        "mobileOrdering": false,
+        "curbsidePickup": false,
+        "delivery": false,
+        "outdoorSeating": true,
+        "privateDining": true,
+        "chefsTable": false,
+        "wineBar": true,
+        "fullBar": true,
+        "craftCocktails": true,
+        "liveEntertainment": false,
+        "fireworksView": false,
+        "waterView": true,
+        "parkView": false,
+        "rooftopDining": true,
+        "interactiveExperience": false,
+        "cookingClass": false,
+        "wineTasting": true,
+        "happyHour": true,
+        "lateNightDining": true,
+        "breakfastAllDay": false
+      },
+      "menuHighlights": [
+        {
+          "name": "Wine Flights",
+          "description": "Curated selection of wines by theme or region",
+          "price": 28,
+          "category": "Wine",
+          "isSignature": true
+        },
+        {
+          "name": "Artisanal Cheese Board",
+          "description": "Selection of imported and domestic cheeses",
+          "price": 32,
+          "category": "Appetizer",
+          "isSignature": true,
+          "dietary": ["vegetarian"]
+        }
+      ],
+      "popularItems": [
+        "Wine Flights",
+        "Artisanal Cheese Board",
+        "Rooftop Burger",
+        "Grilled Octopus"
+      ],
+      "chefSpecialties": [
+        "Wine pairings",
+        "Elevated bar food",
+        "Rooftop dining experience"
+      ],
+      "dietaryAccommodations": {
+        "vegetarian": true,
+        "vegan": true,
+        "glutenFree": true,
+        "dairyFree": true,
+        "nutFree": false,
+        "halal": false,
+        "kosher": false,
+        "keto": true,
+        "paleo": true
+      },
+      "accessibility": {
+        "wheelchairAccessible": true,
+        "assistedListening": true,
+        "brailleMenus": false,
+        "largePrintMenus": true,
+        "signLanguage": false,
+        "serviceAnimalFriendly": true,
+        "accessibleParking": true,
+        "accessibleRestrooms": true
+      },
+      "ambiance": ["Upscale", "Modern", "Wine-focused", "Rooftop"],
+      "isPopular": true,
+      "isNew": false,
+      "isSeasonal": false,
+      "requiresID": true,
+      "minimumAge": 21,
+      "averageRating": 4.5,
+      "reviewCount": 8934,
+      "tags": ["Wine Bar", "Geoffrey Zakarian", "Rooftop", "Disney Springs", "Upscale"],
+      "alternateNames": ["WBG"],
+      "searchKeywords": ["wine bar george zakarian rooftop disney springs upscale"],
+      "challenges": ["Higher price point", "Limited wine bar seating"],
+      "createdAt": "2023-01-01T00:00:00.000Z",
+      "updatedAt": "2024-12-28T00:00:00.000Z"
+    }
+  ]
+} 
