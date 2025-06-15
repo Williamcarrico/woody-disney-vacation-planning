@@ -26,7 +26,14 @@
     "optimize": "node -r ts-node/register scripts/optimization-helpers.ts",
     "optimize:analyze": "node -r ts-node/register scripts/optimization-helpers.ts analyze",
     "optimize:clean": "node -r ts-node/register scripts/optimization-helpers.ts clean-ds",
-    "optimize:calculate": "node -r ts-node/register scripts/optimization-helpers.ts calculate"
+    "optimize:calculate": "node -r ts-node/register scripts/optimization-helpers.ts calculate",
+    "deps:analyze": "node -r ts-node/register scripts/update-dependencies.ts analyze",
+    "deps:safe": "node -r ts-node/register scripts/update-dependencies.ts safe",
+    "deps:minor": "node -r ts-node/register scripts/update-dependencies.ts minor",
+    "deps:major": "node -r ts-node/register scripts/update-dependencies.ts major",
+    "deps:all": "node -r ts-node/register scripts/update-dependencies.ts all",
+    "deps:check": "node -r ts-node/register scripts/update-dependencies.ts check",
+    "deps:cleanup": "node -r ts-node/register scripts/update-dependencies.ts cleanup"
   },
   "dependencies": {
     "@date-fns/tz": "^1.2.0",
@@ -35,6 +42,7 @@
     "@googlemaps/js-api-loader": "^1.16.8",
     "@gsap/react": "^2.1.2",
     "@headlessui/react": "^2.2.4",
+    "@hello-pangea/dnd": "^18.0.1",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.1.1",
     "@mdi/js": "^7.4.47",
@@ -69,7 +77,6 @@
     "@tanstack/react-query-devtools": "^5.80.7",
     "@types/canvas-confetti": "^1.9.0",
     "@types/date-fns": "^2.6.3",
-    "@types/ioredis": "^4.28.10",
     "@uidotdev/usehooks": "^2.4.1",
     "@vis.gl/react-google-maps": "^1.5.3",
     "canvas-confetti": "^1.9.3",
