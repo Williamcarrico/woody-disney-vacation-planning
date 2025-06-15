@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateCacheKey, CACHE_CONFIG } from '@/lib/api/weather-cache';
+import { ResponsePatterns } from '@/lib/api/response-standardizer';
+import { withErrorHandler } from '@/lib/api/unified-error-handler';
+import { ErrorCodes } from '@/lib/api/response';
 
 // Tomorrow.io API configuration
 const TOMORROW_API_KEY = process.env.TOMORROW_IO_API_KEY;
@@ -109,30 +112,25 @@ function parseLocation(locationParam: string): { lat: number; lon: number; name?
     };
 }
 
-export async function GET(request: NextRequest) {
-    try {
-        const { searchParams } = new URL(request.url);
-        const locationParam = searchParams.get('location') || 'Orlando, FL';
-        const units = searchParams.get('units') || 'imperial';
+export const GET = withErrorHandler(async (request: NextRequest) => {
+    const { searchParams } = new URL(request.url);
+    const locationParam = searchParams.get('location') || 'Orlando, FL';
+    const units = searchParams.get('units') || 'imperial';
 
-        const location = parseLocation(locationParam);
-        const cacheKey = generateCacheKey.realtime(locationParam, units);
+    const location = parseLocation(locationParam);
+    const cacheKey = generateCacheKey.realtime(locationParam, units);
 
-        // Clean up expired cache entries
-        cleanupExpiredCache();
+    // Clean up expired cache entries
+    cleanupExpiredCache();
 
-        // Check cache first
-        const cachedEntry = weatherCache.get(cacheKey);
-        if (cachedEntry && Date.now() < cachedEntry.expiresAt) {
-            // Add cache headers
-            return NextResponse.json(cachedEntry.data, {
-                headers: {
-                    'Cache-Control': `public, max-age=${Math.floor((cachedEntry.expiresAt - Date.now()) / 1000)}`,
-                    'X-Cache': 'HIT',
-                    'X-Cache-Timestamp': new Date(cachedEntry.timestamp).toISOString()
-                }
-            });
-        }
+    // Check cache first
+    const cachedEntry = weatherCache.get(cacheKey);
+    if (cachedEntry && Date.now() < cachedEntry.expiresAt) {
+        return ResponsePatterns.realTimeData(
+            cachedEntry.data,
+            new Date(cachedEntry.timestamp)
+        );
+    }
 
         if (!TOMORROW_API_KEY) {
             // Return mock data in Tomorrow.io format if no API key is configured
@@ -179,13 +177,7 @@ export async function GET(request: NextRequest) {
                 units
             });
 
-            return NextResponse.json(mockWeatherData, {
-                headers: {
-                    'Cache-Control': `public, max-age=${CACHE_CONFIG.REALTIME_CACHE_DURATION}`,
-                    'X-Cache': 'MISS',
-                    'X-Data-Source': 'MOCK'
-                }
-            });
+            return ResponsePatterns.realTimeData(mockWeatherData, new Date());
         }
 
         // Fetch real weather data from Tomorrow.io
@@ -228,60 +220,8 @@ export async function GET(request: NextRequest) {
             units
         });
 
-        return NextResponse.json(transformedData, {
-            headers: {
-                'Cache-Control': `public, max-age=${CACHE_CONFIG.REALTIME_CACHE_DURATION}`,
-                'X-Cache': 'MISS',
-                'X-Data-Source': 'TOMORROW_IO'
-            }
-        });
-    } catch (error) {
-        console.error('Error fetching weather data:', error);
-
-        // Return fallback weather data in Tomorrow.io format
-        const fallbackData: TomorrowIORealtimeResponse = {
-            data: {
-                time: new Date().toISOString(),
-                values: {
-                    cloudBase: 1000,
-                    cloudCeiling: 2000,
-                    cloudCover: 30,
-                    dewPoint: 65,
-                    freezingRainIntensity: 0,
-                    humidity: 60,
-                    precipitationProbability: 10,
-                    pressureSurfaceLevel: 1013.25,
-                    rainIntensity: 0,
-                    sleetIntensity: 0,
-                    snowIntensity: 0,
-                    temperature: 75,
-                    temperatureApparent: 78,
-                    uvHealthConcern: 3,
-                    uvIndex: 5,
-                    visibility: 16,
-                    weatherCode: 1101, // Partly cloudy
-                    windDirection: 180,
-                    windGust: 8,
-                    windSpeed: 5
-                }
-            },
-            location: {
-                lat: DEFAULT_COORDINATES.lat,
-                lon: DEFAULT_COORDINATES.lon,
-                name: DEFAULT_COORDINATES.name
-            }
-        };
-
-        return NextResponse.json(fallbackData, {
-            status: 200, // Return 200 with fallback data instead of error
-            headers: {
-                'Cache-Control': 'no-cache',
-                'X-Cache': 'MISS',
-                'X-Data-Source': 'FALLBACK'
-            }
-        });
-    }
-}
+        return ResponsePatterns.realTimeData(transformedData, new Date());
+})
 
 /**
  * Clean up expired cache entries to prevent memory leaks
@@ -295,9 +235,9 @@ function cleanupExpiredCache(): void {
     }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandler(async (request: NextRequest) => {
     // Handle POST requests if needed (for example, location updates)
-    return NextResponse.json({ message: 'POST method not implemented' }, { status: 405 });
-}
+    throw new Error('POST method not implemented for weather endpoint')
+})
 
 export const revalidate = 300; // 5 minutes
