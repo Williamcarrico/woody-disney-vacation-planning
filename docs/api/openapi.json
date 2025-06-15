@@ -1,0 +1,65 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Disney Vacation Planner API",
+    "description": "Comprehensive API for planning your perfect Disney vacation with real-time data, personalized recommendations, and seamless integration.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Disney Vacation Planner Support",
+      "email": "support@woodysdisneyvacation.com",
+      "url": "https://woodysdisneyvacation.com/support"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://woodysdisneyvacation.com",
+      "description": "Production server"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "System",
+      "description": "System health monitoring and metrics"
+    },
+    {
+      "name": "Authentication",
+      "description": "User authentication and session management"
+    },
+    {
+      "name": "User",
+      "description": "User profile and preferences management"
+    },
+    {
+      "name": "Parks",
+      "description": "Disney park information and data"
+    },
+    {
+      "name": "Attractions",
+      "description": "Attraction details and wait times"
+    },
+    {
+      "name": "Restaurants",
+      "description": "Dining locations and reservations"
+    },
+    {
+      "name": "Resorts",
+      "description": "Disney resort information"
+    },
+    {
+      "name": "Weather",
+      "description": "Weather information and forecasts"
+    },
+    {
+      "name": "Analytics",
+      "description": "Data analytics and predictions"
+    }
+  ]
+}
