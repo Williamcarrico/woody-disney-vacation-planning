@@ -5,227 +5,227 @@
 _**User**_
 
 [{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "typescript",
-	"code": "18048",
-	"severity": 8,
-	"message": "'categoryData' is possibly 'undefined'.",
-	"source": "ts",
-	"startLineNumber": 874,
-	"startColumn": 12,
-	"endLineNumber": 874,
-	"endColumn": 24,
-	"modelVersionId": 1
+  "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+  "owner": "typescript",
+  "code": "18048",
+  "severity": 8,
+  "message": "'categoryData' is possibly 'undefined'.",
+  "source": "ts",
+  "startLineNumber": 874,
+  "startColumn": 12,
+  "endLineNumber": 874,
+  "endColumn": 24,
+  "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "typescript",
-	"code": "18048",
-	"severity": 8,
-	"message": "'tips' is possibly 'undefined'.",
-	"source": "ts",
-	"startLineNumber": 935,
-	"startColumn": 54,
-	"endLineNumber": 935,
-	"endColumn": 58,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "typescript",
+    "code": "18048",
+    "severity": 8,
+    "message": "'tips' is possibly 'undefined'.",
+    "source": "ts",
+    "startLineNumber": 935,
+    "startColumn": 54,
+    "endLineNumber": 935,
+    "endColumn": 58,
+    "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "typescript",
-	"code": "2322",
-	"severity": 8,
-	"message": "Type 'string | undefined' is not assignable to type 'string'.\n  Type 'undefined' is not assignable to type 'string'.",
-	"source": "ts",
-	"startLineNumber": 936,
-	"startColumn": 26,
-	"endLineNumber": 936,
-	"endColumn": 34,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "typescript",
+    "code": "2322",
+    "severity": 8,
+    "message": "Type 'string | undefined' is not assignable to type 'string'.\n  Type 'undefined' is not assignable to type 'string'.",
+    "source": "ts",
+    "startLineNumber": 936,
+    "startColumn": 26,
+    "endLineNumber": 936,
+    "endColumn": 34,
+    "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "typescript",
-	"code": "2345",
-	"severity": 8,
-	"message": "Argument of type 'string | undefined' is not assignable to parameter of type 'string'.\n  Type 'undefined' is not assignable to type 'string'.",
-	"source": "ts",
-	"startLineNumber": 1024,
-	"startColumn": 36,
-	"endLineNumber": 1024,
-	"endColumn": 44,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "typescript",
+    "code": "2345",
+    "severity": 8,
+    "message": "Argument of type 'string | undefined' is not assignable to parameter of type 'string'.\n  Type 'undefined' is not assignable to type 'string'.",
+    "source": "ts",
+    "startLineNumber": 1024,
+    "startColumn": 36,
+    "endLineNumber": 1024,
+    "endColumn": 44,
+    "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "typescript",
-	"code": "18048",
-	"severity": 8,
-	"message": "'category' is possibly 'undefined'.",
-	"source": "ts",
-	"startLineNumber": 1027,
-	"startColumn": 19,
-	"endLineNumber": 1027,
-	"endColumn": 27,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "typescript",
+    "code": "18048",
+    "severity": 8,
+    "message": "'category' is possibly 'undefined'.",
+    "source": "ts",
+    "startLineNumber": 1027,
+    "startColumn": 19,
+    "endLineNumber": 1027,
+    "endColumn": 27,
+    "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "typescript",
-	"code": "2345",
-	"severity": 8,
-	"message": "Argument of type 'string | undefined' is not assignable to parameter of type 'string'.\n  Type 'undefined' is not assignable to type 'string'.",
-	"source": "ts",
-	"startLineNumber": 1053,
-	"startColumn": 36,
-	"endLineNumber": 1053,
-	"endColumn": 44,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "typescript",
+    "code": "2345",
+    "severity": 8,
+    "message": "Argument of type 'string | undefined' is not assignable to parameter of type 'string'.\n  Type 'undefined' is not assignable to type 'string'.",
+    "source": "ts",
+    "startLineNumber": 1053,
+    "startColumn": 36,
+    "endLineNumber": 1053,
+    "endColumn": 44,
+    "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "typescript",
-	"code": "18048",
-	"severity": 8,
-	"message": "'category' is possibly 'undefined'.",
-	"source": "ts",
-	"startLineNumber": 1055,
-	"startColumn": 19,
-	"endLineNumber": 1055,
-	"endColumn": 27,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "typescript",
+    "code": "18048",
+    "severity": 8,
+    "message": "'category' is possibly 'undefined'.",
+    "source": "ts",
+    "startLineNumber": 1055,
+    "startColumn": 19,
+    "endLineNumber": 1055,
+    "endColumn": 27,
+    "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "typescript",
-	"code": "2532",
-	"severity": 8,
-	"message": "Object is possibly 'undefined'.",
-	"source": "ts",
-	"startLineNumber": 1290,
-	"startColumn": 46,
-	"endLineNumber": 1290,
-	"endColumn": 76,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "typescript",
+    "code": "2532",
+    "severity": 8,
+    "message": "Object is possibly 'undefined'.",
+    "source": "ts",
+    "startLineNumber": 1290,
+    "startColumn": 46,
+    "endLineNumber": 1290,
+    "endColumn": 76,
+    "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "typescript",
-	"code": "2532",
-	"severity": 8,
-	"message": "Object is possibly 'undefined'.",
-	"source": "ts",
-	"startLineNumber": 1290,
-	"startColumn": 46,
-	"endLineNumber": 1290,
-	"endColumn": 95,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "typescript",
+    "code": "2532",
+    "severity": 8,
+    "message": "Object is possibly 'undefined'.",
+    "source": "ts",
+    "startLineNumber": 1290,
+    "startColumn": 46,
+    "endLineNumber": 1290,
+    "endColumn": 95,
+    "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "typescript",
-	"code": "2532",
-	"severity": 8,
-	"message": "Object is possibly 'undefined'.",
-	"source": "ts",
-	"startLineNumber": 1293,
-	"startColumn": 46,
-	"endLineNumber": 1293,
-	"endColumn": 76,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "typescript",
+    "code": "2532",
+    "severity": 8,
+    "message": "Object is possibly 'undefined'.",
+    "source": "ts",
+    "startLineNumber": 1293,
+    "startColumn": 46,
+    "endLineNumber": 1293,
+    "endColumn": 76,
+    "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "typescript",
-	"code": "2532",
-	"severity": 8,
-	"message": "Object is possibly 'undefined'.",
-	"source": "ts",
-	"startLineNumber": 1293,
-	"startColumn": 46,
-	"endLineNumber": 1293,
-	"endColumn": 95,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "typescript",
+    "code": "2532",
+    "severity": 8,
+    "message": "Object is possibly 'undefined'.",
+    "source": "ts",
+    "startLineNumber": 1293,
+    "startColumn": 46,
+    "endLineNumber": 1293,
+    "endColumn": 95,
+    "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "unsafe-typescript",
-	"severity": 2,
-	"message": "Unsafe type predicate: 'value is 'beginner' | 'intermediate' | 'advanced''.\n\nType predicates rely on custom functions or expressions to determine the type of a variable. If these functions or expressions are not carefully implemented or do not cover all possible cases, it can lead to incorrect type narrowing. In other words, the compiler may infer a more specific type for a variable than is actually accurate, potentially resulting in runtime errors. Use them carefully and actively test them in various scenarios, including edge cases, to identify any potential issues.",
-	"startLineNumber": 77,
-	"startColumn": 50,
-	"endLineNumber": 77,
-	"endColumn": 52,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "unsafe-typescript",
+    "severity": 2,
+    "message": "Unsafe type predicate: 'value is 'beginner' | 'intermediate' | 'advanced''.\n\nType predicates rely on custom functions or expressions to determine the type of a variable. If these functions or expressions are not carefully implemented or do not cover all possible cases, it can lead to incorrect type narrowing. In other words, the compiler may infer a more specific type for a variable than is actually accurate, potentially resulting in runtime errors. Use them carefully and actively test them in various scenarios, including edge cases, to identify any potential issues.",
+    "startLineNumber": 77,
+    "startColumn": 50,
+    "endLineNumber": 77,
+    "endColumn": 52,
+    "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "unsafe-typescript",
-	"severity": 2,
-	"message": "Unsafe type predicate: 'category is keyof TipsDataType & string'.\n\nType predicates rely on custom functions or expressions to determine the type of a variable. If these functions or expressions are not carefully implemented or do not cover all possible cases, it can lead to incorrect type narrowing. In other words, the compiler may infer a more specific type for a variable than is actually accurate, potentially resulting in runtime errors. Use them carefully and actively test them in various scenarios, including edge cases, to identify any potential issues.",
-	"startLineNumber": 862,
-	"startColumn": 54,
-	"endLineNumber": 862,
-	"endColumn": 56,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "unsafe-typescript",
+    "severity": 2,
+    "message": "Unsafe type predicate: 'category is keyof TipsDataType & string'.\n\nType predicates rely on custom functions or expressions to determine the type of a variable. If these functions or expressions are not carefully implemented or do not cover all possible cases, it can lead to incorrect type narrowing. In other words, the compiler may infer a more specific type for a variable than is actually accurate, potentially resulting in runtime errors. Use them carefully and actively test them in various scenarios, including edge cases, to identify any potential issues.",
+    "startLineNumber": 862,
+    "startColumn": 54,
+    "endLineNumber": 862,
+    "endColumn": 56,
+    "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "unsafe-typescript",
-	"severity": 2,
-	"message": "Unsafe TypeScript assertion: 'code as keyof typeof parks'.\n\nType assertions in TypeScript are technically slightly different from what is meant by type casting in other languages. Type assertions are a way of saying to the compiler \"I know better than you, it's actually this other type!\" Use them sparingly, and use the 'satisfies' operator instead where possible.",
-	"startLineNumber": 889,
-	"startColumn": 34,
-	"endLineNumber": 889,
-	"endColumn": 36,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "unsafe-typescript",
+    "severity": 2,
+    "message": "Unsafe TypeScript assertion: 'code as keyof typeof parks'.\n\nType assertions in TypeScript are technically slightly different from what is meant by type casting in other languages. Type assertions are a way of saying to the compiler \"I know better than you, it's actually this other type!\" Use them sparingly, and use the 'satisfies' operator instead where possible.",
+    "startLineNumber": 889,
+    "startColumn": 34,
+    "endLineNumber": 889,
+    "endColumn": 36,
+    "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "unsafe-typescript",
-	"severity": 2,
-	"message": "Unsafe TypeScript assertion: 'randomCategory as keyof typeof tipsData'.\n\nType assertions in TypeScript are technically slightly different from what is meant by type casting in other languages. Type assertions are a way of saying to the compiler \"I know better than you, it's actually this other type!\" Use them sparingly, and use the 'satisfies' operator instead where possible.",
-	"startLineNumber": 934,
-	"startColumn": 46,
-	"endLineNumber": 934,
-	"endColumn": 48,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "unsafe-typescript",
+    "severity": 2,
+    "message": "Unsafe TypeScript assertion: 'randomCategory as keyof typeof tipsData'.\n\nType assertions in TypeScript are technically slightly different from what is meant by type casting in other languages. Type assertions are a way of saying to the compiler \"I know better than you, it's actually this other type!\" Use them sparingly, and use the 'satisfies' operator instead where possible.",
+    "startLineNumber": 934,
+    "startColumn": 46,
+    "endLineNumber": 934,
+    "endColumn": 48,
+    "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "unsafe-typescript",
-	"severity": 2,
-	"message": "Unsafe TypeScript assertion: 'category as keyof typeof tipsData'.\n\nType assertions in TypeScript are technically slightly different from what is meant by type casting in other languages. Type assertions are a way of saying to the compiler \"I know better than you, it's actually this other type!\" Use them sparingly, and use the 'satisfies' operator instead where possible.",
-	"startLineNumber": 1029,
-	"startColumn": 42,
-	"endLineNumber": 1029,
-	"endColumn": 44,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "unsafe-typescript",
+    "severity": 2,
+    "message": "Unsafe TypeScript assertion: 'category as keyof typeof tipsData'.\n\nType assertions in TypeScript are technically slightly different from what is meant by type casting in other languages. Type assertions are a way of saying to the compiler \"I know better than you, it's actually this other type!\" Use them sparingly, and use the 'satisfies' operator instead where possible.",
+    "startLineNumber": 1029,
+    "startColumn": 42,
+    "endLineNumber": 1029,
+    "endColumn": 44,
+    "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "unsafe-typescript",
-	"severity": 2,
-	"message": "Unsafe type predicate: 'item is TipType & { category: string, index: number }'.\n\nType predicates rely on custom functions or expressions to determine the type of a variable. If these functions or expressions are not carefully implemented or do not cover all possible cases, it can lead to incorrect type narrowing. In other words, the compiler may infer a more specific type for a variable than is actually accurate, potentially resulting in runtime errors. Use them carefully and actively test them in various scenarios, including edge cases, to identify any potential issues.",
-	"startLineNumber": 1046,
-	"startColumn": 32,
-	"endLineNumber": 1046,
-	"endColumn": 34,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "unsafe-typescript",
+    "severity": 2,
+    "message": "Unsafe type predicate: 'item is TipType & { category: string, index: number }'.\n\nType predicates rely on custom functions or expressions to determine the type of a variable. If these functions or expressions are not carefully implemented or do not cover all possible cases, it can lead to incorrect type narrowing. In other words, the compiler may infer a more specific type for a variable than is actually accurate, potentially resulting in runtime errors. Use them carefully and actively test them in various scenarios, including edge cases, to identify any potential issues.",
+    "startLineNumber": 1046,
+    "startColumn": 32,
+    "endLineNumber": 1046,
+    "endColumn": 34,
+    "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "unsafe-typescript",
-	"severity": 2,
-	"message": "Unsafe TypeScript assertion: 'category as keyof typeof tipsData'.\n\nType assertions in TypeScript are technically slightly different from what is meant by type casting in other languages. Type assertions are a way of saying to the compiler \"I know better than you, it's actually this other type!\" Use them sparingly, and use the 'satisfies' operator instead where possible.",
-	"startLineNumber": 1057,
-	"startColumn": 42,
-	"endLineNumber": 1057,
-	"endColumn": 44,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "unsafe-typescript",
+    "severity": 2,
+    "message": "Unsafe TypeScript assertion: 'category as keyof typeof tipsData'.\n\nType assertions in TypeScript are technically slightly different from what is meant by type casting in other languages. Type assertions are a way of saying to the compiler \"I know better than you, it's actually this other type!\" Use them sparingly, and use the 'satisfies' operator instead where possible.",
+    "startLineNumber": 1057,
+    "startColumn": 42,
+    "endLineNumber": 1057,
+    "endColumn": 44,
+    "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "unsafe-typescript",
-	"severity": 2,
-	"message": "Unsafe type predicate: 'item is TipType & { category: string, index: number }'.\n\nType predicates rely on custom functions or expressions to determine the type of a variable. If these functions or expressions are not carefully implemented or do not cover all possible cases, it can lead to incorrect type narrowing. In other words, the compiler may infer a more specific type for a variable than is actually accurate, potentially resulting in runtime errors. Use them carefully and actively test them in various scenarios, including edge cases, to identify any potential issues.",
-	"startLineNumber": 1073,
-	"startColumn": 32,
-	"endLineNumber": 1073,
-	"endColumn": 34,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "unsafe-typescript",
+    "severity": 2,
+    "message": "Unsafe type predicate: 'item is TipType & { category: string, index: number }'.\n\nType predicates rely on custom functions or expressions to determine the type of a variable. If these functions or expressions are not carefully implemented or do not cover all possible cases, it can lead to incorrect type narrowing. In other words, the compiler may infer a more specific type for a variable than is actually accurate, potentially resulting in runtime errors. Use them carefully and actively test them in various scenarios, including edge cases, to identify any potential issues.",
+    "startLineNumber": 1073,
+    "startColumn": 32,
+    "endLineNumber": 1073,
+    "endColumn": 34,
+    "modelVersionId": 1
 },{
-	"resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
-	"owner": "unsafe-typescript",
-	"severity": 2,
-	"message": "Unsafe TypeScript assertion: 'parkFilter as keyof typeof parks'.\n\nType assertions in TypeScript are technically slightly different from what is meant by type casting in other languages. Type assertions are a way of saying to the compiler \"I know better than you, it's actually this other type!\" Use them sparingly, and use the 'satisfies' operator instead where possible.",
-	"startLineNumber": 1445,
-	"startColumn": 60,
-	"endLineNumber": 1445,
-	"endColumn": 62,
-	"modelVersionId": 1
+    "resource": "/Users/williamcarrico/Web App Design/woody-disney-vacation-planning/src/app/tips-tricks/page.tsx",
+    "owner": "unsafe-typescript",
+    "severity": 2,
+    "message": "Unsafe TypeScript assertion: 'parkFilter as keyof typeof parks'.\n\nType assertions in TypeScript are technically slightly different from what is meant by type casting in other languages. Type assertions are a way of saying to the compiler \"I know better than you, it's actually this other type!\" Use them sparingly, and use the 'satisfies' operator instead where possible.",
+    "startLineNumber": 1445,
+    "startColumn": 60,
+    "endLineNumber": 1445,
+    "endColumn": 62,
+    "modelVersionId": 1
 }]
 
 ---
@@ -281,25 +281,25 @@ cd /Users/williamcarrico/Web\ App\ Design/woody-disney-vacation-planning && npx 
 ```
 
 ```
-williamcarrico@CIA woody-disney-vacation-planning % 
+williamcarrico@CIA woody-disney-vacation-planning %
 src/app/api/user/profile/route.ts:46:28 - error TS2339: Property 'displayName' d
 oes not exist on type '{ uid
 : string; email: string | undefined; decodedClaims: DecodedIdToken; }'.
-                            
+
 46                 name: user.displayName || 'Disney Explorer',
                               ~~~~~~~~~~~
 
 src/app/api/user/profile/route.ts:48:30 - error TS2339: Property 'photoURL' does
  not exist on type '{ uid: s
 tring; email: string | undefined; decodedClaims: DecodedIdToken; }'.
-                            
+
 48                 avatar: user.photoURL || undefined,
                                 ~~~~~~~~
 
 src/app/api/user/stats/route.ts:114:30 - error TS4111: Property 'waitTime' comes
  from an index signature, so
  it must be accessed with ['waitTime'].
-                            
+
 114                     if (data.waitTime && typeof data.waitTime === 'number')
 {
                                  ~~~~~~~~
@@ -307,7 +307,7 @@ src/app/api/user/stats/route.ts:114:30 - error TS4111: Property 'waitTime' comes
 src/app/api/user/stats/route.ts:114:54 - error TS4111: Property 'waitTime' comes
  from an index signature, so
  it must be accessed with ['waitTime'].
-                            
+
 114                     if (data.waitTime && typeof data.waitTime === 'number')
 {
                                                          ~~~~~~~~
@@ -315,21 +315,21 @@ src/app/api/user/stats/route.ts:114:54 - error TS4111: Property 'waitTime' comes
 src/app/api/user/stats/route.ts:115:47 - error TS4111: Property 'waitTime' comes
  from an index signature, so
  it must be accessed with ['waitTime'].
-                            
+
 115                         totalWaitTime += data.waitTime
                                                   ~~~~~~~~
 
 src/app/api/user/stats/route.ts:125:30 - error TS4111: Property 'attractionId' c
 omes from an index signature
 , so it must be accessed with ['attractionId'].
-                            
+
 125                     if (data.attractionId) {
                                  ~~~~~~~~~~~~
 
 src/app/api/user/stats/route.ts:126:47 - error TS4111: Property 'attractionId' c
 omes from an index signature
 , so it must be accessed with ['attractionId'].
-                            
+
 126                         attractionCounts[data.attractionId] = (attractionCou
 nts[data.attractionId] || 0)
  + 1
@@ -339,7 +339,7 @@ nts[data.attractionId] || 0)
 src/app/api/user/stats/route.ts:126:86 - error TS4111: Property 'attractionId' c
 omes from an index signature
 , so it must be accessed with ['attractionId'].
-                            
+
 126                         attractionCounts[data.attractionId] = (attractionCou
 nts[data.attractionId] || 0)
  + 1
@@ -347,9 +347,9 @@ nts[data.attractionId] || 0)
                                      ~~~~~~~~~~~~
 
 src/app/api/user/stats/route.ts:138:75 - error TS4111: Property 'name' comes fro
-m an index signature, so it 
+m an index signature, so it
 must be accessed with ['name'].
-                            
+
 138                                 favoriteAttraction = attractionDoc.data().na
 me || topAttractionId
                                                                               ~~
@@ -358,47 +358,47 @@ me || topAttractionId
 src/app/api/user/stats/route.ts:160:30 - error TS4111: Property 'steps' comes fr
 om an index signature, so it
  must be accessed with ['steps'].
-                            
+
 160                     if (data.steps && typeof data.steps === 'number') {
                                  ~~~~~
 
 src/app/api/user/stats/route.ts:160:51 - error TS4111: Property 'steps' comes fr
 om an index signature, so it
  must be accessed with ['steps'].
-                            
+
 160                     if (data.steps && typeof data.steps === 'number') {
                                                       ~~~~~
 
 src/app/api/user/stats/route.ts:161:45 - error TS4111: Property 'steps' comes fr
 om an index signature, so it
  must be accessed with ['steps'].
-                            
+
 161                         stepsWalked += data.steps
                                                 ~~~~~
 
 src/app/api/vacations/[vacationId]/events/route.ts:222:32 - error TS7006: Parame
 ter 'event' implicitly has a
 n 'any' type.
-                            
+
 222             events: events.map(event => ({
                                    ~~~~~
 
 src/app/api/vacations/[vacationId]/events/route.ts:321:56 - error TS7006: Parame
 ter 'event' implicitly has a
 n 'any' type.
-                            
+
 321             const hasConflict = conflictingEvents.some(event => {
                                                            ~~~~~
 
 src/app/api/vacations/[vacationId]/events/route.ts:533:60 - error TS7006: Parame
 ter 'event' implicitly has a
 n 'any' type.
-                            
+
 533                 const hasConflict = conflictingEvents.some(event => {
                                                                ~~~~~
 
 src/app/api/vacations/[vacationId]/events/route.ts:573:48 - error TS2375: Type '
-{ id: string; name: string; 
+{ id: string; name: string;
 confirmed: boolean; partySize: number; time: string; confirmationNumber?: string
  | undefined; specialRequests?: string | undefined; cost?: number | undefined; p
 repaid?: boolean | undefined; }' is not assignable to type '{ id: string; name:
@@ -462,7 +462,7 @@ checklist
                                                  ~~~~~~~~~~~~~~~~~~~~
 
 src/app/api/vacations/[vacationId]/events/route.ts:578:48 - error TS2322: Type '
-{ type: "link" | "document" 
+{ type: "link" | "document"
 | "image"; url: string; title: string; thumbnail?: string | undefined; }[]' is n
 ot assignable to type '{ type: "link" | "document" | "image"; url: string; title
 : string; thumbnail?: string; }[]'.                       Type '{ type: "link" |
@@ -501,7 +501,7 @@ r[] }
 type '{ name: string; startD
 ate: Date; endDate: Date; destination?: string; travelers: { adults: number; chi
 ldren: number; childrenAges?: number[]; }; }'
-                                                        
+
 src/app/api/walt-disney-world/route.ts:41:42 - error TS2339: Property 'timezone'
  does not exist on type 'The
 meParksPark | ThemeParksEntity'.
@@ -514,14 +514,14 @@ arksEntity'.
 src/app/api/weather/forecast/route.ts:4:29 - error TS4111: Property 'TOMORROW_IO
 _API_KEY' comes from an inde
 x signature, so it must be accessed with ['TOMORROW_IO_API_KEY'].
-                            
+
 4 const API_KEY = process.env.TOMORROW_IO_API_KEY;
                               ~~~~~~~~~~~~~~~~~~~
 
 src/app/api/weather/realtime/route.ts:8:38 - error TS4111: Property 'TOMORROW_IO
 _API_KEY' comes from an inde
 x signature, so it must be accessed with ['TOMORROW_IO_API_KEY'].
-                            
+
 8 const TOMORROW_API_KEY = process.env.TOMORROW_IO_API_KEY;
                                        ~~~~~~~~~~~~~~~~~~~
 
@@ -546,14 +546,14 @@ signable to parameter of type 'string'.
 src/app/dashboard/attractions/[attractionId]/page.tsx:20:37 - error TS4111: Prop
 erty 'attractionId' comes fr
 om an index signature, so it must be accessed with ['attractionId'].
-                            
+
 20         const attractionId = params.attractionId as string
                                        ~~~~~~~~~~~~
 
 src/app/dashboard/attractions/[attractionId]/page.tsx:30:16 - error TS4111: Prop
 erty 'attractionId' comes fr
 om an index signature, so it must be accessed with ['attractionId'].
-                            
+
 30     }, [params.attractionId])
                   ~~~~~~~~~~~~
 
@@ -576,9 +576,9 @@ ot find name 'AlertCircle'.
                             ~~~~~~~~~~~
 
 src/app/dashboard/disneysprings/[locationId]/page.tsx:231:43 - error TS2339: Pro
-perty 'ticketRequired' does 
+perty 'ticketRequired' does
 not exist on type 'DisneySpringLocation'.
-                            
+
 231                                 {location.ticketRequired && (
                                               ~~~~~~~~~~~~~~
 
@@ -622,7 +622,7 @@ ion]) => (
                             319
     <div
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... 
+...
 333                                                     </div>
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 334                                                 ))}
@@ -631,64 +631,64 @@ ion]) => (
 src/app/dashboard/layout.tsx:43:20 - error TS4111: Property 'id' comes from an i
 ndex signature, so it must b
 e accessed with ['id'].
-                            
+
 43         typeof obj.id === 'string' &&
                       ~~
 
 src/app/dashboard/layout.tsx:44:20 - error TS4111: Property 'title' comes from a
 n index signature, so it mus
 t be accessed with ['title'].
-                            
+
 44         typeof obj.title === 'string' &&
                       ~~~~~
 
 src/app/dashboard/layout.tsx:45:20 - error TS4111: Property 'message' comes from
  an index signature, so it m
 ust be accessed with ['message'].
-                            
+
 45         typeof obj.message === 'string' &&
                       ~~~~~~~
 
 src/app/dashboard/layout.tsx:46:20 - error TS4111: Property 'category' comes fro
-m an index signature, so it 
+m an index signature, so it
 must be accessed with ['category'].
-                            
+
 46         typeof obj.category === 'string' &&
                       ~~~~~~~~
 
 src/app/dashboard/layout.tsx:47:20 - error TS4111: Property 'read' comes from an
  index signature, so it must
  be accessed with ['read'].
-                            
+
 47         typeof obj.read === 'boolean' &&
                       ~~~~
 
 src/app/dashboard/layout.tsx:48:20 - error TS4111: Property 'createdAt' comes fr
 om an index signature, so it
  must be accessed with ['createdAt'].
-                            
+
 48         typeof obj.createdAt === 'string'
                       ~~~~~~~~~
 
 src/app/dashboard/layout.tsx:54:31 - error TS4111: Property 'priority' comes fro
-m an index signature, so it 
+m an index signature, so it
 must be accessed with ['priority'].
-                            
+
 54     const validPriority = obj.priority === undefined ||
                                  ~~~~~~~~
 
 src/app/dashboard/layout.tsx:55:21 - error TS4111: Property 'priority' comes fro
-m an index signature, so it 
+m an index signature, so it
 must be accessed with ['priority'].
-                            
+
 55         (typeof obj.priority === 'string' && ['low', 'medium', 'high'].includ
 es(obj.priority))
                        ~~~~~~~~
 
 src/app/dashboard/layout.tsx:55:85 - error TS4111: Property 'priority' comes fro
-m an index signature, so it 
+m an index signature, so it
 must be accessed with ['priority'].
-                            
+
 55         (typeof obj.priority === 'string' && ['low', 'medium', 'high'].includ
 es(obj.priority))
 
@@ -697,14 +697,14 @@ es(obj.priority))
 src/app/dashboard/layout.tsx:56:27 - error TS4111: Property 'type' comes from an
  index signature, so it must
  be accessed with ['type'].
-                            
+
 56     const validType = obj.type === undefined ||
                              ~~~~
 
 src/app/dashboard/layout.tsx:57:21 - error TS4111: Property 'type' comes from an
  index signature, so it must
  be accessed with ['type'].
-                            
+
 57         (typeof obj.type === 'string' && ['wait_time', 'dining', 'weather', '
 system', 'achievement'].incl
 udes(obj.type))
@@ -713,18 +713,18 @@ udes(obj.type))
 src/app/dashboard/layout.tsx:57:115 - error TS4111: Property 'type' comes from a
 n index signature, so it mus
 t be accessed with ['type'].
-                            
+
 57         (typeof obj.type === 'string' && ['wait_time', 'dining', 'weather', '
 system', 'achievement'].incl
 udes(obj.type))
 
-                                                        
+
          ~~~~
-                            
+
 src/app/dashboard/layout.tsx:74:39 - error TS4111: Property 'achievementLevel' c
 omes from an index signature
 , so it must be accessed with ['achievementLevel'].
-                            
+
 74     const validAchievementLevel = obj.achievementLevel === undefined || typeo
 f obj.achievementLevel === '
 string'
@@ -734,7 +734,7 @@ string'
 src/app/dashboard/layout.tsx:74:84 - error TS4111: Property 'achievementLevel' c
 omes from an index signature
 , so it must be accessed with ['achievementLevel'].
-                            
+
 74     const validAchievementLevel = obj.achievementLevel === undefined || typeo
 f obj.achievementLevel === '
 string'
@@ -742,17 +742,17 @@ string'
                                   ~~~~~~~~~~~~~~~~
 
 src/app/dashboard/layout.tsx:75:34 - error TS4111: Property 'totalVisits' comes
-from an index signature, so 
+from an index signature, so
 it must be accessed with ['totalVisits'].
-                            
+
 75     const validTotalVisits = obj.totalVisits === undefined || typeof obj.tota
 lVisits === 'number'
                                     ~~~~~~~~~~~
 
 src/app/dashboard/layout.tsx:75:74 - error TS4111: Property 'totalVisits' comes
-from an index signature, so 
+from an index signature, so
 it must be accessed with ['totalVisits'].
-                            
+
 75     const validTotalVisits = obj.totalVisits === undefined || typeof obj.tota
 lVisits === 'number'
                                                                             ~~~~
@@ -761,7 +761,7 @@ lVisits === 'number'
 src/app/dashboard/layout.tsx:76:43 - error TS4111: Property 'upcomingReservation
 s' comes from an index signa
 ture, so it must be accessed with ['upcomingReservations'].
-                            
+
 76     const validUpcomingReservations = obj.upcomingReservations === undefined
 || typeof obj.upcomingReserv
 ations === 'number'
@@ -771,14 +771,14 @@ ations === 'number'
 src/app/dashboard/layout.tsx:76:92 - error TS4111: Property 'upcomingReservation
 s' comes from an index signa
 ture, so it must be accessed with ['upcomingReservations'].
-                            
+
 76     const validUpcomingReservations = obj.upcomingReservations === undefined
 || typeof obj.upcomingReserv
 ations === 'number'
 
                                           ~~~~~~~~~~~~~~
 ~~~~~~
-                            
+
 src/app/dashboard/messages/page.tsx:232:30 - error TS2379: Argument of type '{ i
 d: string; displayName: stri
 ng; email: string; isOnline: boolean; lastSeen: Date; status: "idle" | "busy" |
@@ -795,12 +795,12 @@ r of type 'PartyMember' with 'exactOptionalPropertyTypes: true'. Consider adding
                                   Type 'undefined' is not assignable to type '{
 latitude: number; longitude: number; timestamp: Date; }'
 .
-                            
+
 232                 members.push({
                                  ~
 233                     id: memberId,
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... 
+...
 246                     } : undefined
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 247                 })
@@ -959,7 +959,7 @@ assignable to type 'UseFormReturn<OptimizerFormData>'.
     The expected type comes from property 'form' which is declared here on type
 'IntrinsicAttributes & TimeP
 referencesSectionProps'
-                            
+
 src/app/dashboard/optimizer/page.tsx:355:49 - error TS2322: Type 'UseFormReturn<
 { parkId: string; date: Date
 ; partySize: number; maxWaitTime: number; ridePreference: "family" | "all" | "th
@@ -979,7 +979,7 @@ assignable to type 'UseFormReturn<OptimizerFormData>'.
     The expected type comes from property 'form' which is declared here on type
 'IntrinsicAttributes & Party
 ConfigSectionProps'
-                            
+
 src/app/dashboard/optimizer/page.tsx:551:53 - error TS2322: Type 'UseFormReturn<
 { parkId: string; date: Date
 ; partySize: number; maxWaitTime: number; ridePreference: "family" | "all" | "th
@@ -999,7 +999,7 @@ assignable to type 'UseFormReturn<OptimizerFormData>'.
     The expected type comes from property 'form' which is declared here on type
 'IntrinsicAttributes & Mobil
 ityOptionsSectionProps'
-                            
+
 src/app/dashboard/optimizer/page.tsx:553:58 - error TS2322: Type 'UseFormReturn<
 { parkId: string; date: Date
 ; partySize: number; maxWaitTime: number; ridePreference: "family" | "all" | "th
@@ -1020,7 +1020,7 @@ se types.
     The expected type comes from property 'form' which is declared here on type
 'IntrinsicAttributes & Light
 ningLaneOptionsSectionProps'
-                            
+
 src/app/dashboard/optimizer/page.tsx:555:59 - error TS2322: Type 'UseFormReturn<
 { parkId: string; date: Date
 ; partySize: number; maxWaitTime: number; ridePreference: "family" | "all" | "th
@@ -1035,12 +1035,12 @@ ean; rideRepeats: boolean; ... 17 more ...; dinnerTime?: string | undefined; }>'
  is not assignable to type 'UseFormWatch<OptimizerFormData>'.
 
           Type 'OptimizerFormData' is missing the following properties from type
- '{ parkId: string; date: Date; 
+ '{ parkId: string; date: Date;
 partySize: number; maxWaitTime: number; ridePreference: "family" | "all" | "thri
 ll"; hasStroller: boolean; mobilityConsiderations: boolean; rideRepeats: boolean
 ; ... 17 more ...; dinnerTime?: string | undefined; }': parkId, date, partySize,
  maxWaitTime, and 14 more.
-    
+
 555                             <AttractionPreferencesSection form={form} parkId
 ={form.watch("parkId")} />
                                                               ~~~~
@@ -1051,7 +1051,7 @@ ll"; hasStroller: boolean; mobilityConsiderations: boolean; rideRepeats: boolean
     The expected type comes from property 'form' which is declared here on type
 'IntrinsicAttributes & Attra
 ctionPreferencesSectionProps'
-                            
+
 src/app/dashboard/page.tsx:148:5 - error TS2375: Type '{ id: string; name: strin
 g; startDate: string; endDat
 e: string; resort: string | undefined; daysUntilTrip: number; magicalLevel: "del
@@ -1069,7 +1069,7 @@ ith 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types
 src/app/dashboard/page.tsx:228:53 - error TS4111: Property 'NEXT_PUBLIC_APP_URL'
  comes from an index signatu
 re, so it must be accessed with ['NEXT_PUBLIC_APP_URL'].
-                            
+
 228         const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api
 /weather/realtime?location=O
 rlando,FL&enhanced=true`, {
@@ -1079,7 +1079,7 @@ rlando,FL&enhanced=true`, {
 src/app/dashboard/page.tsx:244:53 - error TS4111: Property 'NEXT_PUBLIC_APP_URL'
  comes from an index signatu
 re, so it must be accessed with ['NEXT_PUBLIC_APP_URL'].
-                            
+
 244         const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api
 /user/stats?userId=${userId}
 &enhanced=true`, {
@@ -1089,7 +1089,7 @@ re, so it must be accessed with ['NEXT_PUBLIC_APP_URL'].
 src/app/dashboard/page.tsx:247:89 - error TS4111: Property 'session' comes from
 an index signature, so it mu
 st be accessed with ['session'].
-                            
+
 247                 'Cookie': `session=${await getCurrentUser().then(u => u?.dec
 odedClaims?.session || '')}`
 
@@ -1098,7 +1098,7 @@ odedClaims?.session || '')}`
 src/app/dashboard/page.tsx:263:53 - error TS4111: Property 'NEXT_PUBLIC_APP_URL'
  comes from an index signatu
 re, so it must be accessed with ['NEXT_PUBLIC_APP_URL'].
-                            
+
 263         const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api
 /user/events?userId=${userId
 }&upcoming=true&limit=10&disneyThemed=true`, {
@@ -1108,7 +1108,7 @@ re, so it must be accessed with ['NEXT_PUBLIC_APP_URL'].
 src/app/dashboard/page.tsx:266:89 - error TS4111: Property 'session' comes from
 an index signature, so it mu
 st be accessed with ['session'].
-                            
+
 266                 'Cookie': `session=${await getCurrentUser().then(u => u?.dec
 odedClaims?.session || '')}`
 
@@ -1117,7 +1117,7 @@ odedClaims?.session || '')}`
 src/app/dashboard/page.tsx:282:53 - error TS4111: Property 'NEXT_PUBLIC_APP_URL'
  comes from an index signatu
 re, so it must be accessed with ['NEXT_PUBLIC_APP_URL'].
-                            
+
 282         const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api
 /user/achievements?userId=${
 userId}&magical=true`, {
@@ -1127,7 +1127,7 @@ userId}&magical=true`, {
 src/app/dashboard/page.tsx:285:89 - error TS4111: Property 'session' comes from
 an index signature, so it mu
 st be accessed with ['session'].
-                            
+
 285                 'Cookie': `session=${await getCurrentUser().then(u => u?.dec
 odedClaims?.session || '')}`
 
@@ -1136,7 +1136,7 @@ odedClaims?.session || '')}`
 src/app/dashboard/page.tsx:323:38 - error TS4111: Property 'tab' comes from an i
 ndex signature, so it must b
 e accessed with ['tab'].
-                            
+
 323     const activeTab = (searchParams?.tab && typeof searchParams.tab === 'str
 ing')
                                          ~~~
@@ -1144,7 +1144,7 @@ ing')
 src/app/dashboard/page.tsx:323:65 - error TS4111: Property 'tab' comes from an i
 ndex signature, so it must b
 e accessed with ['tab'].
-                            
+
 323     const activeTab = (searchParams?.tab && typeof searchParams.tab === 'str
 ing')
                                                                     ~~~
@@ -1152,7 +1152,7 @@ ing')
 src/app/dashboard/page.tsx:324:24 - error TS4111: Property 'tab' comes from an i
 ndex signature, so it must b
 e accessed with ['tab'].
-                            
+
 324         ? searchParams.tab
                            ~~~
 
@@ -1173,7 +1173,7 @@ edTime: string; magicalTip: string; weatherBasedSuggestion: string; }'.
 s not assignable to type '{ suggestedPark: string; recommendedTime: string; magi
 calT
 ip: string; weatherBasedSuggestion: string; }'.
-                            
+
 346                         <EnhancedDashboardHeader
                              ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1204,7 +1204,7 @@ onsider adding 'undefined' to the types of the target's properties.
                                  ~~~~~~~~~~~~~~~~~~
 
 src/app/dashboard/parks/epcot/page.tsx:1061:48 - error TS2345: Argument of type
-'string | undefined' is not 
+'string | undefined' is not
 assignable to parameter of type 'string'.
                               Type 'undefined' is not assignable to type 'string
 '.
@@ -1216,7 +1216,7 @@ it(':')[1])
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 src/app/dashboard/parks/epcot/page.tsx:1061:90 - error TS2345: Argument of type
-'string | undefined' is not 
+'string | undefined' is not
 assignable to parameter of type 'string'.
                               Type 'undefined' is not assignable to type 'string
 '.
@@ -1227,9 +1227,9 @@ it(':')[1])
 
                                           ~~~~~~~~~~~~~~
 ~~~~~~~~~~
-                            
+
 src/app/dashboard/parks/epcot/page.tsx:1062:48 - error TS2345: Argument of type
-'string | undefined' is not 
+'string | undefined' is not
 assignable to parameter of type 'string'.
                               Type 'undefined' is not assignable to type 'string
 '.
@@ -1241,7 +1241,7 @@ it(':')[1])
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 src/app/dashboard/parks/epcot/page.tsx:1062:90 - error TS2345: Argument of type
-'string | undefined' is not 
+'string | undefined' is not
 assignable to parameter of type 'string'.
                               Type 'undefined' is not assignable to type 'string
 '.
@@ -1252,7 +1252,7 @@ it(':')[1])
 
                                           ~~~~~~~~~~~~~~
 ~~~~~~~~~~
-                            
+
 src/app/dashboard/parks/epcot/page.tsx:1169:65 - error TS2532: Object is possibl
 y 'undefined'.
 
@@ -1307,9 +1307,9 @@ ndefined'.
                                                         ~~~~~~~~~~~~~~~~~~
 
 src/app/dashboard/resorts/[resortId]/page.tsx:54:30 - error TS4111: Property 're
-sortId' comes from an index 
+sortId' comes from an index
 signature, so it must be accessed with ['resortId'].
-                            
+
 54     const resortId = params?.resortId as string
                                 ~~~~~~~~
 
@@ -1464,7 +1464,7 @@ src/app/faq/page.tsx:425:55 - error TS2532: Object is possibly 'undefined'.
 src/app/faq/page.tsx:761:14 - error TS2532: Object is possibly 'undefined'.
 
 761             {enhancedFaqData[category as keyof typeof enhancedFaqData].slice
-(0, 3).map((item, index) => 
+(0, 3).map((item, index) =>
 (
                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -1494,29 +1494,29 @@ ength} questions
 src/app/layout.tsx:102:39 - error TS4111: Property 'NEXT_PUBLIC_APP_URL' comes f
 rom an index signature, so i
 t must be accessed with ['NEXT_PUBLIC_APP_URL'].
-                            
+
 102     metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://woodys
 disneyplanner.com"),
                                           ~~~~~~~~~~~~~~~~~~~
 
 src/app/map/page.tsx:91:24 - error TS4111: Property 'location' comes from an ind
-ex signature, so it must be 
+ex signature, so it must be
 accessed with ['location'].
-                            
+
 91             typeof obj.location === 'object' &&
                           ~~~~~~~~
 
 src/app/map/page.tsx:92:17 - error TS4111: Property 'location' comes from an ind
-ex signature, so it must be 
+ex signature, so it must be
 accessed with ['location'].
-                            
+
 92             obj.location !== null &&
                    ~~~~~~~~
 
 src/app/map/page.tsx:93:25 - error TS4111: Property 'location' comes from an ind
-ex signature, so it must be 
+ex signature, so it must be
 accessed with ['location'].
-                            
+
 93             typeof (obj.location as Record<string, unknown>).lat === 'number'
  &&
                            ~~~~~~~~
@@ -1524,15 +1524,15 @@ accessed with ['location'].
 src/app/map/page.tsx:93:62 - error TS4111: Property 'lat' comes from an index si
 gnature, so it must be acces
 sed with ['lat'].
-                            
+
 93             typeof (obj.location as Record<string, unknown>).lat === 'number'
  &&
                                                                 ~~~
 
 src/app/map/page.tsx:94:25 - error TS4111: Property 'location' comes from an ind
-ex signature, so it must be 
+ex signature, so it must be
 accessed with ['location'].
-                            
+
 94             typeof (obj.location as Record<string, unknown>).lng === 'number'
  &&
                            ~~~~~~~~
@@ -1540,7 +1540,7 @@ accessed with ['location'].
 src/app/map/page.tsx:94:62 - error TS4111: Property 'lng' comes from an index si
 gnature, so it must be acces
 sed with ['lng'].
-                            
+
 94             typeof (obj.location as Record<string, unknown>).lng === 'number'
  &&
                                                                 ~~~
@@ -1548,14 +1548,14 @@ sed with ['lng'].
 src/app/map/page.tsx:95:24 - error TS4111: Property 'timestamp' comes from an in
 dex signature, so it must be
  accessed with ['timestamp'].
-                            
+
 95             typeof obj.timestamp === 'number' &&
                           ~~~~~~~~~
 
 src/app/map/page.tsx:96:24 - error TS4111: Property 'userId' comes from an index
  signature, so it must be ac
 cessed with ['userId'].
-                            
+
 96             typeof obj.userId === 'string'
                           ~~~~~~
 
@@ -1582,12 +1582,12 @@ ion' are incompatible.
 omponent<Omit<ToastActionPro
 ps & RefAttributes<HTMLButtonElement>, "ref"> & RefAttributes<HTMLButtonElement>
 >, string | JSXElementConstructor<...>>'.
-                                                        
+
 508             toast({
                       ~
 509                 title: 'Location Update Failed',
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... 
+...
 522                 ) : undefined,
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 523             });
