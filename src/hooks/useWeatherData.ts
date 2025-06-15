@@ -2,8 +2,9 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { RealtimeWeatherResponse, ForecastResponse, WeatherLocation, TemperatureUnit } from '@/types/weather'
 import { fetchRealtimeWeather, fetchWeatherForecast } from '@/lib/api/weather'
 import { clientWeatherCache, generateCacheKey, CACHE_CONFIG } from '@/lib/api/weather-cache'
+import type { SharedQueryOptions } from '@/types/shared'
 
-interface UseWeatherDataOptions {
+interface UseWeatherDataOptions extends SharedQueryOptions {
     location: string | WeatherLocation
     units?: TemperatureUnit
     enabled?: boolean
